@@ -10,7 +10,7 @@ def generate_launch_description():
     launch_description = LaunchDescription()
 
     model_pkg_share = FindPackageShare("pelican")
-    model_middleware = "description/X3/"
+    model_middleware = "models/X3/"
     sdf_model = "model.sdf"
 
     # Pose where we want to spawn the robot
@@ -23,7 +23,7 @@ def generate_launch_description():
 
     # Debug
     # print(reach_pkg.describe())
-    # sub = PathJoinSubstitution([reach_pkg, "description/tugbot_depot/tugbot_depot.sdf"])
+    # sub = PathJoinSubstitution([model_pkg_share, model_middleware, sdf_model])
     # print(Path(sub.perform(LaunchContext())))
 
     # Spawn entity

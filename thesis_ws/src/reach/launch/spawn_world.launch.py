@@ -12,7 +12,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time")
 
     world_pkg_share = FindPackageShare("reach")
-    world_middleware = "description/tugbot_depot/"
+    world_middleware = "worlds/tugbot_depot/"
     world_filename = "tugbot_depot.sdf"
 
     ignition_pkg = FindPackageShare("ros_gz_sim")
@@ -21,7 +21,7 @@ def generate_launch_description():
 
     # Debug
     # print(reach_pkg.describe())
-    # sub = PathJoinSubstitution([reach_pkg, "description/tugbot_depot/tugbot_depot.sdf"])
+    # sub = PathJoinSubstitution([world_pkg_share, world_middleware, world_filename])
     # print(Path(sub.perform(LaunchContext())))
 
     # Argument to be used in simulations only, not with real hw
