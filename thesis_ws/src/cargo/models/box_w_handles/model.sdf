@@ -1,0 +1,560 @@
+<?xml version='1.0' ?>
+<sdf version="1.6">
+  <model name="large_dry_box_handles">
+    <static>false</static>
+
+    <link name="suspension_front_left">
+      <pose>.3861 .2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <joint name="joint_suspension_front_left" type="prismatic">
+      <parent>link</parent>
+      <child>suspension_front_left</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>100</damping>
+          <spring_reference>-0.05</spring_reference>
+          <spring_stiffness>120</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-0.05</lower>
+          <upper>0.00</upper>
+        </limit>
+      </axis>
+      <physics>
+        <ode>
+          <implicit_spring_damper>true</implicit_spring_damper>
+        </ode>
+      </physics>
+    </joint>
+    <link name="caster_front_left">
+      <pose>.3861 .2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+      <collision name="caster_front_left_col">
+        <geometry>
+          <sphere>
+            <radius>0.02</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>10000000.0</kp>
+              <kd>1.0</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+    </link>
+    <joint name="joint_caster_front_left" type="ball">
+      <parent>suspension_front_left</parent>
+      <child>caster_front_left</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+      </axis>
+    </joint>
+
+    <link name="suspension_front_right">
+      <pose>.3861 -.2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <joint name="joint_suspension_front_right" type="prismatic">
+      <parent>link</parent>
+      <child>suspension_front_right</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>100</damping>
+          <spring_reference>-0.05</spring_reference>
+          <spring_stiffness>120</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-0.05</lower>
+          <upper>0.00</upper>
+        </limit>
+      </axis>
+      <physics>
+        <ode>
+          <implicit_spring_damper>true</implicit_spring_damper>
+        </ode>
+      </physics>
+    </joint>
+    <link name="caster_front_right">
+      <pose>.3861 -.2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+      <collision name="caster_front_right_col">
+        <geometry>
+          <sphere>
+            <radius>0.02</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>10000000.0</kp>
+              <kd>1.0</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+    </link>
+    <joint name="joint_caster_front_right" type="ball">
+      <parent>suspension_front_right</parent>
+      <child>caster_front_right</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+      </axis>
+    </joint>
+
+    <link name="suspension_back_left">
+      <pose>-.3861 .2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <joint name="joint_suspension_back_left" type="prismatic">
+      <parent>link</parent>
+      <child>suspension_back_left</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>100</damping>
+          <spring_reference>-0.05</spring_reference>
+          <spring_stiffness>120</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-0.05</lower>
+          <upper>0.00</upper>
+        </limit>
+      </axis>
+      <physics>
+        <ode>
+          <implicit_spring_damper>true</implicit_spring_damper>
+        </ode>
+      </physics>
+    </joint>
+    <link name="caster_back_left">
+      <pose>-.3861 .2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+      <collision name="caster_back_left_col">
+        <geometry>
+          <sphere>
+            <radius>0.02</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>10000000.0</kp>
+              <kd>1.0</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+    </link>
+    <joint name="joint_caster_back_left" type="ball">
+      <parent>suspension_back_left</parent>
+      <child>caster_back_left</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+      </axis>
+    </joint>
+
+    <link name="suspension_back_right">
+      <pose>-.3861 -.2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+    </link>
+    <joint name="joint_suspension_back_right" type="prismatic">
+      <parent>link</parent>
+      <child>suspension_back_right</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+          <damping>100</damping>
+          <spring_reference>-0.05</spring_reference>
+          <spring_stiffness>120</spring_stiffness>
+        </dynamics>
+        <limit>
+          <lower>-0.05</lower>
+          <upper>0.00</upper>
+        </limit>
+      </axis>
+      <physics>
+        <ode>
+          <implicit_spring_damper>true</implicit_spring_damper>
+        </ode>
+      </physics>
+    </joint>
+    <link name="caster_back_right">
+      <pose>-.3861 -.2245 0.025 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>8e-5</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>8e-5</iyy>
+          <iyz>0.0</iyz>
+          <izz>8e-5</izz>
+        </inertia>
+      </inertial>
+      <collision name="caster_back_right_col">
+        <geometry>
+          <sphere>
+            <radius>0.02</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <contact>
+            <ode>
+              <kp>10000000.0</kp>
+              <kd>1.0</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+    </link>
+    <joint name="joint_caster_back_right" type="ball">
+      <parent>suspension_back_right</parent>
+      <child>caster_back_right</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+      </axis>
+    </joint>
+
+    <link name="link">
+      <inertial>
+        <pose>0 0 0.27 0 0 0</pose>
+        <mass>2</mass>
+        <inertia>
+          <ixx>0.1009</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.1777</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.1813</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>meshes/largedrybox.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/LargeDryBox_Albedo.jpg</albedo_map>
+              <normal_map>materials/textures/LargeDryBox_Normal.jpg</normal_map>
+              <roughness_map>materials/textures/LargeDryBox_Roughness.jpg</roughness_map>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+      <collision name="Cylinder002">
+        <pose>0.0 0.0 0.603761 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <cylinder>
+            <length>0.217911</length>
+            <radius>0.0197214</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision name="Box069">
+        <pose>0.135114 -0.000510667 0.514101 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.0345349 0.0943769 0.0403584</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box070">
+        <pose>0.123455 -0.000510669 0.577033 0.944614 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.0345349 0.0657995 0.0304827</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box071">
+        <pose>0.0 0.0 0.249041 0.0 0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.772257 0.449103 0.498081</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box072">
+        <pose>-0.377964 0.0 0.398883 0.0 -0.889769 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.0910681 0.392965 0.0671908</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box005">
+        <pose>0.0 0.0 0.394802 0.0 0.0 0.0</pose>
+        <geometry>
+          <box>
+            <size>0.80589 0.500076 0.0506488</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box006">
+        <pose>0.395201 0.0 0.394123 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.341681 0.118639 0.0743472</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box073">
+        <pose>-0.123456 -0.000510669 0.577033 -0.944607 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.0345349 0.0657995 0.0304827</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box074">
+        <pose>-0.135114 -0.000510667 0.514101 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.0345349 0.0943769 0.0403584</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box075">
+        <pose>-0.600994 0.0 0.386826 1.5708 0.0 -1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.266316 0.0316343 0.0433154</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box076">
+        <pose>-0.581567 0.151505 0.386826 1.5708 0.0 -2.26893</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box077">
+        <pose>-0.470407 0.179853 0.386826 1.5708 0.0 3.14159</pose>
+        <geometry>
+          <box>
+            <size>0.2 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box078">
+        <pose>-0.470407 -0.179853 0.386826 1.5708 0.0 -6.51683e-07</pose>
+        <geometry>
+          <box>
+            <size>0.2 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box079">
+        <pose>-0.581567 -0.151505 0.386826 1.5708 0.0 -0.872665</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box082">
+        <pose>0.0 0.521852 0.386826 1.5708 0.0 3.14159</pose>
+        <geometry>
+          <box>
+            <size>0.266316 0.0316343 0.0433154</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box080">
+        <pose>0.151505 0.502425 0.386826 1.5708 0.0 2.44346</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box081">
+        <pose>-0.151505 0.502425 0.386826 1.5708 1.49012e-07 -2.44346</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box083">
+        <pose>0.179853 0.226463 0.386826 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.530265 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box084">
+        <pose>-0.179853 0.226464 0.386826 1.5708 -3.57628e-07 -1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.530265 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box085">
+        <pose>0.600994 0.0 0.386826 1.5708 0.0 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.266316 0.0316343 0.0433154</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box086">
+        <pose>0.581568 -0.151505 0.386826 1.5708 0.0 0.872665</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box087">
+        <pose>0.470407 -0.179853 0.386826 1.5708 0.0 -6.51683e-07</pose>
+        <geometry>
+          <box>
+            <size>0.2 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box088">
+        <pose>0.470407 0.179853 0.386826 1.5708 0.0 3.14159</pose>
+        <geometry>
+          <box>
+            <size>0.2 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box089">
+        <pose>0.581568 0.151505 0.386826 1.5708 0.0 2.26893</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box092">
+        <pose>0.0 -0.521852 0.386826 1.5708 0.0 -1.19209e-07</pose>
+        <geometry>
+          <box>
+            <size>0.266316 0.0316343 0.0433154</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box090">
+        <pose>-0.151505 -0.502425 0.386826 1.5708 0.0 -0.698132</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box091">
+        <pose>0.151505 -0.502425 0.386826 1.5708 1.49012e-07 0.698131</pose>
+        <geometry>
+          <box>
+            <size>0.0810202 0.0316343 0.039417</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box093">
+        <pose>0.179853 -0.226464 0.386826 1.5708 -3.57628e-07 1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.530265 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision name="Box094">
+        <pose>-0.179853 -0.226464 0.386826 1.5708 1.49012e-07 -1.5708</pose>
+        <geometry>
+          <box>
+            <size>0.530265 0.0316343 0.0301304</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>
