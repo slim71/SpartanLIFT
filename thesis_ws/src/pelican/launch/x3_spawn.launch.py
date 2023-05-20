@@ -22,7 +22,7 @@ def generate_launch_description():
     spawn_roll = "0.0"
 
     # Debug
-    # print(reach_pkg.describe())
+    # print(model_pkg_share.describe())
     # sub = PathJoinSubstitution([model_pkg_share, model_middleware, sdf_model])
     # print(Path(sub.perform(LaunchContext())))
 

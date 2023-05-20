@@ -20,7 +20,7 @@ def generate_launch_description():
     ignition_launchfile = "gz_sim.launch.py"
 
     # Debug
-    # print(reach_pkg.describe())
+    # print(world_pkg_share.describe())
     # sub = PathJoinSubstitution([world_pkg_share, world_middleware, world_filename])
     # print(Path(sub.perform(LaunchContext())))
 
