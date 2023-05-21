@@ -223,13 +223,6 @@
             "command": "sudo apt-get update && rosdep update && rosdep install --from-paths src --ignore-src -y",
             "problemMatcher": []
         },
-        {
-            "label": "setup",
-            "detail": "Set up the workspace",
-            "type": "shell",
-            "command": "./setup.sh",
-            "problemMatcher": []
-        }
     ],
     "inputs": [
         {
