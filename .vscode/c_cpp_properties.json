@@ -1,0 +1,20 @@
+// Settings for the C/C++ extension
+// see: https://code.visualstudio.com/docs/cpp/c-cpp-properties-schema-reference
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/ros/humble/include/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            // "compileCommands": "${workspaceFolder}/thesis_ws/build/compile_commands.json",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
