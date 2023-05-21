@@ -9,6 +9,8 @@ from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 # TODO: move to launch package?
 def generate_launch_description():
     launch_description = LaunchDescription()
+    # LaunchConfigurations are used to store values of launch arguments in the above 
+    # variables and to pass them to required actions
     use_sim_time = LaunchConfiguration("use_sim_time")
 
     world_pkg_share = FindPackageShare("reach")
@@ -24,7 +26,7 @@ def generate_launch_description():
     # sub = PathJoinSubstitution([world_pkg_share, world_middleware, world_filename])
     # print(Path(sub.perform(LaunchContext())))
 
-    # Argument to be used in simulations only, not with real hw
+    # Arguments to be used in simulations only, not with real hw
     # From the docs: "A launch argument is stored in a "launch configuration" of the same name."
 
     # TODO: consider checking for headless mode?
@@ -57,6 +59,7 @@ def generate_launch_description():
     )
 
     # Declare the launch options
+    # Notice: you need to add this, otherwise the argument is not passed
     launch_description.add_action(use_sim_time_argument)
 
     # Add any actions
