@@ -9,16 +9,44 @@
         "editor.detectIndentation": false
     },
     "python.linting.flake8Enabled": false,
-    "ros.distro": "humble",
-    "ros.rosSetupScript": "/home/slim71/Documents/git/SpartanLIFT/thesis_ws/install/setup.bash",
-    "ros.isolateEnvironment": false,
-    "python.autoComplete.extraPaths": [
-        "/opt/ros/humble/lib/python3.10/site-packages",
-        "/opt/ros/humble/local/lib/python3.10/dist-packages"
-    ],
+    "python.formatting.provider": "black",
     "python.analysis.extraPaths": [
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
-    "python.formatting.provider": "black"
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.formatting.autopep8Path": "/usr/bin/autopep8",
+    "python.formatting.autopep8Args": [
+        "--max-line-length=100"
+    ],
+
+    "ros.distro": "humble",
+    "ros.rosSetupScript": "/home/slim71/Documents/git/SpartanLIFT/thesis_ws/install/setup.bash",
+    "ros.isolateEnvironment": false,
+
+    "files.associations": {
+        "*.repos": "yaml",
+        "*.world": "xml",
+        "*.xacro": "xml"
+    },
+
+    "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
+    "C_Cpp.formatting": "disabled",
+    "uncrustify.configPath.linux": "/opt/ros/humble/lib/python3.10/site-packages/ament_uncrustify/configuration/ament_code_style.cfg",
+    "[cpp]": {
+        "editor.defaultFormatter": "zachflower.uncrustify"
+    },
+    
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/build": true,
+        "**/install": true,
+        "**/log": true
+    },
 }

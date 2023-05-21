@@ -52,15 +52,15 @@
             "detail": "Purge workspace by deleting all generated files.",
             "type": "shell",
             // py3clean removes .pyc and .pyo files
-            "command": "rm -fr thesis_ws/build thesis_ws/install log; py3clean .",
+            "command": "rm -fr build install log; py3clean .",
             "problemMatcher": []
         },
         // Linting and static code analysis tasks
-        { // Uncrustify: linting for C/C++ and others
+        { // Uncrustify: code beautifier for C/C++ and others
             "label": "fix",
             "detail": "Reformat files with uncrustify.",
             "type": "shell",
-            "command": "ament_uncrustify --reformat thesis_ws/src/",
+            "command": "ament_uncrustify --reformat src/",
             "problemMatcher": []
         },
         {
