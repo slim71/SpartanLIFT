@@ -41,12 +41,21 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# TODO: CMake flags like set (CMAKE_CXX_fLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -std=c++14")
+
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")
 
+# To allow separation of headers and sources
+add_library(Pelican_lib src/pelican.cpp)
+ament_target_dependencies(Pelican_lib rclcpp px4_msgs)
+target_include_directories(Pelican_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+target_link_libraries(Pelican_lib "${PUGIXML_DIR}")
+
 # One for each node: create executable
-add_executable(pelican_listener src/pelican.cpp)
+add_executable(pelican_listener src/pelican_node.cpp)
+target_include_directories(pelican_listener PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 ament_target_dependencies(pelican_listener rclcpp px4_msgs)
-target_link_libraries(pelican_listener "${PUGIXML_DIR}")
+target_link_libraries(pelican_listener Pelican_lib)
 
 # Once: install executables
 install(TARGETS
