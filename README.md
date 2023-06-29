@@ -20,19 +20,39 @@ Codename:	jammy
 slim71@slim71-Ubuntu:~$ echo $ROS_DISTRO 
 humble
 ```
-### Ignition Gazebo
+### Gazebo Garden
 ```bash
-slim71@slim71-Ubuntu:~$ ign gazebo --version
-Ignition Gazebo, version 6.11.0
+ùslim71@slim71-Ubuntu:~/Documents/git/SpartanLIFT$ gz sim --version
+Gazebo Sim, version 7.5.0
 Copyright (C) 2018 Open Source Robotics Foundation.
 Released under the Apache 2.0 License.
 ```
 
 ---
 
+## Controller library
+I initially started with [Ardupilot](https://ardupilot.org/), but I soon had to switch over to [PX4](https://px4.io/) 
+because the former was not yet ready to be used in ROS2 projects when I started out.
+Among many things, this meant migrating from Gazebo 6 (Ignition) to Gazebo (Garden).
+
 ## Models
-Drone models and world files found in the [Fuel models page](https://app.gazebosim.org/fuel/models):
+Drone models and world files downloaded from the [Fuel models page](https://app.gazebosim.org/fuel/models):
 - [X3 drone](https://app.gazebosim.org/OpenRobotics/fuel/models/X3%20UAV%20Config%201) by **OpenRobotics**
 - [X4 drone](https://app.gazebosim.org/OpenRobotics/fuel/models/X4%20UAV%20Config%201) by **OpenRobotics**
 - [Tugbot depot](https://app.gazebosim.org/MovAi/fuel/worlds/tugbot_depot) by **MovAi**
 - [Tugbot warehouse](https://app.gazebosim.org/MovAi/fuel/worlds/tugbot_warehouse) by **MovAi**
+I modified them in order to use it for my project.
+
+## External libraries
+- pugixml from source + make + sudo make install
+- ccache
+
+## Installation
+
+1. PX4
+2. px4_msgs
+3. px4_ros_com
+4. microxrcedds_agent
+5. my packages
+
+TODO: order of colcon build?
