@@ -3,6 +3,9 @@
 #include "pugixml.hpp"
 
 
+enum possible_roles { tbd, follower, leader };
+
+
 class PelicanUnit : public rclcpp::Node {
     public:
         explicit PelicanUnit() : Node("single_pelican") {
@@ -14,10 +17,15 @@ class PelicanUnit : public rclcpp::Node {
             
             // Subscriber, listening for VehicleLocalPosition messages
             // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module was started.
-            subscription_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-                                        "/fmu/out/vehicle_local_position", 
+            sub_to_local_pos_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
+                                        this->local_pos_topic_,
                                         qos, 
                                         std::bind(&PelicanUnit::printData, this, std::placeholders::_1));
+
+            sub_to_leader_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
+                                        this->local_pos_topic_,
+                                        qos, 
+                                        std::bind(&PelicanUnit::printData, this, std::placeholders::_1)); // TODO: define callback
 
             // Declare parameters
             declare_parameter("name", ""); // default to ""
@@ -26,8 +34,6 @@ class PelicanUnit : public rclcpp::Node {
             // Get parameters values and store them
             get_parameter("name", name_);
             get_parameter("model", model_);
-
-            mass_ = 0.0;
 
             parseModel();
 
@@ -40,12 +46,18 @@ class PelicanUnit : public rclcpp::Node {
         }
 
     private:
-        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr subscription_; // TODO: change name
+        std::string leader_topic_ { "/fleet/leader_selection" };
+        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr sub_to_leader_topic_;
+        
+
+        std::string local_pos_topic_ { "/fmu/out/vehicle_local_position" };
+        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr sub_to_local_pos_;
         
         std::string name_;
         std::string model_;
-        double mass_;
-        std::string::size_type mass_size_;
+        double mass_ { 0.0 };
+
+        int role_ { tbd };
 
         void parseModel() {
             pugi::xml_document doc;
@@ -67,6 +79,9 @@ class PelicanUnit : public rclcpp::Node {
             }
         }
         
+        void leaderSelection(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
+
+        }
 
         void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
             std::cout << "\n\n";
@@ -91,6 +106,7 @@ class PelicanUnit : public rclcpp::Node {
         }
 
 };
+
 
 int main(int argc, char *argv[]) {
 	std::cout << "Starting pelican_unit listener node..." << std::endl;
