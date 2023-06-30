@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(pugixml REQUIRED)
+find_package(comms REQUIRED)
 
 # Find pugixml
 find_library(PUGIXML_DIR pugixml)
@@ -47,14 +48,14 @@ ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.d
 
 # To allow separation of headers and sources
 add_library(Pelican_lib src/pelican.cpp)
-ament_target_dependencies(Pelican_lib rclcpp px4_msgs)
+ament_target_dependencies(Pelican_lib rclcpp px4_msgs comms)
 target_include_directories(Pelican_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_lib "${PUGIXML_DIR}")
 
 # One for each node: create executable
 add_executable(pelican_listener src/pelican_node.cpp)
 target_include_directories(pelican_listener PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(pelican_listener rclcpp px4_msgs)
+ament_target_dependencies(pelican_listener rclcpp px4_msgs comms)
 target_link_libraries(pelican_listener Pelican_lib)
 
 # Once: install executables
