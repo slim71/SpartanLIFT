@@ -10,15 +10,21 @@ PelicanUnit::PelicanUnit() : Node("single_pelican") {
     
     // Subscriber, listening for VehicleLocalPosition messages
     // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module was started.
-    sub_to_local_pos_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-                                this->local_pos_topic_,
-                                qos, 
-                                std::bind(&PelicanUnit::printData, this, std::placeholders::_1));
+    this->sub_to_local_pos_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
+                                        this->local_pos_topic_,
+                                        qos, 
+                                        std::bind(&PelicanUnit::printData, this, std::placeholders::_1)
+                                    );
 
-    sub_to_leader_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-                                this->local_pos_topic_,
-                                qos, 
-                                std::bind(&PelicanUnit::printData, this, std::placeholders::_1)); // TODO: define callback
+    this->sub_to_leader_selection_topic_ = this->create_subscription<comms::msg::Datapad>(
+                                                this->local_pos_topic_,
+                                                qos, 
+                                                std::bind(&PelicanUnit::leaderSelection, this, std::placeholders::_1)
+                                            );
+
+    this->pub_to_leader_selection_topic_ = this->create_publisher<comms::msg::Datapad>(
+                                                this->leader_selection_topic_, 10
+                                            ); // TODO: 10 in constant
 
     // Declare parameters
     declare_parameter("name", ""); // default to ""
@@ -32,17 +38,19 @@ PelicanUnit::PelicanUnit() : Node("single_pelican") {
 
     // Log parameters values
     RCLCPP_INFO(get_logger(), "Copter %s loaded model %s", name_.c_str(), model_.c_str());
+
+    this->becomeCandidate();
 }
 
 PelicanUnit::~PelicanUnit() {
     RCLCPP_INFO(get_logger(), "Destructor for %s", name_.c_str());
 }
 
-int PelicanUnit::get_ID() {};
-std::string PelicanUnit::get_name() {};
-std::string PelicanUnit::get_model() {};
-double PelicanUnit::get_mass() {};
-possible_roles PelicanUnit::get_role() {};
+int PelicanUnit::get_ID() { return this->id_; };
+std::string PelicanUnit::get_name() { return this->name_; };
+std::string PelicanUnit::get_model() { return this->model_; };
+double PelicanUnit::get_mass() {return this->mass_; };
+possible_roles PelicanUnit::get_role() { return this->role_; };
 
 void PelicanUnit::parseModel() {
     pugi::xml_document doc;
@@ -63,7 +71,7 @@ void PelicanUnit::parseModel() {
     }
 }
 
-void PelicanUnit::leaderSelection(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
+void PelicanUnit::leaderSelection(const comms::msg::Datapad::SharedPtr msg) const {
 
 }
 
@@ -87,4 +95,30 @@ void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr
     std::cout << "ay: " << msg->ay << std::endl; // [m/s^2]
     std::cout << "az: " << msg->az << std::endl; // [m/s^2]
     std::cout << "heading: " << msg->heading << std::endl; // [rad]
+}
+
+void PelicanUnit::becomeLeader() {
+    this->role_ = leader;
+}
+
+void PelicanUnit::becomeFollower() {
+    this->role_ = follower;
+}
+
+void PelicanUnit::becomeCandidate() {
+    this->role_ = candidate;
+
+}
+
+void PelicanUnit::vote(int id_to_vote) {
+    auto msg = comms::msg::Datapad();
+
+    // int64 term_id
+    // int64 voter_id
+    // int64 proposed_leader
+    msg.term_id = this->current_term_;
+    msg.voter_id = this->id_;
+    msg.proposed_leader = id_to_vote;
+
+    this->pub_to_leader_selection_topic_->publish(msg);
 }
