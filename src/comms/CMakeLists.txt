@@ -11,6 +11,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -26,6 +27,8 @@ endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Datapad.msg"
+  "msg/Heartbeat.msg"
+  DEPENDENCIES builtin_interfaces
 )
 
 ament_package()
