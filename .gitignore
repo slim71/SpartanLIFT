@@ -370,3 +370,6 @@ AMENT_IGNORE
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/ros2,c++,python,pycharm,visualstudiocode
+
+# Temporary folder used for other stuff
+temp
