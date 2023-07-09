@@ -21,12 +21,13 @@ PelicanUnit::PelicanUnit() : Node("single_pelican") {
                                         std::bind(&PelicanUnit::printData, this, std::placeholders::_1)
                                     );
 
+    // TODO: add group
     this->sub_to_leader_selection_topic_ = this->create_subscription<comms::msg::Datapad>(
                                                 this->leader_selection_topic_,
                                                 qos, 
-                                                std::bind(&PelicanUnit::leaderSelection, this, std::placeholders::_1)
+                                                std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1)
                                             );
-
+    // TODO: add group
     this->pub_to_leader_selection_topic_ = this->create_publisher<comms::msg::Datapad>(
                                                 this->leader_selection_topic_, 10
                                             ); // TODO: 10 (or better value) in constant
@@ -56,6 +57,7 @@ PelicanUnit::~PelicanUnit() {
     this->timer_->cancel();
 }
 
+// TODO: use these when needed
 int PelicanUnit::get_ID() { return this->id_; };
 std::string PelicanUnit::get_name() { return this->name_; };
 std::string PelicanUnit::get_model() { return this->model_; };
@@ -63,7 +65,7 @@ double PelicanUnit::get_mass() {return this->mass_; };
 possible_roles PelicanUnit::get_role() { return this->role_; };
 int PelicanUnit::get_current_term() { return this->current_term_; };
 
-void PelicanUnit::randomTimer() {
+void PelicanUnit::randomTimer() { // TODO: modify and use
     RCLCPP_INFO(get_logger(), "Creating timer");
 
     // initialize random seed
@@ -92,14 +94,40 @@ void PelicanUnit::parseModel() {
     }
 }
 
-void PelicanUnit::leaderSelection(const comms::msg::Datapad::SharedPtr msg) const {
+void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "\n\n";
-    std::cout << "RECEIVED Datapad DATA"   << std::endl;
+    std::cout << "AGENT " << this->id_ << "RECEIVED DATAPAD DATA"   << std::endl;
     std::cout << "============================="   << std::endl;
     std::cout << "term_id: " << msg->term_id << std::endl;
     std::cout << "voter_id: " << msg->voter_id << std::endl;
     std::cout << "proposed_leader: " << msg->proposed_leader << std::endl;
+    std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
 
+    this->votes_mutex_.lock();
+    this->received_votes.push_back(msg);
+    this->votes_mutex_.unlock();
+
+    // Votes received are supposedly from followers, so if no more votes come within a time frame, the elections is finished
+    if(this->role_ == candidate) {
+        if(this->voting_timer != nullptr) { // Make the timer restart
+            this->voting_timer->reset();
+        } else{
+            this->voting_timer = this->create_wall_timer(this->voting_max_time_, std::bind(&PelicanUnit::setElectionCompleted, this));
+        };
+    };
+
+}
+
+void PelicanUnit::setElectionCompleted() {
+    this->voting_timer->cancel();
+    std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
+    this->election_completed_ = true;
+}
+
+void PelicanUnit::flushVotes() {
+    // Ensure safe access to received_votes
+    std::lock_guard<std::mutex> lock(this->votes_mutex_);
+    this->received_votes.clear();
 }
 
 void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
@@ -143,13 +171,22 @@ void PelicanUnit::becomeFollower() {
 
     rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
     auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
-    auto sub_opt = rclcpp::SubscriptionOptions();
-    sub_opt.callback_group = this->reentrant_group_;
+    auto reentrant_opt = rclcpp::SubscriptionOptions();
+
+    reentrant_opt.callback_group = this->reentrant_group_;
     this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
                                         this->heartbeat_topic_,
                                         qos, 
                                         std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
-                                        sub_opt
+                                        reentrant_opt
+                                    );
+
+    // TODO: needed by all agents?
+    this->sub_to_request_vote_rpc_topic_ = this->create_subscription<comms::msg::RequestVoteRPC>(
+                                        this->request_vote_rpc_topic_,
+                                        qos, 
+                                        std::bind(&PelicanUnit::expressPreference, this, std::placeholders::_1),
+                                        reentrant_opt
                                     );
 
     std::chrono::milliseconds sleep_time {1000}; // TODO: value?
@@ -160,7 +197,135 @@ void PelicanUnit::becomeFollower() {
 void PelicanUnit::becomeCandidate() {
     RCLCPP_INFO(get_logger(), "Becoming Candidate");
     this->role_ = candidate;
+    this->leader_elected_ = false;
 
+    this->election_completed_mutex_.lock();
+    this->election_completed_ = false;
+    this->election_completed_mutex_.unlock();
+
+    this->sub_to_request_vote_rpc_topic_.reset(); // unsubscribe from topic
+
+    this->election_timer_ = this->create_wall_timer(this->election_max_time_, std::bind(&PelicanUnit::setVotingTimedOut, this));
+
+    // the candidate repeats this until:
+    // (a) it wins the election
+    // (b) another server establishes itself as leader
+    // (c) a period of time goes by with no winner
+    while(!this->checkElectionCompleted()) {
+        this->current_term_++;
+        while(!this->checkVotingCompleted() &&  !this->checkVotingTimedOut()) {
+            this->vote(this->id_);
+            this->requestVote();
+        };
+        // here either the voting is completed or it's timed-out
+        this->leaderElection();
+    };
+
+}
+
+void PelicanUnit::leaderElection() {
+    // As for followers, even the candidates has stored all the votes
+    // TODO: case of no votes inserted
+    
+    // Copy because I don't want to modify the original vector TODO: needed?
+    std::vector<comms::msg::Datapad::SharedPtr> votes_copy(received_votes);
+    std::sort(votes_copy.begin(), 
+              votes_copy.end(), 
+              [](const comms::msg::Datapad::SharedPtr &a, const comms::msg::Datapad::SharedPtr &b) {
+                  return a->proposed_leader < b->proposed_leader;
+              }
+            );
+
+    std::vector<vote_count> ballot;
+
+    for(auto it = std::cbegin(votes_copy); it != std::cend(votes_copy); ) {  
+        vote_count candidate_support;
+        candidate_support.candidate_id = (*it)->proposed_leader;
+        candidate_support.total = std::count_if(it, 
+                                                std::cend(votes_copy), 
+                                                [&](const comms::msg::Datapad::SharedPtr &v) {
+                                                    return v->proposed_leader == (*it)->proposed_leader;
+                                                }
+                                                );
+        ballot.push_back(candidate_support);
+
+        // Increment the iterator until the last value of the cluster is found
+        for(auto last = (*it)->proposed_leader; (*++it)->proposed_leader == last;);
+    }
+
+    std::sort(ballot.begin(),
+              ballot.end(),
+              [](vote_count a, vote_count b){
+                  return a.total < b.total;
+              }
+            );
+    auto item = std::find_if(ballot.begin(),
+                             ballot.end(),
+                             [this](const vote_count &v){
+                                 return v.candidate_id == this->get_ID();
+                             }
+                            );
+    
+    // If item is the last element of the ballot vector, either this candidate has won the election or there's a tie
+    if((*item).total == (*ballot.cend()).total) {
+        if((*item).total != (*(ballot.cend()-1)).total) { // this candidate has won
+            // I've been chosen!
+            this->election_timer_->cancel();
+            this->election_completed_ = true;
+            this->leader_elected_ = true;
+            this->leader_id_ = this->id_;
+            this->becomeLeader();
+            this->sendHeartbeat(); // to be sure one is sent now
+        } else { // tie
+            // each candidate will time out and start a new election by incrementing its term and initiating another round of Request-Vote RPCs
+            // Do not flag the election as completed and starts from scratch
+            this->resetVotingWindow();
+        }
+    };
+    // Otherwise, let the winning candidate send its heartbeat as leader confirmation
+}
+
+bool PelicanUnit::checkVotingTimedOut() {
+    // Ensure safe access to election_timed_out
+    std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
+    return this->election_timed_out;
+}
+
+bool PelicanUnit::checkElectionCompleted() {
+    // Ensure safe access to election_timed_out
+    std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
+    return this->election_completed_;
+}
+
+bool PelicanUnit::checkVotingCompleted() {
+    // Ensure safe access to election_timed_out
+    std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
+    return this->voting_completed_;
+}
+
+void PelicanUnit::setVotingTimedOut() {
+    this->election_timer_->cancel();
+    // Ensure safe access to election_timed_out
+    std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
+    this->election_timed_out = true;
+}
+
+void PelicanUnit::setVotingCompleted() {
+    this->election_timer_->cancel();
+    // Ensure safe access to election_timed_out
+    std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
+    this->election_timed_out = true;
+}
+
+void PelicanUnit::resetVotingWindow() {
+    this->voting_completed_mutex_.lock();
+    this->voting_completed_ = false;
+    this->voting_completed_mutex_.unlock();
+
+    this->election_timer_->reset();
+    this->election_timedout_mutex_.lock();
+    this->election_timed_out = false;
+    this->election_timedout_mutex_.unlock();
 }
 
 bool PelicanUnit::isLeader() {
@@ -182,6 +347,32 @@ void PelicanUnit::vote(int id_to_vote) {
     msg.proposed_leader = id_to_vote;
 
     this->pub_to_leader_selection_topic_->publish(msg);
+}
+
+void PelicanUnit::requestVote() {
+    if (this->pub_to_request_vote_rpc_topic_ == nullptr) {
+        this->pub_to_request_vote_rpc_topic_ = this->create_publisher<comms::msg::RequestVoteRPC>(
+                                                    this->request_vote_rpc_topic_, 10
+                                                ); // TODO: 10 (or better value) in constant
+    };
+
+    comms::msg::RequestVoteRPC req;
+    req.do_vote = true;
+    req.solicitant_id = this->id_;
+    req.term_id = this->current_term_;
+
+    this->pub_to_request_vote_rpc_topic_->publish(req);
+}
+
+void PelicanUnit::expressPreference(const comms::msg::RequestVoteRPC msg) { // TODO: think about the name
+    this->sub_to_request_vote_rpc_topic_.reset();
+    auto heavier = std::max_element(this->received_votes.begin(),
+                                    this->received_votes.end(),
+                                    [](comms::msg::Datapad::SharedPtr first, comms::msg::Datapad::SharedPtr second) {
+                                        return first->candidate_mass > second->candidate_mass;
+                                    }
+                                    );
+    this->vote((*heavier)->candidate_mass);
 }
 
 void PelicanUnit::sendHeartbeat() {
@@ -206,8 +397,9 @@ void PelicanUnit::checkHeartbeat() {
     if (this->received_hbs_.empty()) {
         this->hbs_mutex_.unlock();
         RCLCPP_INFO(get_logger(), "No heartbeat received; switching to candidate...");
-        this->becomeCandidate();
         this->hb_monitoring_timer_->cancel();
+        this->current_term_++; // increment term ID
+        this->becomeCandidate(); // transition to Candidate state
     } else {
         // TODO: check for the hb term and timestamp to be sure?
         // TODO: consider the case of changing follower ID in two subsequent hbs?
