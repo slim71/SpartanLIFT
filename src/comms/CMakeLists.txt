@@ -28,6 +28,7 @@ endif()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Datapad.msg"
   "msg/Heartbeat.msg"
+  "msg/RequestVoteRPC.msg"
   DEPENDENCIES builtin_interfaces
 )
 
