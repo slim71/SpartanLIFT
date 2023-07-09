@@ -53,7 +53,8 @@ target_include_directories(Pelican_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/incl
 target_link_libraries(Pelican_lib "${PUGIXML_DIR}")
 
 # One for each node: create executable
-add_executable(pelican_listener src/pelican_node.cpp)
+add_executable(pelican_listener 
+                src/pelican_node.cpp src/pelican_roles.cpp src/pelican_heartbeat.cpp src/pelican_election.cpp)
 target_include_directories(pelican_listener PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 ament_target_dependencies(pelican_listener rclcpp px4_msgs comms)
 target_link_libraries(pelican_listener Pelican_lib)
