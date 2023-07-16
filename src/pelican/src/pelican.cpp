@@ -4,52 +4,60 @@
 // TODO: specialize logs with agent ID
 
 PelicanUnit::PelicanUnit() : Node("single_pelican") {
-    // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data. 
-    // This is needed because the default ROS 2 QoS profile for subscribers is 
-    // incompatible with the PX4 profile for publishers.
-    rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
-    auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
-    
-    this->exclusive_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
+    this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    // Callbacks belonging to different callback groups (of any type) can always be executed parallel to each other
+    // Almost every callback can be executed in parallel to one another or with itself (thanks to mutexes)
+    this->reentrant_opt_.callback_group = this->reentrant_group_;
+    
+    // TODO: move to transition functions?
     // Subscriber, listening for VehicleLocalPosition messages
     // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module was started.
     this->sub_to_local_pos_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
                                         this->local_pos_topic_,
-                                        qos, 
-                                        std::bind(&PelicanUnit::printData, this, std::placeholders::_1)
+                                        this->px4_qos_, 
+                                        std::bind(&PelicanUnit::printData, this, std::placeholders::_1),
+                                        this->reentrant_opt_
                                     );
 
-    // TODO: add group
     this->sub_to_leader_selection_topic_ = this->create_subscription<comms::msg::Datapad>(
                                                 this->leader_selection_topic_,
-                                                qos, 
-                                                std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1)
+                                                this->standard_qos_, 
+                                                std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1),
+                                                this->reentrant_opt_
                                             );
-    // TODO: add group
+    
     this->pub_to_leader_selection_topic_ = this->create_publisher<comms::msg::Datapad>(
-                                                this->leader_selection_topic_, 10
-                                            ); // TODO: 10 (or better value) in constant
+                                                this->leader_selection_topic_, 
+                                                this->standard_qos_
+                                            );
+
+
+    this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
+                                        this->heartbeat_topic_,
+                                        this->standard_qos_, 
+                                        std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
+                                        this->reentrant_opt_
+                                    );
 
     // Declare parameters
     declare_parameter("name", ""); // default to ""
     declare_parameter("model", ""); // default to ""
 
     // Get parameters values and store them
-    get_parameter("name", name_);
-    get_parameter("model", model_);
+    get_parameter("name", this->name_);
+    get_parameter("model", this->model_);
 
-    parseModel();
+    this->parseModel();
 
     // Log parameters values
-    RCLCPP_INFO(get_logger(), "Copter %s loaded model %s", name_.c_str(), model_.c_str());
+    RCLCPP_INFO(this->get_logger(), "Copter %s loaded model %s", this->getName().c_str(), this->getModel().c_str());
 
     this->becomeFollower();
 }
 
 PelicanUnit::~PelicanUnit() {
-    RCLCPP_INFO(get_logger(), "Destructor for %s", name_.c_str());
+    RCLCPP_INFO(this->get_logger(), "Destructor for %s", this->getName().c_str());
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
@@ -59,31 +67,22 @@ PelicanUnit::~PelicanUnit() {
 
 void PelicanUnit::parseModel() {
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file(this->model_.c_str());
+    pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
 
     if (result) {
         pugi::xml_node start = doc.child("sdf").child("model");
 
         for (pugi::xml_node link = start.first_child(); link; link = link.next_sibling()) {
             if (strcmp(link.attribute("name").value(), "base_link") == 0) {
-                this->mass_ = link.child("inertial").child("mass").text().as_double();
-                RCLCPP_INFO(get_logger(), "Drone mass: %f", this->mass_);
+                this->setMass(link.child("inertial").child("mass").text().as_double());
+                RCLCPP_INFO(this->get_logger(), "Drone mass: %f", this->getMass());
             }
         }
     } else {
-        RCLCPP_ERROR(get_logger(), "Model file could not be loaded! Error description: %s", result.description());
-        // TODO: abort everything
+        RCLCPP_ERROR(this->get_logger(), "Model file could not be loaded! Error description: %s", result.description());
+        // Abort everything // TODO: works?
+        throw std::runtime_error("Agent model could not be parsed!");
     }
-}
-
-void PelicanUnit::randomTimer() { // TODO: modify and use
-    RCLCPP_INFO(get_logger(), "Creating timer");
-
-    // initialize random seed
-    srand(time(NULL));
-    
-    // TODO: do I need a particular kind of random?
-    this->timer_ = this->create_wall_timer(std::chrono::seconds(rand()%10+1), std::bind(&PelicanUnit::isLeader, this)); // TODO: change callback and duration
 }
 
 void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
@@ -91,7 +90,7 @@ void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr
     std::cout << "RECEIVED VehicleLocalPosition DATA"   << std::endl;
     std::cout << "============================="   << std::endl;
     std::cout << "Time since start: " << msg->timestamp << std::endl; // [us]
-    std::cout << "Timestamp of raw data: " << msg->timestamp_sample << std::endl; // TODO: not needed? // [us]
+    std::cout << "Timestamp of raw data: " << msg->timestamp_sample << std::endl; // [us]
     std::cout << "x: " << msg->x << std::endl; // [m]
     std::cout << "y: " << msg->y << std::endl; // [m]
     std::cout << "z: " << msg->z << std::endl; // [m]
@@ -107,13 +106,3 @@ void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr
     std::cout << "az: " << msg->az << std::endl; // [m/s^2]
     std::cout << "heading: " << msg->heading << std::endl; // [rad]
 }
-
-// TODO: getters and setters in a unique file?
-
-// TODO: use these when needed
-int PelicanUnit::get_ID() { return this->id_; };
-std::string PelicanUnit::get_name() { return this->name_; };
-std::string PelicanUnit::get_model() { return this->model_; };
-double PelicanUnit::get_mass() {return this->mass_; };
-possible_roles PelicanUnit::get_role() { return this->role_; };
-int PelicanUnit::get_current_term() { return this->current_term_; };

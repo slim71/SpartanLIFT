@@ -7,17 +7,15 @@ int main(int argc, char *argv[]) {
     // Initialization
 	rclcpp::init(argc, argv);
 
+	// Instantiation
+	rclcpp::Node::SharedPtr node = std::make_shared<PelicanUnit>();
+	rclcpp::executors::MultiThreadedExecutor executor;
+	
+	executor.add_node(node);
+
 	try {
-		// Instantiation
-		rclcpp::Node::SharedPtr node = std::make_shared<PelicanUnit>();
-		rclcpp::executors::MultiThreadedExecutor executor;
-		
-		executor.add_node(node);
-
-		// TODO: try-catch needed for the spin() call too?
 		executor.spin();
-
-	} catch (...) {
+	} catch (std::exception& e) {
 		std::cout << "rclcpp shutting down..." << std::endl;
 		rclcpp::shutdown();
 		return 0;
