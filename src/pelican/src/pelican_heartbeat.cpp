@@ -34,7 +34,10 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // First of all, check if it's too late
     if (this->checkElectionTimedOut()) {
         this->logInfo("No heartbeat received within the 'election_timeout' window; switching to candidate...");
+        // TODO: delete if deleting checkHeartbeat
         this->hb_monitoring_timer_->cancel(); // Cancel the wall_timer for further checking of heartbeats
+
+        this->election_timer_->cancel();
 
         this->becomeCandidate(); // transition to Candidate state
         return;
@@ -42,7 +45,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logInfo("Ignoring heartbeat received with previous term ID");
+        this->logDebug("Ignoring heartbeat received with previous term ID");
         return;
     }
 
@@ -61,7 +64,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
               });
     this->hbs_mutex_.unlock();
         
-    this->election_timer_.reset(); // Reset the wall_timer used to be sure there's a leader, to election_timeout
+    this->election_timer_.reset(); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
 
     if (this->getRole() == candidate) {
         this->setExternalLeaderElected();
