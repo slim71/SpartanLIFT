@@ -1,4 +1,5 @@
-/single_pelican:
+PelicanUnit:
   ros__parameters:
     name: "FirstOne"
-    model: "src/pelican/models/X3/model.sdf"
+    model: "src/pelican/models/X3/model.sdf" # TODO: change to share installation folder (install/pelican/share/pelican)
+    id: 1

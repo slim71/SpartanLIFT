@@ -1,4 +1,5 @@
-/single_pelican:
+PelicanUnit:
   ros__parameters:
     name: "SecondOne"
     model: "src/pelican/models/X4/model.sdf"
+    id: 2
