@@ -145,12 +145,13 @@ void PelicanUnit::resetVotingWindow() {
 
 void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "\n\n";
-    std::cout << "AGENT " << this->getID() << "RECEIVED DATAPAD DATA"   << std::endl;
+    std::cout << "AGENT " << this->getID() << " RECEIVED DATAPAD DATA"   << std::endl;
     std::cout << "============================="   << std::endl;
     std::cout << "term_id: " << msg->term_id << std::endl;
     std::cout << "voter_id: " << msg->voter_id << std::endl;
     std::cout << "proposed_leader: " << msg->proposed_leader << std::endl;
     std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
+    std::cout << "\n\n";
 
     this->votes_mutex_.lock();
     this->received_votes_.push_back(msg);
@@ -176,10 +177,12 @@ void PelicanUnit::flushVotes() {
 
 void PelicanUnit::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
-    while (!this->checkVotingCompleted() && !this->checkForExternalLeader()) {
+    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->is_terminated_) {
+        this->logDebug("Ballot checking...");
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
+    this->logDebug("Ballot finished");
 
     // Notify the first thread to stop waiting
     cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
