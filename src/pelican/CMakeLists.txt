@@ -7,7 +7,6 @@ project(pelican
 set(CMAKE_CXX_STANDARD 14) # TODO: check if later is good
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  message("Being pedantic")
   add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
 endif()
 
@@ -46,6 +45,9 @@ ament_target_dependencies(Pelican_lib rclcpp px4_msgs comms)
 target_include_directories(Pelican_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_lib "${PUGIXML_DIR}")
 
+find_package(fmt)
+target_link_libraries(Pelican_lib fmt::fmt)
+
 # One for each node: create executable
 add_executable(pelican_listener 
                 src/pelican_node.cpp 
@@ -58,6 +60,7 @@ add_executable(pelican_listener
 target_include_directories(pelican_listener PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 ament_target_dependencies(pelican_listener rclcpp px4_msgs comms)
 target_link_libraries(pelican_listener Pelican_lib)
+
 
 # Once: install executables
 install(TARGETS

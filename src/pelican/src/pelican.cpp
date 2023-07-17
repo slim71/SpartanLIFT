@@ -3,7 +3,9 @@
 
 // TODO: specialize logs with agent ID
 
-PelicanUnit::PelicanUnit() : Node("single_pelican") {
+PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
+
+	this->get_logger().set_level(rclcpp::Logger::Level::Debug);
 
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     // Callbacks belonging to different callback groups (of any type) can always be executed parallel to each other
@@ -43,21 +45,23 @@ PelicanUnit::PelicanUnit() : Node("single_pelican") {
     // Declare parameters
     declare_parameter("name", ""); // default to ""
     declare_parameter("model", ""); // default to ""
+    declare_parameter("id", 0); // default to 0
 
     // Get parameters values and store them
     get_parameter("name", this->name_);
     get_parameter("model", this->model_);
+    get_parameter("id", this->id_);
 
     this->parseModel();
-
+    
     // Log parameters values
-    RCLCPP_INFO(this->get_logger(), "Copter %s loaded model %s", this->getName().c_str(), this->getModel().c_str());
+    this->logInfo("Loaded model {}", this->getModel());
 
     this->becomeFollower();
 }
 
 PelicanUnit::~PelicanUnit() {
-    RCLCPP_INFO(this->get_logger(), "Destructor for %s", this->getName().c_str());
+    this->logDebug("Destructor for {}", this->getName());
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
@@ -66,6 +70,7 @@ PelicanUnit::~PelicanUnit() {
 }
 
 void PelicanUnit::parseModel() {
+    this->logDebug("Trying to load model {}", this->getModel());
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
 
@@ -75,12 +80,13 @@ void PelicanUnit::parseModel() {
         for (pugi::xml_node link = start.first_child(); link; link = link.next_sibling()) {
             if (strcmp(link.attribute("name").value(), "base_link") == 0) {
                 this->setMass(link.child("inertial").child("mass").text().as_double());
-                RCLCPP_INFO(this->get_logger(), "Drone mass: %f", this->getMass());
+                this->logInfo("Drone mass: {}", this->getMass());
             }
         }
     } else {
-        RCLCPP_ERROR(this->get_logger(), "Model file could not be loaded! Error description: %s", result.description());
-        // Abort everything // TODO: works?
+        this->logError("Model file {} could not be loaded! Error description: {}", 
+                        this->getModel(), result.description());
+        // Abort everything
         throw std::runtime_error("Agent model could not be parsed!");
     }
 }
