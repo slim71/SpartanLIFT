@@ -1,7 +1,7 @@
 #include "pelican.hpp"
 
 void PelicanUnit::becomeLeader() {
-    RCLCPP_INFO(this->get_logger(), "Becoming Leader");
+    this->logInfo("Becoming Leader");
     this->setRole(leader);
 
     // Unsubscribe from the heartbeat topic // TODO: not to do, in case of another leader arriving?
@@ -18,7 +18,7 @@ void PelicanUnit::becomeLeader() {
 }
 
 void PelicanUnit::becomeFollower() {
-    RCLCPP_INFO(this->get_logger(), "Becoming Follower");
+    this->logInfo("Becoming Follower");
     this->setRole(follower);
 
     // TODO: needed by all agents? maybe, to let candidates and old leaders know they have to step down
@@ -43,7 +43,7 @@ void PelicanUnit::becomeFollower() {
 }
 
 void PelicanUnit::becomeCandidate() {
-    RCLCPP_INFO(this->get_logger(), "Becoming Candidate");
+    this->logInfo("Becoming Candidate");
     this->setRole(candidate);
 
     this->unsetLeaderElected();
@@ -94,6 +94,6 @@ void PelicanUnit::becomeCandidate() {
 }
 
 bool PelicanUnit::isLeader() {
-    RCLCPP_INFO(this->get_logger(), "Agent is leader? %d", this->getRole() == leader);
+    this->logDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
 }

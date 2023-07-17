@@ -1,7 +1,7 @@
 #include "pelican.hpp"
 
 void PelicanUnit::sendHeartbeat() {
-    RCLCPP_INFO(this->get_logger(), "Sending heartbeat");
+    this->logInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->getCurrentTerm();
@@ -23,7 +23,7 @@ void PelicanUnit::stopHeartbeat() {
 
 //         this->received_hbs_.pop(); // TODO: needed?
 //         this->hbs_mutex_.unlock();
-//         RCLCPP_INFO(this->get_logger(), "Heartbeat received");
+//         this->logInfo("Heartbeat received");
 //     }
 // }
 
@@ -33,7 +33,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     // First of all, check if it's too late
     if (this->checkElectionTimedOut()) {
-        RCLCPP_INFO(this->get_logger(), "No heartbeat received within the 'election_timeout' window; switching to candidate...");
+        this->logInfo("No heartbeat received within the 'election_timeout' window; switching to candidate...");
         this->hb_monitoring_timer_->cancel(); // Cancel the wall_timer for further checking of heartbeats
 
         this->becomeCandidate(); // transition to Candidate state
@@ -42,7 +42,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        RCLCPP_INFO(this->get_logger(), "Ignoring heartbeat received with previous term ID");
+        this->logInfo("Ignoring heartbeat received with previous term ID");
         return;
     }
 

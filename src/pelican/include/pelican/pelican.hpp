@@ -10,6 +10,7 @@
 #include "comms/msg/datapad.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
+#include <fmt/core.h>
 
 enum possible_roles { tbd, candidate, follower, leader };
 
@@ -39,7 +40,12 @@ class PelicanUnit : public rclcpp::Node {
         bool isLeader();
 
     // Member functions
-    private: 
+    private:
+        template<typename... Args> void logInfo(std::string s, Args... args);
+        template<typename... Args> void logError(std::string s, Args... args);
+        template<typename... Args> void logWarning(std::string s, Args... args);
+        template<typename... Args> void logDebug(std::string s, Args... args);
+
         // TODO: If a member doesn't modify any member data, mark it const by default.
 
         void parseModel();
@@ -216,5 +222,8 @@ class PelicanUnit : public rclcpp::Node {
         std::uniform_int_distribution<> random_distribution_ {150, 300}; // inclusive; intended as milliseconds 
 
 };
+
+// Including templates definitions
+#include "pelican_logger.tpp"
 
 #endif

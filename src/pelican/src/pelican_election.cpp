@@ -1,7 +1,7 @@
 #include "pelican.hpp"
 
 void PelicanUnit::vote(int id_to_vote) {
-    RCLCPP_INFO(this->get_logger(), "Voting: %d", id_to_vote);
+    this->logInfo("Voting: {}", id_to_vote);
 
     auto msg = comms::msg::Datapad();
     msg.term_id = this->getCurrentTerm();
