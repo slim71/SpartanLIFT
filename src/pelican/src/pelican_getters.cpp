@@ -25,3 +25,7 @@ possible_roles PelicanUnit::getRole() const {
 int PelicanUnit::getCurrentTerm() const {
     return this->current_term_;
 }
+
+std::shared_ptr<PelicanUnit> PelicanUnit::getInstance() {
+    return instance_.lock();
+}
