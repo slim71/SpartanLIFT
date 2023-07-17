@@ -18,13 +18,16 @@ void PelicanUnit::setRandomBallotWaittime() {
 void PelicanUnit::setRandomElectionTimeout() {
     // DELETE: mutex? not needed
     this->election_timeout_ = std::chrono::milliseconds { this->random_distribution_(this->random_engine_) };
+    this->logDebug("Set election_timeout_ to {}", this->election_timeout_.count());
 }
 
 void PelicanUnit::setRole(possible_roles r) {
+    this->logDebug("Setting role to {}", static_cast<int>(r));
     this->role_ = r;
 }
 
 void PelicanUnit::setElectionTimedOut() {
+    this->logInfo("Election timed out!");
     this->election_timer_->cancel(); // Cancel the wall_timer used to call this function
     std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
     this->election_timed_out_ = true;
@@ -72,4 +75,8 @@ void PelicanUnit::increaseCurrentTerm() {
 
 void PelicanUnit::setMass(double m) {
     this->mass_ = m;
+}
+
+void PelicanUnit::setInstance(rclcpp::Node::SharedPtr instance) {
+    instance_ = std::static_pointer_cast<PelicanUnit>(instance);
 }

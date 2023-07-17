@@ -7,10 +7,11 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <fmt/core.h>
 #include "comms/msg/datapad.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
-#include <fmt/core.h>
+#include <signal.h>
 
 enum possible_roles { tbd, candidate, follower, leader };
 
@@ -39,8 +40,18 @@ class PelicanUnit : public rclcpp::Node {
 
         bool isLeader();
 
+        std::atomic<bool> is_terminated_ {false};
+        void stopBallotThread();
+        void startBallotThread();
+        static void signalHandler(int signum);
+        static std::shared_ptr<PelicanUnit> getInstance();
+        static void setInstance(rclcpp::Node::SharedPtr instance);
+
     // Member functions
     private:
+        std::thread helping_thread_;
+        static std::weak_ptr<PelicanUnit> instance_; // Weak pointer to the instance of the node
+
         template<typename... Args> void logInfo(std::string s, Args... args);
         template<typename... Args> void logError(std::string s, Args... args);
         template<typename... Args> void logWarning(std::string s, Args... args);

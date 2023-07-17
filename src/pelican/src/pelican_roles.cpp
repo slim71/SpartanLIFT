@@ -37,7 +37,7 @@ void PelicanUnit::becomeFollower() {
     this->setRandomElectionTimeout();
 
     this->election_timer_ = this->create_wall_timer(this->election_timeout_, 
-                                                    std::bind(&PelicanUnit::setElectionTimedOut, this), 
+                                                    std::bind(&PelicanUnit::becomeCandidate, this), 
                                                     this->reentrant_group_
                                                    );
 }
@@ -71,7 +71,7 @@ void PelicanUnit::becomeCandidate() {
         this->vote(this->getID());
         this->requestVote();
 
-        std::thread worker([this]() { this->ballotCheckingThread(); });
+        this->startBallotThread();
 
         // Wait until voting is completed (aka no more votes are registered in a time frame) or timed-out, which is checked by another thread
         std::unique_lock<std::mutex> lock(this->candidate_mutex_);

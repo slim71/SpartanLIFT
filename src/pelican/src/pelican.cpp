@@ -1,8 +1,6 @@
 #include "pelican.hpp"
 #include "pugixml.hpp"
 
-// TODO: specialize logs with agent ID
-
 PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
 
 	this->get_logger().set_level(rclcpp::Logger::Level::Debug);
@@ -61,12 +59,19 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
 }
 
 PelicanUnit::~PelicanUnit() {
+    //TODO:Check for resource leaks: Make sure that you are releasing all resources (memory, 
+    // publishers, subscribers, timers, etc.) correctly when shutting down the node. 
+    // If there are any resource leaks, it can lead to invalid contexts or other errors.
+
     this->logDebug("Destructor for {}", this->getName());
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
     this->hb_monitoring_timer_->cancel();
     this->timer_->cancel();
+    
+    this->logDebug("Trying to kill the thread");
+    this->stopBallotThread();
 }
 
 void PelicanUnit::parseModel() {
@@ -111,4 +116,27 @@ void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr
     std::cout << "ay: " << msg->ay << std::endl; // [m/s^2]
     std::cout << "az: " << msg->az << std::endl; // [m/s^2]
     std::cout << "heading: " << msg->heading << std::endl; // [rad]
+}
+
+void PelicanUnit::signalHandler(int signum) {
+    // Stop the thread gracefully
+    std::shared_ptr<PelicanUnit> node = getInstance();
+        if (node) {
+            node->stopBallotThread();
+        }
+
+    rclcpp::shutdown();
+}
+
+void PelicanUnit::startBallotThread() {
+    if (!this->helping_thread_.joinable()) {
+        this->helping_thread_ = std::thread(&PelicanUnit::ballotCheckingThread, this);
+    }
+}
+
+void PelicanUnit::stopBallotThread() {
+    if (this->helping_thread_.joinable()) {
+        this->is_terminated_ = true;
+        this->helping_thread_.join();
+    }
 }
