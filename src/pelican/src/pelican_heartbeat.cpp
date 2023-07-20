@@ -32,7 +32,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // TODO: consider the case of changing follower ID in two subsequent hbs?
 
     // First of all, check if it's too late
-    if (this->checkElectionTimedOut()) {
+    if (this->isFollower() && this->checkElectionTimedOut()) {
         this->logInfo("No heartbeat received within the 'election_timeout' window; switching to candidate...");
         // TODO: delete if deleting checkHeartbeat
         this->hb_monitoring_timer_->cancel(); // Cancel the wall_timer for further checking of heartbeats

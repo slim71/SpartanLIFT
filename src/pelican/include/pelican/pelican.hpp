@@ -39,6 +39,8 @@ class PelicanUnit : public rclcpp::Node {
         int getCurrentTerm() const;
 
         bool isLeader();
+        bool isFollower();
+        bool isCandidate();
 
         std::atomic<bool> is_terminated_ {false};
         void stopBallotThread();
@@ -73,7 +75,7 @@ class PelicanUnit : public rclcpp::Node {
 
         void becomeCandidate();
 
-        void vote(int id_to_vote);
+        void vote(int id_to_vote, double candidate_mass);
 
         void sendHeartbeat();
 
@@ -141,7 +143,6 @@ class PelicanUnit : public rclcpp::Node {
 
     // Attributes
     private:
-        // TODO: init values
         std::string name_;
         int id_;
         std::string model_;
@@ -220,16 +221,20 @@ class PelicanUnit : public rclcpp::Node {
         // using another variable only for clarity purposes
         std::chrono::milliseconds new_ballot_waittime_;
 
-        std::chrono::milliseconds heartbeat_period_ {10}; // TODO: value?
+        std::chrono::milliseconds heartbeat_period_ {100}; // TODO: value good? checked and its not random, it has to be lower than the election_timeout_
+        // Found this about timeouts:
+        // The broadcast time should be an order of magnitude less than the election timeout so that leaders can
+        // reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach 
+        // used for election timeouts, this inequality also makes split votes unlikely. The election timeout should be
+        // a few orders of magnitude less than MTBF so that the system makes steady progress
 
         // std::chrono::seconds hb_monitoring_period_ {10}; // TODO: not needed?
 
-        std::chrono::seconds voting_max_time_ {10};
+        std::chrono::milliseconds voting_max_time_ {100}; // TODO: value? Tried using the same as it would be the period of a functioning leader's heartbeat
 
         std::condition_variable cv;
 
         std::mt19937 random_engine_ { std::random_device{}() }; // mersenne_twister_engine seeded with random_device()
-        // TODO: range? (e.g., 150–300ms) is uniform distribution ok?
         std::uniform_int_distribution<> random_distribution_ {150, 300}; // inclusive; intended as milliseconds 
 
 };

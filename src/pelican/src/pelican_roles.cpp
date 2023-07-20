@@ -44,16 +44,16 @@ void PelicanUnit::becomeFollower() {
 
 void PelicanUnit::becomeCandidate() {
     this->logInfo("Becoming Candidate");
+    this->election_timer_->cancel();
     this->setRole(candidate);
 
     this->unsetLeaderElected();
     this->unsetVotingCompleted();
     this->unsetElectionCompleted();
-
-    this->sub_to_request_vote_rpc_topic_.reset(); // unsubscribe from topic
-
     // init of new_ballot_waittime_
     this->setRandomBallotWaittime();
+
+    this->sub_to_request_vote_rpc_topic_.reset(); // unsubscribe from topic
 
     // the candidate repeats this until:
     // (a) it wins the election                         --> election_completed_ = true
@@ -64,11 +64,11 @@ void PelicanUnit::becomeCandidate() {
 
         this->flushVotes();
 
-        std::this_thread::sleep_for(this->new_ballot_waittime_);
+        std::this_thread::sleep_for(this->new_ballot_waittime_); // TODO: getter
 
         this->increaseCurrentTerm();
 
-        this->vote(this->getID());
+        this->vote(this->getID(), this->getMass());
         this->requestVote();
 
         this->startBallotThread();
@@ -80,11 +80,13 @@ void PelicanUnit::becomeCandidate() {
         });
 
         if(this->checkForExternalLeader()) {
+            this->logInfo("External leader elected");
             this->setElectionCompleted();
             this->becomeFollower();
         }
 
         if(this->checkVotingCompleted()) {
+            this->logInfo("Voting completed. Checking if I'm the winner...");
             this->leaderElection(); // if this node is not the leader, election_completed_ is not true
         }
 
@@ -96,4 +98,14 @@ void PelicanUnit::becomeCandidate() {
 bool PelicanUnit::isLeader() {
     this->logDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
+}
+
+bool PelicanUnit::isFollower() {
+    this->logDebug("Agent is follower? {}", this->getRole() == follower);
+    return (this->getRole() == follower);
+}
+
+bool PelicanUnit::isCandidate() {
+    this->logDebug("Agent is candidate? {}", this->getRole() == candidate);
+    return (this->getRole() == candidate);
 }
