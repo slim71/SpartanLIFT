@@ -6,7 +6,6 @@ from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
 
-# TODO: move to launch package?
 def generate_launch_description():
     launch_description = LaunchDescription()
     drone_name = LaunchConfiguration("name", default='my_drone')
@@ -18,7 +17,7 @@ def generate_launch_description():
     spawn_yaw = LaunchConfiguration("yaw", default='0.0')
 
     model_pkg_share = FindPackageShare("pelican")
-    model_middleware = "models/X3/"
+    model_middleware = "models/X4/"
     sdf_model = "model.sdf"
 
     # Pose where we want to spawn the robot
@@ -65,6 +64,7 @@ def generate_launch_description():
     # print(Path(sub.perform(LaunchContext())))
 
     # Spawn entity
+    # TODO: adapt to change used file too?
     drone = Node(
         package='ros_gz_sim',
         executable='create',
