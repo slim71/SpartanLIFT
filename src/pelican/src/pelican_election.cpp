@@ -1,12 +1,13 @@
 #include "pelican.hpp"
 
-void PelicanUnit::vote(int id_to_vote) {
+void PelicanUnit::vote(int id_to_vote, double candidate_mass) {
     this->logInfo("Voting: {}", id_to_vote);
 
     auto msg = comms::msg::Datapad();
     msg.term_id = this->getCurrentTerm();
     msg.voter_id = this->getID();
     msg.proposed_leader = id_to_vote;
+    msg.candidate_mass = candidate_mass;
 
     this->pub_to_leader_selection_topic_->publish(msg);
 }
@@ -36,6 +37,10 @@ void PelicanUnit::leaderElection() {
                     return a->proposed_leader < b->proposed_leader;
                 }
                 );
+        for(const comms::msg::Datapad::SharedPtr &recvote : this->received_votes_) {
+            this->logDebug("Received vote| agent {} voted for {} (mass {}) during term {} ",
+            recvote->voter_id, recvote->proposed_leader, recvote->candidate_mass, recvote->term_id);
+        };
 
         std::vector<vote_count> ballot;
 
@@ -62,22 +67,36 @@ void PelicanUnit::leaderElection() {
                     return a.total < b.total;
                 }
                 );
-        auto item = std::find_if(ballot.begin(),
+        for(const vote_count &canvote : ballot) {
+            this->logDebug("Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total);
+        };
+
+        auto cluster_for_this_node = std::find_if(ballot.begin(),
                                 ballot.end(),
                                 [this](const vote_count &v){
                                     return v.candidate_id == this->getID();
                                 }
                                 );
-        
-        // If item is the last element of the ballot vector, either this candidate has won the election or there's a tie
-        if((*item).total == (*ballot.cend()).total) {
-            if((*item).total != (*(ballot.cend()-1)).total) { // this candidate has won
-                // I've been chosen!
-                this->setElectionCompleted();
-                this->setLeader(this->getID());
-                this->becomeLeader();
-                this->sendHeartbeat(); // to be sure one is sent now; TODO: maybe move to leader? needed?
-                return;
+        this->logDebug("cluster_for_this_node: candidate_id={} total={}", 
+                        (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total);
+
+        if (ballot.size() > 0) { // back on empty vector has undefined behavior
+            this->logDebug("cluster_for_this_node.total={}, ballot.size={}, last_element.total={}", 
+                            (*cluster_for_this_node).total, ballot.size(), ballot.back().total);
+            
+            // If cluster_for_this_node is the last element of the ballot vector, either this candidate has won the election or there's a tie
+            if((*cluster_for_this_node).total == ballot.back().total) {
+                this->logDebug("total of last element is the same as my total");
+
+                if((ballot.size() == 1) ||(*cluster_for_this_node).total != (ballot.end()[-2]).total) { // this candidate has won
+                    this->logDebug("I've won!");
+                    // I've been chosen!
+                    this->setElectionCompleted();
+                    this->setLeader(this->getID());
+                    this->becomeLeader();
+                    this->sendHeartbeat(); // to be sure one is sent now; TODO: maybe move to leader? needed?
+                    return;
+                };
             };
         };
         // Otherwise, let the winning candidate send its heartbeat as leader confirmation
@@ -92,17 +111,6 @@ void PelicanUnit::leaderElection() {
     this->resetVotingWindow();
 }
 
-void PelicanUnit::setLeader(int id = -1) {
-    this->setLeaderElected();
-
-    // TODO: sync with other nodes first?
-    if (id == -1) {
-        this->leader_id_ = this->getID();
-    } else {
-        this->leader_id_ = id;
-    }
-}
-
 void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
     auto heavier = std::max_element(this->received_votes_.begin(),
                                     this->received_votes_.end(),
@@ -110,7 +118,7 @@ void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
                                         return first->candidate_mass > second->candidate_mass;
                                     }
                                     );
-    this->vote((*heavier)->proposed_leader);
+    this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
 bool PelicanUnit::checkForExternalLeader() {
@@ -163,7 +171,7 @@ void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
             this->voting_timer->reset();
         } else{
             this->voting_timer = this->create_wall_timer(this->voting_max_time_, 
-                                                         std::bind(&PelicanUnit::setElectionCompleted, this),
+                                                         std::bind(&PelicanUnit::setVotingCompleted, this),
                                                          this->reentrant_group_);
         };
     };
@@ -180,7 +188,7 @@ void PelicanUnit::ballotCheckingThread() {
     while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->is_terminated_) {
         this->logDebug("Ballot checking...");
         // Simulate some delay between checks
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     this->logDebug("Ballot finished");
 

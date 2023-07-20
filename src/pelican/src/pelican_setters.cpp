@@ -13,6 +13,7 @@ void PelicanUnit::unsetLeaderElected() {
 void PelicanUnit::setRandomBallotWaittime() {
     // DELETE: mutex? not needed
     this->new_ballot_waittime_ = std::chrono::milliseconds { this->random_distribution_(this->random_engine_) };
+    this->logDebug("Set new_ballot_waittime_ to {}", this->new_ballot_waittime_.count());
 }
 
 void PelicanUnit::setRandomElectionTimeout() {
@@ -79,4 +80,15 @@ void PelicanUnit::setMass(double m) {
 
 void PelicanUnit::setInstance(rclcpp::Node::SharedPtr instance) {
     instance_ = std::static_pointer_cast<PelicanUnit>(instance);
+}
+
+void PelicanUnit::setLeader(int id = -1) {
+    this->setLeaderElected();
+
+    // TODO: sync with other nodes first?
+    if (id == -1) {
+        this->leader_id_ = this->getID();
+    } else {
+        this->leader_id_ = id;
+    }
 }

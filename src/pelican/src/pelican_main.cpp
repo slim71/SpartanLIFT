@@ -4,7 +4,7 @@
 std::weak_ptr<PelicanUnit> PelicanUnit::instance_;
 
 int main(int argc, char *argv[]) {
-	std::cout << "Starting pelican_unit listener node..." << std::endl;
+	std::cout << "Starting PelicanUnit node..." << std::endl;
 	setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
     // Initialization
