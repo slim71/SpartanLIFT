@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(pelican
         VERSION 0.1
-        DESCRIPTION "SpartanLIFT"
+        DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14) # TODO: check if later is good
