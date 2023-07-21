@@ -29,11 +29,6 @@ void PelicanUnit::becomeFollower() {
                                         this->reentrant_opt_
                                     );
 
-    // this->hb_monitoring_timer_ = this->create_wall_timer(this->hb_monitoring_period_, 
-    //                                                      std::bind(&PelicanUnit::checkHeartbeat, this), 
-    //                                                      this->reentrant_group_
-    //                                                     );
-
     this->setRandomElectionTimeout();
 
     this->election_timer_ = this->create_wall_timer(this->election_timeout_, 
@@ -64,7 +59,7 @@ void PelicanUnit::becomeCandidate() {
 
         this->flushVotes();
 
-        std::this_thread::sleep_for(this->new_ballot_waittime_); // TODO: getter
+        std::this_thread::sleep_for(this->getBallotWaitTime());
 
         this->increaseCurrentTerm();
 

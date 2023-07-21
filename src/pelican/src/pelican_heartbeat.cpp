@@ -16,17 +16,6 @@ void PelicanUnit::stopHeartbeat() {
     this->hb_transmission_timer_->cancel();
 }
 
-// void PelicanUnit::checkHeartbeat() {
-//     this->hbs_mutex_.lock();
-//     // Missing heartbeats from leader
-//     if (!this->received_hbs_.empty()) { // Leader is sending heartbearts
-
-//         this->received_hbs_.pop(); // TODO: needed?
-//         this->hbs_mutex_.unlock();
-//         this->logInfo("Heartbeat received");
-//     }
-// }
-
 void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // TODO: refine for leader id and term id
     // TODO: consider the case of changing follower ID in two subsequent hbs?
@@ -34,8 +23,6 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // First of all, check if it's too late
     if (this->isFollower() && this->checkElectionTimedOut()) {
         this->logInfo("No heartbeat received within the 'election_timeout' window; switching to candidate...");
-        // TODO: delete if deleting checkHeartbeat
-        this->hb_monitoring_timer_->cancel(); // Cancel the wall_timer for further checking of heartbeats
 
         this->election_timer_->cancel();
 

@@ -67,7 +67,6 @@ PelicanUnit::~PelicanUnit() {
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
-    this->hb_monitoring_timer_->cancel();
     this->timer_->cancel();
     
     this->logDebug("Trying to kill the thread");
