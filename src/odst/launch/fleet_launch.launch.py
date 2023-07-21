@@ -28,7 +28,7 @@ def generate_launch_description():
             # Using `ros_arguments` is equivalent to using `arguments` with a prepended '--ros-args' item.
             ros_arguments=['--params-file', PathJoinSubstitution([config_pkg_share, config_middleware, config_file])]
         )
-        
+
         ld.add_action(pelican_unit)
 
     return ld

@@ -48,6 +48,7 @@ class PelicanUnit : public rclcpp::Node {
         static void signalHandler(int signum);
         static std::shared_ptr<PelicanUnit> getInstance();
         static void setInstance(rclcpp::Node::SharedPtr instance);
+        std::chrono::milliseconds PelicanUnit::getBallotWaitTime();
 
     // Member functions
     private:
@@ -107,13 +108,9 @@ class PelicanUnit : public rclcpp::Node {
 
         void stopHeartbeat();
 
-        // void checkHeartbeat();
-
         void storeHeartbeat(const comms::msg::Heartbeat msg);
 
         void ballotCheckingThread();
-
-        // void externalCandidateWon(); // TODO: not needed?
 
         bool checkForExternalLeader();
 
@@ -179,7 +176,6 @@ class PelicanUnit : public rclcpp::Node {
         rclcpp::QoS standard_qos_ {rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
         rclcpp::TimerBase::SharedPtr timer_;
-        rclcpp::TimerBase::SharedPtr hb_monitoring_timer_;
         rclcpp::TimerBase::SharedPtr hb_transmission_timer_;
         rclcpp::TimerBase::SharedPtr election_timer_;
         rclcpp::TimerBase::SharedPtr voting_timer;
@@ -193,7 +189,6 @@ class PelicanUnit : public rclcpp::Node {
         // Wondered if using a std::deque would be better, but in the end I don't expect many items here
         std::vector<heartbeat> received_hbs_;
         
-        // TODO: check if SharedPtr works
         std::vector<comms::msg::Datapad::SharedPtr> received_votes_;
 
         // TODO: macro for single lock/unlock?
@@ -227,8 +222,6 @@ class PelicanUnit : public rclcpp::Node {
         // reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach 
         // used for election timeouts, this inequality also makes split votes unlikely. The election timeout should be
         // a few orders of magnitude less than MTBF so that the system makes steady progress
-
-        // std::chrono::seconds hb_monitoring_period_ {10}; // TODO: not needed?
 
         std::chrono::milliseconds voting_max_time_ {100}; // TODO: value? Tried using the same as it would be the period of a functioning leader's heartbeat
 

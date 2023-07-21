@@ -1,7 +1,5 @@
 #include "pelican.hpp"
 
-// TODO: check when getters are needed
-
 int PelicanUnit::getID() const { 
     return this->id_; 
 }
@@ -28,4 +26,8 @@ int PelicanUnit::getCurrentTerm() const {
 
 std::shared_ptr<PelicanUnit> PelicanUnit::getInstance() {
     return instance_.lock();
+}
+
+std::chrono::milliseconds PelicanUnit::getBallotWaitTime() {
+    return this->new_ballot_waittime_;
 }
