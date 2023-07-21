@@ -48,7 +48,7 @@ class PelicanUnit : public rclcpp::Node {
         static void signalHandler(int signum);
         static std::shared_ptr<PelicanUnit> getInstance();
         static void setInstance(rclcpp::Node::SharedPtr instance);
-        std::chrono::milliseconds PelicanUnit::getBallotWaitTime();
+        std::chrono::milliseconds getBallotWaitTime();
 
     // Member functions
     private:

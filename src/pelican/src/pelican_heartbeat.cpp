@@ -18,7 +18,6 @@ void PelicanUnit::stopHeartbeat() {
 
 void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // TODO: refine for leader id and term id
-    // TODO: consider the case of changing follower ID in two subsequent hbs?
 
     // First of all, check if it's too late
     if (this->isFollower() && this->checkElectionTimedOut()) {
@@ -32,9 +31,12 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logDebug("Ignoring heartbeat received with previous term ID");
+        this->logDebug("Ignoring heartbeat received with previous term ID ({} vs {})",
+                        msg.term_id, this->getCurrentTerm());
         return;
     }
+
+    // If it comes to this, the msg.term is at least equal to the node's current term
 
     heartbeat hb;
     hb.term = msg.term_id;
@@ -57,5 +59,9 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (this->getRole() == candidate) {
         this->setExternalLeaderElected();
-    }
+
+    } else if (this->getRole() == leader) { // Switch back to follower!
+        this->logInfo("As a leader, I've received a heartbeat from some other leader agent");
+        this->becomeFollower();
+    };
 }

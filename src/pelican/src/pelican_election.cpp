@@ -1,6 +1,11 @@
 #include "pelican.hpp"
 
 void PelicanUnit::vote(int id_to_vote, double candidate_mass) {
+    // Do not even vote in case another leader has been already chosen
+    if(this->isCandidate() && this->checkExternalLeaderElected()) {
+        return;
+    };
+
     this->logInfo("Voting: {}", id_to_vote);
 
     auto msg = comms::msg::Datapad();
@@ -13,6 +18,11 @@ void PelicanUnit::vote(int id_to_vote, double candidate_mass) {
 }
 
 void PelicanUnit::requestVote() {
+    // Do not serve request in case another leader has been already chosen
+    if(this->isCandidate() && this->checkExternalLeaderElected()) {
+        return;
+    };
+
     this->pub_to_request_vote_rpc_topic_ = this->create_publisher<comms::msg::RequestVoteRPC>(
                                                 this->request_vote_rpc_topic_,
                                                 this->standard_qos_
@@ -64,8 +74,6 @@ void PelicanUnit::leaderElection() {
             }
             // Set the main iterator to the position after the last element of the cluster
             it = last_it;
-
-            this->logDebug("Last cluster found");
         }
 
         this->votes_mutex_.unlock();
@@ -91,8 +99,6 @@ void PelicanUnit::leaderElection() {
                         (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total);
 
         if (ballot.size() > 0) { // back on empty vector has undefined behavior
-            this->logDebug("cluster_for_this_node.total={}, ballot.size={}, last_element.total={}", 
-                            (*cluster_for_this_node).total, ballot.size(), ballot.back().total);
             
             // If cluster_for_this_node is the last element of the ballot vector, either this candidate has won the election or there's a tie
             if((*cluster_for_this_node).total == ballot.back().total) {
