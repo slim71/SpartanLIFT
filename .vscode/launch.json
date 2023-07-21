@@ -55,12 +55,12 @@
             "type": "ros",
             "request": "launch",
             "preLaunchTask": "build",
-            "target": "${workspaceFolder}/thesis_ws/install/share/${input:package}/launch/${input:ros_launch}",
+            "target": "${workspaceFolder}/install/share/${input:package}/launch/${input:ros_launch}",
         },
         {
             "name": "ROS: Launch File (isolated-install)",
             "request": "launch",
-            "target": "${workspaceFolder}/thesis_ws/install/${input:package}/share/${input:package}/launch/${input:ros_launch}",
+            "target": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:ros_launch}",
             "launch": ["rviz", "gz", "gzserver", "gzclient"],
             "type": "ros"
         }

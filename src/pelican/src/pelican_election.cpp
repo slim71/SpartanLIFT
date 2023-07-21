@@ -31,20 +31,21 @@ void PelicanUnit::leaderElection() {
     this->votes_mutex_.lock();
 
     if (this->received_votes_.size() > 0) {
-        std::sort(this->received_votes_.begin(), 
-                this->received_votes_.end(), 
-                [](const comms::msg::Datapad::SharedPtr &a, const comms::msg::Datapad::SharedPtr &b) {
-                    return a->proposed_leader < b->proposed_leader;
-                }
-                );
+        std::sort(this->received_votes_.begin(), this->received_votes_.end(), 
+                  [](const comms::msg::Datapad::SharedPtr &a, const comms::msg::Datapad::SharedPtr &b) {
+                      return a->proposed_leader < b->proposed_leader;
+                  }
+                 );
+        
+        this->logDebug("Logging recorded votes..");
         for(const comms::msg::Datapad::SharedPtr &recvote : this->received_votes_) {
-            this->logDebug("Received vote| agent {} voted for {} (mass {}) during term {} ",
-            recvote->voter_id, recvote->proposed_leader, recvote->candidate_mass, recvote->term_id);
+            this->logDebug("agent {} voted for {} (mass {}) during term {} ",
+                            recvote->voter_id, recvote->proposed_leader, recvote->candidate_mass, recvote->term_id);
         };
 
         std::vector<vote_count> ballot;
 
-        for(auto it = std::cbegin(this->received_votes_); it != std::cend(this->received_votes_); ) {  
+        for(auto it = std::cbegin(this->received_votes_); it != std::cend(this->received_votes_); /*iterator incremented inside*/) {  
             vote_count candidate_support;
             candidate_support.candidate_id = (*it)->proposed_leader;
             candidate_support.total = std::count_if(it, 
@@ -55,18 +56,27 @@ void PelicanUnit::leaderElection() {
                                                     );
             ballot.push_back(candidate_support);
 
-            // Increment the iterator until the last value of the cluster is found
-            for(auto last = (*it)->proposed_leader; (*++it)->proposed_leader == last;);
+            auto last_it = it;
+            ++last_it; // Move right away to the next element
+            // Increment last_it until the last value of the cluster is found
+            while (last_it != std::cend(this->received_votes_) && (*last_it)->proposed_leader == (*it)->proposed_leader) {
+                ++last_it;
+            }
+            // Set the main iterator to the position after the last element of the cluster
+            it = last_it;
+
+            this->logDebug("Last cluster found");
         }
 
         this->votes_mutex_.unlock();
 
-        std::sort(ballot.begin(),
-                ballot.end(),
-                [](vote_count a, vote_count b){
-                    return a.total < b.total;
-                }
-                );
+        std::sort(ballot.begin(), ballot.end(),
+                  [](vote_count a, vote_count b){
+                      return a.total < b.total;
+                  }
+                 );
+
+        this->logDebug("Logging clusters..");
         for(const vote_count &canvote : ballot) {
             this->logDebug("Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total);
         };
@@ -77,7 +87,7 @@ void PelicanUnit::leaderElection() {
                                     return v.candidate_id == this->getID();
                                 }
                                 );
-        this->logDebug("cluster_for_this_node: candidate_id={} total={}", 
+        this->logDebug("cluster for this node: candidate_id={} total={}", 
                         (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total);
 
         if (ballot.size() > 0) { // back on empty vector has undefined behavior
@@ -86,7 +96,7 @@ void PelicanUnit::leaderElection() {
             
             // If cluster_for_this_node is the last element of the ballot vector, either this candidate has won the election or there's a tie
             if((*cluster_for_this_node).total == ballot.back().total) {
-                this->logDebug("total of last element is the same as my total");
+                this->logDebug("Victory or not?");
 
                 if((ballot.size() == 1) ||(*cluster_for_this_node).total != (ballot.end()[-2]).total) { // this candidate has won
                     this->logDebug("I've won!");
@@ -97,12 +107,14 @@ void PelicanUnit::leaderElection() {
                     this->sendHeartbeat(); // to be sure one is sent now; TODO: maybe move to leader? needed?
                     return;
                 };
+
+                this->logDebug("Tie or timeout");
             };
         };
         // Otherwise, let the winning candidate send its heartbeat as leader confirmation
+    } else {
+        this->votes_mutex_.unlock();
     }
-
-    this->votes_mutex_.unlock();
 
     // Each candidate will time out and start a new election by incrementing its term and initiating another round.
     // Each candidate restarts its randomized election timeout at the start of an election, and it waits 
@@ -160,6 +172,9 @@ void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "proposed_leader: " << msg->proposed_leader << std::endl;
     std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
     std::cout << "\n\n";
+
+    this->logDebug("Received vote| agent {} voted for {} (mass {}) during term {} ",
+    msg->voter_id, msg->proposed_leader, msg->candidate_mass, msg->term_id);
 
     this->votes_mutex_.lock();
     this->received_votes_.push_back(msg);

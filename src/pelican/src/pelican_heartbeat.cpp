@@ -64,7 +64,9 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
               });
     this->hbs_mutex_.unlock();
         
-    this->election_timer_.reset(); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
+    this->logDebug("Resetting election_timer_...");
+    this->election_timer_->reset(); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
+    this->logDebug("After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count()/10);
 
     if (this->getRole() == candidate) {
         this->setExternalLeaderElected();
