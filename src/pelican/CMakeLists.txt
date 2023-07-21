@@ -33,7 +33,7 @@ if(BUILD_TESTING)
 endif()
 
 install(
-  DIRECTORY config models launch
+  DIRECTORY config models
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -50,7 +50,7 @@ target_link_libraries(Pelican_lib fmt::fmt)
 
 # One for each node: create executable
 add_executable(pelican_listener 
-                src/pelican_node.cpp 
+                src/pelican_main.cpp 
                 src/pelican_roles.cpp 
                 src/pelican_heartbeat.cpp 
                 src/pelican_election.cpp

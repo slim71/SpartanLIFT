@@ -3,7 +3,7 @@
 
 PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
 
-	this->get_logger().set_level(rclcpp::Logger::Level::Debug);
+	this->get_logger().set_level(rclcpp::Logger::Level::Debug); // TODO: add optionally as input from CLI
 
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     // Callbacks belonging to different callback groups (of any type) can always be executed parallel to each other

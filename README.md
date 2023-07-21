@@ -56,3 +56,4 @@ I modified them in order to use it for my project.
 5. my packages
 
 TODO: order of colcon build?
+document setuptools warning/problem for python packages

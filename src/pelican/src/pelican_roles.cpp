@@ -83,6 +83,7 @@ void PelicanUnit::becomeCandidate() {
             this->logInfo("External leader elected");
             this->setElectionCompleted();
             this->becomeFollower();
+            continue; // or break, should be the same since the condition is set
         }
 
         if(this->checkVotingCompleted()) {
