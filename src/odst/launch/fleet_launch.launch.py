@@ -1,25 +1,61 @@
+import sys
 from pathlib import Path  # Debug
+from launch.logging import get_logger
 from launch import LaunchDescription, LaunchContext
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
-AGENT_NUM = 3  # TODO: add optionally as input from CLI
+DEFAULT_AGENT_NUM = 3
+DEFAULT_LOG_LEVEL = 'Info'
 
+
+def print_argument(context, *args, **kwargs):
+    stuff_to_log = []
+
+    stuff_to_log.append(LogInfo(msg="=====Launch Configuration Values ====="))
+
+    for var, value in context.launch_configurations.items():
+        stuff_to_log.append(LogInfo(msg=f'\'{var}\' has value \'{value}\''))
+
+    return stuff_to_log
 
 def generate_launch_description():
-    ld = LaunchDescription()
+    # Parse arguments manually to use them in this script too
+    n_args = DEFAULT_AGENT_NUM
+    level = DEFAULT_LOG_LEVEL
+    for arg in sys.argv:
+        if arg.startswith('agent_num:='):
+            n_args = int(arg.split(':=')[1])
+        if arg.startswith('loglevel:='):
+            level = str(arg.split(':=')[1])
 
-    files = ['copter{}.yaml'.format(x) for x in range(1,AGENT_NUM+1)]
+    launch_description = LaunchDescription()
 
-    config_pkg_share = FindPackageShare("pelican")
-    config_middleware = "config/"
+    log_level = LaunchConfiguration('loglevel', default='Info')
+    log_level_argument = DeclareLaunchArgument(
+        name='loglevel',
+        default_value='Info',
+        description='Log level of the launch file itself',
+    )
+    launch_description.add_action(log_level_argument)
 
+    files = [f'copter{x}.yaml' for x in range(1, n_args+1)]
+
+    config_pkg_share = FindPackageShare('pelican')
+    config_middleware = 'config/'
+
+    if level == 'Debug':
+        sub = PathJoinSubstitution([config_pkg_share, config_middleware, files[0]])
+        print(f'[DEBUG] Path to config files: {Path(sub.perform(LaunchContext()))}')
+
+        print_launch_argument = OpaqueFunction(function=print_argument)
+        launch_description.add_action(print_launch_argument)
+
+
+    LogInfo(msg=f'Starting {n_args} agents...')
     for config_file in files:
-        # Debug
-        print(config_pkg_share.describe())
-        sub = PathJoinSubstitution([config_pkg_share, config_middleware, config_file])
-        print(Path(sub.perform(LaunchContext())))
 
         # ... Populate launch file like this:
         pelican_unit = Node(
@@ -29,6 +65,6 @@ def generate_launch_description():
             ros_arguments=['--params-file', PathJoinSubstitution([config_pkg_share, config_middleware, config_file])]
         )
 
-        ld.add_action(pelican_unit)
+        launch_description.add_action(pelican_unit)
 
-    return ld
+    return launch_description

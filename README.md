@@ -57,3 +57,14 @@ I modified them in order to use it for my project.
 
 TODO: order of colcon build?
 document setuptools warning/problem for python packages
+
+  /// An enum for the type of logger level.
+  enum class Level
+  {
+    Unset = RCUTILS_LOG_SEVERITY_UNSET,  ///< The unset log level
+    Debug = RCUTILS_LOG_SEVERITY_DEBUG,  ///< The debug log level
+    Info = RCUTILS_LOG_SEVERITY_INFO,    ///< The info log level
+    Warn = RCUTILS_LOG_SEVERITY_WARN,    ///< The warn log level
+    Error = RCUTILS_LOG_SEVERITY_ERROR,  ///< The error log level
+    Fatal = RCUTILS_LOG_SEVERITY_FATAL,  ///< The fatal log level
+  };
