@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path  # Debug
-from launch.logging import get_logger
 from launch import LaunchDescription, LaunchContext
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo
 from launch_ros.actions import Node
@@ -8,10 +7,10 @@ from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
 DEFAULT_AGENT_NUM = 3
-DEFAULT_LOG_LEVEL = 'Info'
+DEFAULT_LOG_LEVEL = 'info'
 
 
-def print_argument(context, *args, **kwargs):
+def print_argument(context):
     stuff_to_log = []
 
     stuff_to_log.append(LogInfo(msg="=====Launch Configuration Values ====="))
@@ -20,6 +19,7 @@ def print_argument(context, *args, **kwargs):
         stuff_to_log.append(LogInfo(msg=f'\'{var}\' has value \'{value}\''))
 
     return stuff_to_log
+
 
 def generate_launch_description():
     # Parse arguments manually to use them in this script too
@@ -33,10 +33,10 @@ def generate_launch_description():
 
     launch_description = LaunchDescription()
 
-    log_level = LaunchConfiguration('loglevel', default='Info')
+    log_level = LaunchConfiguration('loglevel', default='info')
     log_level_argument = DeclareLaunchArgument(
         name='loglevel',
-        default_value='Info',
+        default_value='info',
         description='Log level of the launch file itself',
     )
     launch_description.add_action(log_level_argument)
@@ -46,7 +46,7 @@ def generate_launch_description():
     config_pkg_share = FindPackageShare('pelican')
     config_middleware = 'config/'
 
-    if level == 'Debug':
+    if level == 'debug':
         sub = PathJoinSubstitution([config_pkg_share, config_middleware, files[0]])
         print(f'[DEBUG] Path to config files: {Path(sub.perform(LaunchContext()))}')
 
@@ -62,7 +62,8 @@ def generate_launch_description():
             package='pelican',
             executable='pelican_listener',
             # Using `ros_arguments` is equivalent to using `arguments` with a prepended '--ros-args' item.
-            ros_arguments=['--params-file', PathJoinSubstitution([config_pkg_share, config_middleware, config_file])]
+            ros_arguments=['--params-file', PathJoinSubstitution([config_pkg_share, config_middleware, config_file]),
+                           '--log-level', log_level]
         )
 
         launch_description.add_action(pelican_unit)
