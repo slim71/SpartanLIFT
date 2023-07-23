@@ -2,8 +2,15 @@
 #include "pugixml.hpp"
 
 PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
+    // Declare parameters
+    declare_parameter("name", ""); // default to ""
+    declare_parameter("model", ""); // default to ""
+    declare_parameter("id", 0); // default to 0
 
-	this->get_logger().set_level(rclcpp::Logger::Level::Debug); // TODO: add optionally as input from CLI
+    // Get parameters values and store them
+    get_parameter("name", this->name_);
+    get_parameter("model", this->model_);
+    get_parameter("id", this->id_);
 
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     // Callbacks belonging to different callback groups (of any type) can always be executed parallel to each other
@@ -39,16 +46,6 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
                                         std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
                                         this->reentrant_opt_
                                     );
-
-    // Declare parameters
-    declare_parameter("name", ""); // default to ""
-    declare_parameter("model", ""); // default to ""
-    declare_parameter("id", 0); // default to 0
-
-    // Get parameters values and store them
-    get_parameter("name", this->name_);
-    get_parameter("model", this->model_);
-    get_parameter("id", this->id_);
 
     this->parseModel();
     
