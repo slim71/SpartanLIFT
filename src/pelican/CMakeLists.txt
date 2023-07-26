@@ -40,16 +40,16 @@ install(
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")
 
 # To allow separation of headers and sources
-add_library(Pelican_lib src/pelican.cpp)
-ament_target_dependencies(Pelican_lib rclcpp px4_msgs comms)
-target_include_directories(Pelican_lib PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-target_link_libraries(Pelican_lib "${PUGIXML_DIR}")
+add_library(Pelican_class src/pelican.cpp)
+ament_target_dependencies(Pelican_class rclcpp px4_msgs comms)
+target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+target_link_libraries(Pelican_class "${PUGIXML_DIR}")
 
 find_package(fmt)
-target_link_libraries(Pelican_lib fmt::fmt)
+target_link_libraries(Pelican_class fmt::fmt)
 
 # One for each node: create executable
-add_executable(pelican_listener 
+add_executable(pelican_unit 
                 src/pelican_main.cpp 
                 src/pelican_roles.cpp 
                 src/pelican_heartbeat.cpp 
@@ -57,14 +57,14 @@ add_executable(pelican_listener
                 src/pelican_checkers.cpp
                 src/pelican_getters.cpp
                 src/pelican_setters.cpp)
-target_include_directories(pelican_listener PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(pelican_listener rclcpp px4_msgs comms)
-target_link_libraries(pelican_listener Pelican_lib)
+target_include_directories(pelican_unit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+ament_target_dependencies(pelican_unit rclcpp px4_msgs comms)
+target_link_libraries(pelican_unit Pelican_class)
 
 
 # Once: install executables
 install(TARGETS
-    pelican_listener
+    pelican_unit
     DESTINATION lib/${PROJECT_NAME} # lib folder inside ROS2 workspace
 )
 

@@ -1,6 +1,6 @@
 #include "pelican.hpp"
 
-void PelicanUnit::sendHeartbeat() {
+void PelicanUnit::sendHeartbeat() const {
     this->logInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
@@ -8,7 +8,11 @@ void PelicanUnit::sendHeartbeat() {
     hb.leader_id = this->getID();
     hb.timestamp = this->now(); // rclcpp::Clock{RCL_SYSTEM_TIME}.now()
 
-    this->pub_to_heartbeat_topic_->publish(hb);
+    if (this->pub_to_heartbeat_topic_) {
+        this->pub_to_heartbeat_topic_->publish(hb);
+    } else {
+        this->logError("Publisher to heartbeat topic is not defined!");
+    }
 
 }
 
@@ -17,31 +21,35 @@ void PelicanUnit::stopHeartbeat() {
 }
 
 void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
-    // TODO: refine for leader id and term id
-
-    // First of all, check if it's too late
-    if (this->isFollower() && this->checkElectionTimedOut()) {
-        this->logInfo("No heartbeat received within the 'election_timeout' window; switching to candidate...");
-
-        this->election_timer_->cancel();
-
-        this->becomeCandidate(); // transition to Candidate state
-        return;
-    }
+    // DELETE: removed the check that was here since there's a timer already doing it
 
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logDebug("Ignoring heartbeat received with previous term ID ({} vs {})",
+        this->logWarning("Ignoring heartbeat received with previous term ID ({} vs {})",
                         msg.term_id, this->getCurrentTerm());
         return;
     }
 
     // If it comes to this, the msg.term is at least equal to the node's current term
 
+    // For any node; this should not apply to leaders
+    this->setElectionStatus(msg.leader_id);
+        
+    this->logDebug("Resetting election_timer_...");
+    this->resetTimer(this->election_timer_); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
+    this->logDebug("After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count()/10);
+
+    // Keep heartbeat vector limited
+    if (this->getNumberOfHbs() >= this->getMaxHbs()) {
+        this->flushHeartbeats();
+    }
+
     heartbeat hb;
     hb.term = msg.term_id;
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
+
+    this->logInfo("Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id);
 
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
@@ -52,16 +60,15 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
                 return a.timestamp < b.timestamp;
               });
     this->hbs_mutex_.unlock();
-        
-    this->logDebug("Resetting election_timer_...");
-    this->election_timer_->reset(); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
-    this->logDebug("After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count()/10);
 
-    if (this->getRole() == candidate) {
-        this->setExternalLeaderElected();
-
-    } else if (this->getRole() == leader) { // Switch back to follower!
-        this->logInfo("As a leader, I've received a heartbeat from some other leader agent");
+    if (this->getRole() == leader) { // Switch back to follower!
+        // This should never be needed, since Raft guarantees safety
+        this->logWarning("As a leader, I've received a heartbeat from some other leader agent");
         this->becomeFollower();
-    };
+    }
+}
+
+void PelicanUnit::flushHeartbeats() {
+    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
+    this->received_hbs_.clear();
 }

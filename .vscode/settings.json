@@ -115,7 +115,8 @@
         "ranges": "cpp",
         "scoped_allocator": "cpp",
         "span": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "*.tpp": "cpp"
     },
 
     "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",

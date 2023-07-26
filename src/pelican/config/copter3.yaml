@@ -1,5 +1,4 @@
 PelicanUnit:
   ros__parameters:
-    name: "ThirdOne"
-    model: "src/pelican/models/X4/model.sdf"
+    model: "install/pelican/share/pelican/models/X4/model.sdf"
     id: 3

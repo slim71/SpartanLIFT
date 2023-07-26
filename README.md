@@ -56,4 +56,13 @@ I modified them in order to use it for my project.
 5. my packages
 
 TODO: order of colcon build?
+
 document setuptools warning/problem for python packages
+
+// Found this about timeouts:
+// The broadcast time should be an order of magnitude less than the election timeout so that leaders can
+// reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach 
+// used for election timeouts, this inequality also makes split votes unlikely. The election timeout should be
+// a few orders of magnitude less than MTBF so that the system makes steady progress
+
+rclcpp::create_wall_timer is a factory function that creates an object of a class that derives from rclcpp::TimerBase and uses the wall clock as the timer's time source.
