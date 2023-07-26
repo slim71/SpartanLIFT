@@ -180,7 +180,7 @@ class PelicanUnit : public rclcpp::Node {
         // it guarantees sequential consistency (total global ordering) between all atomic operations.
         std::atomic<bool> is_terminated_ {false};
         std::atomic<bool> leader_elected_ {false};
-        std::atomic<bool> external_leader_elected_ {false}; // DELETE: needed different from previous line? decided to keep it to differentiate
+        std::atomic<bool> external_leader_elected_ {false};
         std::atomic<bool> election_completed_ {false}; // candidate (current node) has won an election
         std::atomic<bool> voting_completed_ {false}; // the appropriate amount of time after a vote to judge if all agents voted has passed
 

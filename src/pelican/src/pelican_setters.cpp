@@ -16,7 +16,6 @@ void PelicanUnit::setRandomBallotWaittime() {
 }
 
 void PelicanUnit::setRandomElectionTimeout() {
-    // DELETE: mutex? not needed
     this->election_timeout_ = std::chrono::milliseconds { this->random_distribution_(this->random_engine_) };
     this->logDebug("election_timeout_ set to {}", this->election_timeout_.count());
 }
@@ -72,7 +71,6 @@ void PelicanUnit::setInstance(rclcpp::Node::SharedPtr instance) {
 void PelicanUnit::setLeader(int id) {
     this->setLeaderElected();
 
-    // DELETE: sync with other nodes first? they will know about the new leader when receiving the heartbeat
     if (id == -1) {
         this->leader_id_ = this->getID();
     } else {

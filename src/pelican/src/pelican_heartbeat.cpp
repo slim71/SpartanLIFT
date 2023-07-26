@@ -21,8 +21,6 @@ void PelicanUnit::stopHeartbeat() {
 }
 
 void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
-    // DELETE: removed the check that was here since there's a timer already doing it
-
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
         this->logWarning("Ignoring heartbeat received with previous term ID ({} vs {})",
