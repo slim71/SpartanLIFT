@@ -6,9 +6,8 @@ void PelicanUnit::becomeLeader() {
     this->flushHeartbeats();
 
     // Unsubscribe from topics
-    // DELETE: not to do, in case of another leader arriving? this should not happen, since Raft guarantees election safety
     this->resetSharedPointer(this->sub_to_heartbeat_topic_);
-    // not needed by leaders, since Raft guarantees safety and there's for an additional check to avoid multiple leaders
+    // This is not needed by leaders, since Raft guarantees safety and there's for an additional check to avoid multiple leaders
     this->resetSharedPointer(this->sub_to_leader_election_topic_);
     this->resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
 
@@ -29,8 +28,6 @@ void PelicanUnit::becomeFollower() {
     this->prepareCommonCallbacks();
     this->setRandomElectionTimeout();
 
-    // DELETE: needed by all agents? maybe, to let candidates and old leaders know they have to step down...
-    // DELETE: not needed: election safety = no multiple leaders & candidates see new leader with heartbeats
     this->sub_to_request_vote_rpc_topic_ = this->create_subscription<comms::msg::RequestVoteRPC>(
                                         this->request_vote_rpc_topic_,
                                         this->standard_qos_, 
