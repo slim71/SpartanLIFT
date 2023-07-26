@@ -4,10 +4,6 @@ int PelicanUnit::getID() const {
     return this->id_; 
 }
 
-std::string PelicanUnit::getName() const {
-    return this->name_;
-}
-
 std::string PelicanUnit::getModel() const {
     return this->model_;
 }
@@ -28,6 +24,21 @@ std::shared_ptr<PelicanUnit> PelicanUnit::getInstance() {
     return instance_.lock();
 }
 
-std::chrono::milliseconds PelicanUnit::getBallotWaitTime() {
+std::chrono::milliseconds PelicanUnit::getBallotWaitTime() const {
     return this->new_ballot_waittime_;
+}
+
+int PelicanUnit::getNumberOfHbs() const {
+    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
+    return this->received_hbs_.size();
+}
+
+heartbeat PelicanUnit::getLastHb() const {
+    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
+    return this->received_hbs_.back();
+}
+
+int PelicanUnit::getMaxHbs() const {
+    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
+    return this->received_hbs_.size();
 }

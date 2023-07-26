@@ -64,7 +64,6 @@ def generate_launch_description():
     # print(Path(sub.perform(LaunchContext())))
 
     # Spawn entity
-    # TODO: adapt to change used file too?
     drone = Node(
         package='ros_gz_sim',
         executable='create',

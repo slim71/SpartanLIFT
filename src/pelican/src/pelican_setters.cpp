@@ -26,18 +26,6 @@ void PelicanUnit::setRole(possible_roles r) {
     this->role_ = r;
 }
 
-void PelicanUnit::setElectionTimedOut() {
-    this->logInfo("Election timed out!");
-    this->election_timer_->cancel(); // Cancel the wall_timer used to call this function
-    std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
-    this->election_timed_out_ = true;
-}
-
-void PelicanUnit::unsetElectionTimedOut() {
-    std::lock_guard<std::mutex> lock(this->election_timedout_mutex_);
-    this->election_timed_out_ = false;
-}
-
 void PelicanUnit::setElectionCompleted() {
     this->voting_timer->cancel();
     std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
@@ -81,13 +69,18 @@ void PelicanUnit::setInstance(rclcpp::Node::SharedPtr instance) {
     instance_ = std::static_pointer_cast<PelicanUnit>(instance);
 }
 
-void PelicanUnit::setLeader(int id = -1) {
+void PelicanUnit::setLeader(int id) {
     this->setLeaderElected();
 
-    // TODO: sync with other nodes first?
+    // DELETE: sync with other nodes first? they will know about the new leader when receiving the heartbeat
     if (id == -1) {
         this->leader_id_ = this->getID();
     } else {
         this->leader_id_ = id;
     }
+}
+
+void PelicanUnit::setIsTerminated() {
+    std::lock_guard<std::mutex> lock(this->terminated_mutex_);
+    this->is_terminated_ = true;
 }

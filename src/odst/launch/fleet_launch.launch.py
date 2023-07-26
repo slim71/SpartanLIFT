@@ -60,7 +60,7 @@ def generate_launch_description():
         # ... Populate launch file like this:
         pelican_unit = Node(
             package='pelican',
-            executable='pelican_listener',
+            executable='pelican_unit',
             # Using `ros_arguments` is equivalent to using `arguments` with a prepended '--ros-args' item.
             ros_arguments=['--params-file', PathJoinSubstitution([config_pkg_share, config_middleware, config_file]),
                            '--log-level', log_level]

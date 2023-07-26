@@ -3,12 +3,10 @@
 
 PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
     // Declare parameters
-    declare_parameter("name", ""); // default to ""
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0); // default to 0
 
     // Get parameters values and store them
-    get_parameter("name", this->name_);
     get_parameter("model", this->model_);
     get_parameter("id", this->id_);
 
@@ -16,10 +14,10 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
     // Callbacks belonging to different callback groups (of any type) can always be executed parallel to each other
     // Almost every callback can be executed in parallel to one another or with itself (thanks to mutexes)
     this->reentrant_opt_.callback_group = this->reentrant_group_;
-    
-    // TODO: move to transition functions?
+
     // Subscriber, listening for VehicleLocalPosition messages
     // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module was started.
+    // Needed by every type of agent and never canceled
     this->sub_to_local_pos_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
                                         this->local_pos_topic_,
                                         this->px4_qos_, 
@@ -27,44 +25,23 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
                                         this->reentrant_opt_
                                     );
 
-    this->sub_to_leader_selection_topic_ = this->create_subscription<comms::msg::Datapad>(
-                                                this->leader_selection_topic_,
-                                                this->standard_qos_, 
-                                                std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1),
-                                                this->reentrant_opt_
-                                            );
-    
-    this->pub_to_leader_selection_topic_ = this->create_publisher<comms::msg::Datapad>(
-                                                this->leader_selection_topic_, 
-                                                this->standard_qos_
-                                            );
-
-
-    this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
-                                        this->heartbeat_topic_,
-                                        this->standard_qos_, 
-                                        std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
-                                        this->reentrant_opt_
-                                    );
-
     this->parseModel();
     
     // Log parameters values
-    this->logInfo("Loaded model {}", this->getModel());
+    this->logInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
 
     this->becomeFollower();
 }
 
 PelicanUnit::~PelicanUnit() {
-    //TODO:Check for resource leaks: Make sure that you are releasing all resources (memory, 
+    //TODO: Check for resource leaks: Make sure that you are releasing all resources (memory, 
     // publishers, subscribers, timers, etc.) correctly when shutting down the node. 
     // If there are any resource leaks, it can lead to invalid contexts or other errors.
 
-    this->logDebug("Destructor for {}", this->getName());
+    this->logDebug("Destructor for agent {}", this->getID());
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
-    this->timer_->cancel();
     
     this->logDebug("Trying to kill the thread");
     this->stopBallotThread();
@@ -81,7 +58,6 @@ void PelicanUnit::parseModel() {
         for (pugi::xml_node link = start.first_child(); link; link = link.next_sibling()) {
             if (strcmp(link.attribute("name").value(), "base_link") == 0) {
                 this->setMass(link.child("inertial").child("mass").text().as_double());
-                this->logInfo("Drone mass: {}", this->getMass());
             }
         }
     } else {
@@ -125,14 +101,49 @@ void PelicanUnit::signalHandler(int signum) {
 }
 
 void PelicanUnit::startBallotThread() {
-    if (!this->helping_thread_.joinable()) {
-        this->helping_thread_ = std::thread(&PelicanUnit::ballotCheckingThread, this);
+    if (!this->ballot_thread_.joinable()) {
+        this->ballot_thread_ = std::thread(&PelicanUnit::ballotCheckingThread, this);
     }
 }
 
 void PelicanUnit::stopBallotThread() {
-    if (this->helping_thread_.joinable()) {
-        this->is_terminated_ = true;
-        this->helping_thread_.join();
+    if (this->ballot_thread_.joinable()) {
+        this->setIsTerminated();
+        this->ballot_thread_.join();
     }
+}
+
+void PelicanUnit::prepareCommonCallbacks() { // for followers and candidates
+    /******************* Subscribrers ****************************/
+    if (!this->sub_to_leader_election_topic_) {
+        this->sub_to_leader_election_topic_ = this->create_subscription<comms::msg::Datapad>(
+                                                    this->leader_election_topic_,
+                                                    this->standard_qos_, 
+                                                    std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1),
+                                                    this->reentrant_opt_
+                                                );
+    }
+
+    if (!this->pub_to_leader_election_topic_) {
+        this->pub_to_leader_election_topic_ = this->create_publisher<comms::msg::Datapad>(
+                                                    this->leader_election_topic_, 
+                                                    this->standard_qos_
+                                                );
+    }
+
+    // not for leaders --> all agents, to avoid multiple leaders (this should not happen, since Raft guarantees safety)
+    if (!this->sub_to_heartbeat_topic_) {
+        this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
+                                            this->heartbeat_topic_,
+                                            this->standard_qos_, 
+                                            std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
+                                            this->reentrant_opt_
+                                        );
+    }
+
+    /******************* Publishers ****************************/
+    this->resetSharedPointer(this->pub_to_heartbeat_topic_);
+
+    /*********************** Timers ****************************/
+    this->cancelTimer(this->hb_transmission_timer_);
 }

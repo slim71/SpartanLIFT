@@ -1,10 +1,10 @@
 #include "pelican.hpp"
 
-void PelicanUnit::vote(int id_to_vote, double candidate_mass) {
+void PelicanUnit::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
-    if(this->isCandidate() && this->checkExternalLeaderElected()) {
+    if (this->isCandidate() && this->checkExternalLeaderElected()) {
         return;
-    };
+    }
 
     this->logInfo("Voting: {}", id_to_vote);
 
@@ -14,15 +14,17 @@ void PelicanUnit::vote(int id_to_vote, double candidate_mass) {
     msg.proposed_leader = id_to_vote;
     msg.candidate_mass = candidate_mass;
 
-    this->pub_to_leader_selection_topic_->publish(msg);
+    this->pub_to_leader_election_topic_->publish(msg);
 }
 
 void PelicanUnit::requestVote() {
     // Do not serve request in case another leader has been already chosen
-    if(this->isCandidate() && this->checkExternalLeaderElected()) {
+    if (this->isCandidate() && this->checkExternalLeaderElected()) {
         return;
-    };
+    }
 
+    this->logDebug("Requesting votes to other agents...");
+    
     this->pub_to_request_vote_rpc_topic_ = this->create_publisher<comms::msg::RequestVoteRPC>(
                                                 this->request_vote_rpc_topic_,
                                                 this->standard_qos_
@@ -101,22 +103,21 @@ void PelicanUnit::leaderElection() {
         if (ballot.size() > 0) { // back on empty vector has undefined behavior
             
             // If cluster_for_this_node is the last element of the ballot vector, either this candidate has won the election or there's a tie
-            if((*cluster_for_this_node).total == ballot.back().total) {
+            if ((*cluster_for_this_node).total == ballot.back().total) {
                 this->logDebug("Victory or not?");
 
-                if((ballot.size() == 1) ||(*cluster_for_this_node).total != (ballot.end()[-2]).total) { // this candidate has won
+                if ((ballot.size() == 1) ||(*cluster_for_this_node).total != (ballot.end()[-2]).total) { // this candidate has won
                     this->logDebug("I've won!");
                     // I've been chosen!
                     this->setElectionCompleted();
                     this->setLeader(this->getID());
                     this->becomeLeader();
-                    this->sendHeartbeat(); // to be sure one is sent now; TODO: maybe move to leader? needed?
                     return;
-                };
+                }
 
                 this->logDebug("Tie or timeout");
-            };
-        };
+            }
+        }
         // Otherwise, let the winning candidate send its heartbeat as leader confirmation
     } else {
         this->votes_mutex_.unlock();
@@ -129,7 +130,7 @@ void PelicanUnit::leaderElection() {
     this->resetVotingWindow();
 }
 
-void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
+void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     auto heavier = std::max_element(this->received_votes_.begin(),
                                     this->received_votes_.end(),
                                     [](comms::msg::Datapad::SharedPtr first, comms::msg::Datapad::SharedPtr second) {
@@ -143,23 +144,24 @@ bool PelicanUnit::checkForExternalLeader() {
     // If the (external) leader’s term is at least as large as the candidate’s current term, 
     // then the candidate recognizes the leader as legitimate and returns to follower state
 
-    if(!this->checkExternalLeaderElected()) {
+    if (!this->checkExternalLeaderElected()) {
         return false;
-    };
-
-    this->hbs_mutex_.lock();
-    if (this->received_hbs_.size() == 0) {
-        this->hbs_mutex_.unlock();    
-        return true; // standard behavior: boolean is more important than the heartbeat
     }
 
-    auto last_hb_received = this->received_hbs_.back();
-    this->hbs_mutex_.unlock();
+    if (this->getNumberOfHbs() == 0) {
+        // Standard behavior: boolean is more important than the heartbeat
+        // This is equal to "no heartbeat received YET, but external leader is there"
+        return true;
+    }
+
+    auto last_hb_received = this->getLastHb();
 
     if (last_hb_received.term >= this->getCurrentTerm()) {
         return true;
     } else {
-        this->unsetExternalLeaderElected(); // reject external leader and continue as no heartbeat arrived
+        // reject external leader and continue as no heartbeat arrived
+        this->logDebug("Most recent heartbeat has old term");
+        this->clearElectionStatus();
         return false;
     }
 }
@@ -187,15 +189,15 @@ void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     this->votes_mutex_.unlock();
 
     // Votes received are supposedly from followers, so if no more votes come within a time frame, the elections is finished
-    if(this->getRole() == candidate) {
-        if(this->voting_timer != nullptr) { // Make the timer restart
+    if (this->getRole() == candidate) {
+        if (this->voting_timer != nullptr) { // Make the timer restart
             this->voting_timer->reset();
         } else{
             this->voting_timer = this->create_wall_timer(this->voting_max_time_, 
                                                          std::bind(&PelicanUnit::setVotingCompleted, this),
                                                          this->reentrant_group_);
-        };
-    };
+        }
+    }
 
 }
 
@@ -206,13 +208,37 @@ void PelicanUnit::flushVotes() {
 
 void PelicanUnit::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
-    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->is_terminated_) {
+    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->checkIsTerminated()) {
         this->logDebug("Ballot checking...");
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    this->logDebug("Ballot finished");
+    this->logInfo("Ballot finished");
 
-    // Notify the first thread to stop waiting
-    cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
+    // Notify the main thread to stop waiting
+    this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
+}
+
+void PelicanUnit::clearElectionStatus() {
+    this->unsetExternalLeaderElected();
+    this->unsetLeaderElected();
+    this->setLeader();
+}
+
+void PelicanUnit::setElectionStatus(int id) {
+    this->setExternalLeaderElected();
+    this->setLeaderElected();
+    this->setLeader(id);
+}
+
+void PelicanUnit::cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
+    if (timer) {
+        timer->cancel();
+    }
+}
+
+void PelicanUnit::resetTimer(rclcpp::TimerBase::SharedPtr& timer) {
+    if (timer) {
+        timer->reset();
+    }
 }

@@ -1,3 +1,9 @@
+"""
+Older version, used with Ignition
+
+Returns:
+    _type_: _description_
+"""
 # from pathlib import Path  # Debug
 from launch import LaunchDescription  # , LaunchContext  # Debug
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
@@ -6,7 +12,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
 
-# TODO: move to launch package?
 def generate_launch_description():
     launch_description = LaunchDescription()
     # LaunchConfigurations are used to store values of launch arguments in the above 
