@@ -22,7 +22,7 @@ humble
 ```
 ### Gazebo Garden
 ```bash
-ùslim71@slim71-Ubuntu:~/Documents/git/SpartanLIFT$ gz sim --version
+slim71@slim71-Ubuntu:~/Documents/git/SpartanLIFT$ gz sim --version
 Gazebo Sim, version 7.5.0
 Copyright (C) 2018 Open Source Robotics Foundation.
 Released under the Apache 2.0 License.

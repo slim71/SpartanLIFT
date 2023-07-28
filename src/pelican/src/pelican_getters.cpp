@@ -1,7 +1,7 @@
 #include "pelican.hpp"
 
-int PelicanUnit::getID() const { 
-    return this->id_; 
+int PelicanUnit::getID() const {
+    return this->id_;
 }
 
 std::string PelicanUnit::getModel() const {
