@@ -11,12 +11,14 @@ void PelicanUnit::unsetLeaderElected() {
 }
 
 void PelicanUnit::setRandomBallotWaittime() {
-    this->new_ballot_waittime_ = std::chrono::milliseconds { this->random_distribution_(this->random_engine_) };
+    this->new_ballot_waittime_ =
+        std::chrono::milliseconds {this->random_distribution_(this->random_engine_)};
     this->logDebug("new_ballot_waittime_ set to {}", this->new_ballot_waittime_.count());
 }
 
 void PelicanUnit::setRandomElectionTimeout() {
-    this->election_timeout_ = std::chrono::milliseconds { this->random_distribution_(this->random_engine_) };
+    this->election_timeout_ =
+        std::chrono::milliseconds {this->random_distribution_(this->random_engine_)};
     this->logDebug("election_timeout_ set to {}", this->election_timeout_.count());
 }
 

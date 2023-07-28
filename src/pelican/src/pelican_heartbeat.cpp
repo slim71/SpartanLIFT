@@ -13,7 +13,6 @@ void PelicanUnit::sendHeartbeat() const {
     } else {
         this->logError("Publisher to heartbeat topic is not defined!");
     }
-
 }
 
 void PelicanUnit::stopHeartbeat() {
@@ -23,8 +22,10 @@ void PelicanUnit::stopHeartbeat() {
 void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logWarning("Ignoring heartbeat received with previous term ID ({} vs {})",
-                        msg.term_id, this->getCurrentTerm());
+        this->logWarning(
+            "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id,
+            this->getCurrentTerm()
+        );
         return;
     }
 
@@ -32,10 +33,13 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     // For any node; this should not apply to leaders
     this->setElectionStatus(msg.leader_id);
-        
+
     this->logDebug("Resetting election_timer_...");
-    this->resetTimer(this->election_timer_); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
-    this->logDebug("After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count()/10);
+    this->resetTimer(this->election_timer_
+    ); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
+    this->logDebug(
+        "After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count() / 10
+    );
 
     // Keep heartbeat vector limited
     if (this->getNumberOfHbs() >= this->getMaxHbs()) {
@@ -52,11 +56,10 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
     // Sort such that older hb is first, to be sure
-    std::sort(this->received_hbs_.begin(),
-              this->received_hbs_.end(),
-              [](const heartbeat &a, const heartbeat &b) {
-                return a.timestamp < b.timestamp;
-              });
+    std::sort(
+        this->received_hbs_.begin(), this->received_hbs_.end(),
+        [](const heartbeat& a, const heartbeat& b) { return a.timestamp < b.timestamp; }
+    );
     this->hbs_mutex_.unlock();
 
     if (this->getRole() == leader) { // Switch back to follower!
