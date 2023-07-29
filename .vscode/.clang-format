@@ -1,0 +1,64 @@
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Right
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: 
+  Kind: Always
+  OverEmptyLines: 1
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: All
+AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: No
+BreakAfterAttributes: Never
+BreakBeforeBraces: Attach
+# BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterComma
+ColumnLimit: 100
+Cpp11BracedListStyle: true
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Always
+IncludeBlocks: Merge
+IndentAccessModifiers: true
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentPPDirectives: BeforeHash
+IndentWidth: 4 #(VS Code current setting)
+# InsertBraces: true # Setting this option to true could lead to incorrect code formatting due to clang-format’s lack of complete semantic information
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtEOF: true
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+LambdaBodyIndentation: Signature
+Language: Cpp
+NamespaceIndentation: All
+PackConstructorInitializers: NextLine
+PointerAlignment: Left
+QualifierAlignment: Leave
+ReferenceAlignment: Pointer # equal to RAS_Left here
+ReflowComments: true
+RemoveParentheses: Leave # Setting this option to true could lead to incorrect code formatting due to clang-format’s lack of complete semantic information
+RemoveSemicolon: true # Setting this option to true could lead to incorrect code formatting due to clang-format’s lack of complete semantic information
+SeparateDefinitionBlocks: Always
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: false
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeJsonColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: Leave
+SpacesInLineCommentPrefix: 
+  Minimum: 1
+  Maximum: 1
+SpacesInSquareBrackets: false
+Standard: c++14 # TODO: update if needed
+UseTab: Never #(VS Code current setting)
