@@ -1,8 +1,10 @@
-# from pathlib import Path  # Debug
-from launch import LaunchDescription  # , LaunchContext  # Debug
-from launch.actions import DeclareLaunchArgument
+import os
+from launch import LaunchDescription
+from ament_index_python.packages import get_package_share_directory
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
 
@@ -15,7 +17,9 @@ def generate_launch_description():
     spawn_roll = LaunchConfiguration("roll", default='0.0')
     spawn_pitch = LaunchConfiguration("pitch", default='0.0')
     spawn_yaw = LaunchConfiguration("yaw", default='0.0')
+    world = LaunchConfiguration("world", default='empty.sdf')
 
+    # TODO: get models from PX4 instead of pelican?
     model_pkg_share = FindPackageShare("pelican")
     model_middleware = "models/X4/"
     sdf_model = "model.sdf"
@@ -57,11 +61,21 @@ def generate_launch_description():
         default_value="0.0",
         description="Rotation around z-axis",
     )
+    world_argument = DeclareLaunchArgument(
+        name="world",
+        default_value="empty.sdf",
+        description="World in which to spawn everything in",
+    )
 
-    # Debug
-    # print(model_pkg_share.describe())
-    # sub = PathJoinSubstitution([model_pkg_share, model_middleware, sdf_model])
-    # print(Path(sub.perform(LaunchContext())))
+    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    gazebo = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
+            ),
+            launch_arguments={
+                'gz_args': world
+                }.items(),
+        )
 
     # Spawn entity
     drone = Node(
@@ -80,7 +94,9 @@ def generate_launch_description():
         output='screen'
     )
 
+    launch_description.add_action(gazebo)
     launch_description.add_action(drone)
+    launch_description.add_action(world_argument)
     launch_description.add_action(drone_name_argument)
     launch_description.add_action(spawn_x_argument)
     launch_description.add_action(spawn_y_argument)
