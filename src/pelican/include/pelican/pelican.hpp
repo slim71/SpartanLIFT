@@ -13,6 +13,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <signal.h>
 
+// TODO: try the Enum Macro Trick
 enum possible_roles { tbd, candidate, follower, leader };
 
 struct vote_count {
@@ -26,6 +27,7 @@ struct heartbeat {
         rclcpp::Time timestamp;
 };
 
+// TODO: make more classes and use a "outer class-container" for the agent?
 class PelicanUnit : public rclcpp::Node {
     public:
         explicit PelicanUnit();
@@ -46,6 +48,7 @@ class PelicanUnit : public rclcpp::Node {
 
         static void signalHandler(int signum);
         static void setInstance(rclcpp::Node::SharedPtr instance);
+        static std::shared_ptr<PelicanUnit> getInstance();
 
     private: // Member functions
         template<typename... Args> void logInfo(std::string s, Args... args) const;
@@ -118,8 +121,6 @@ class PelicanUnit : public rclcpp::Node {
 
         bool checkIsTerminated() const;
         void setIsTerminated();
-
-        static std::shared_ptr<PelicanUnit> getInstance();
 
         void prepareCommonCallbacks();
 

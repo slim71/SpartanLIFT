@@ -1,8 +1,5 @@
 #include "pelican.hpp"
 
-// Initialize the static instance pointer to a weak pointer
-std::weak_ptr<PelicanUnit> PelicanUnit::instance_;
-
 int main(int argc, char* argv[]) {
     std::cout << "Starting PelicanUnit node..." << std::endl;
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
