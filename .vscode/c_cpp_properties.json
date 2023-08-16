@@ -5,8 +5,10 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**",
+                "/opt/ros/humble/bin/**",
                 "/usr/include/**",
-                "/home/slim71/Documents/git/pugixml"
+                "/home/slim71/Documents/git/pugixml",
+                "/opt/ros/humble/include/ament_index_cpp"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

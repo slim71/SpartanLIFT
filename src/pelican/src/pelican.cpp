@@ -1,6 +1,9 @@
 #include "pelican.hpp"
 #include "pugixml.hpp"
 
+// Initialize the static instance pointer to a weak pointer
+std::weak_ptr<PelicanUnit> PelicanUnit::instance_;
+
 PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
