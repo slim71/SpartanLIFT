@@ -223,7 +223,7 @@ class Pelican : public rclcpp::Node {
 };
 
 // Including templates definitions
-#include "pelican_logger.tpp"
-#include "pelican_templates.tpp"
+#include "logger.tpp"
+#include "templates.tpp"
 
 #endif
