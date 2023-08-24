@@ -1,8 +1,9 @@
 #include "fixtures.hpp"
 
-void PelicanUnitTest::SetUp() {
+void PelicanTest::SetUp() {
     std::string pelican_share_directory = ament_index_cpp::get_package_share_directory("pelican");
     std::string config_file_path = pelican_share_directory + "/config/copter_test.yaml";
+    std::cout << "config_file_path=" << config_file_path << std::endl;
 
     char* argv[] = {
         strdup("--ros-args"),
@@ -20,9 +21,9 @@ void PelicanUnitTest::SetUp() {
     }
 
     // Instantiation
-    this->node = std::make_shared<PelicanUnit>();
+    this->node = std::make_shared<Pelican>();
     // Set the instance pointer to the shared pointer of the main node
-    PelicanUnit::setInstance(this->node);
+    Pelican::setInstance(this->node);
 
     this->executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
     this->executor->add_node(this->node);
@@ -30,7 +31,7 @@ void PelicanUnitTest::SetUp() {
     this->spin_thread = std::thread([this](){this->executor->spin();});
 };
 
-void PelicanUnitTest::TearDown() {
+void PelicanTest::TearDown() {
     this->executor->cancel();
     this->spin_thread.join(); // Wait for thread completion
     rclcpp::shutdown();

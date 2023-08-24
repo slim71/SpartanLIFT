@@ -24,9 +24,9 @@
 //     int result = RUN_ALL_TESTS();
 
 //     // Instantiation
-//     rclcpp::Node::SharedPtr node = std::make_shared<PelicanUnit>();
+//     rclcpp::Node::SharedPtr node = std::make_shared<Pelican>();
 //     // Set the instance pointer to the shared pointer of the main node
-//     PelicanUnit::setInstance(node);
+//     Pelican::setInstance(node);
 
 //     rclcpp::executors::MultiThreadedExecutor executor;
 //     executor.add_node(node);

@@ -28,10 +28,10 @@ struct heartbeat {
 };
 
 // TODO: make more classes and use a "outer class-container" for the agent?
-class PelicanUnit : public rclcpp::Node {
+class Pelican : public rclcpp::Node {
     public:
-        explicit PelicanUnit();
-        ~PelicanUnit();
+        explicit Pelican();
+        ~Pelican();
 
         int getID() const;
         std::string getModel() const;
@@ -48,7 +48,7 @@ class PelicanUnit : public rclcpp::Node {
 
         static void signalHandler(int signum);
         static void setInstance(rclcpp::Node::SharedPtr instance);
-        static std::shared_ptr<PelicanUnit> getInstance();
+        static std::shared_ptr<Pelican> getInstance();
 
     private: // Member functions
         template<typename... Args> void logInfo(std::string s, Args... args) const;
@@ -137,7 +137,7 @@ class PelicanUnit : public rclcpp::Node {
         int max_hbs_ {100}; // heartbeat period is 100ms, so this keeps a log of 10s
 
         std::thread ballot_thread_;
-        static std::weak_ptr<PelicanUnit> instance_; // Weak pointer to the instance of the node
+        static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is

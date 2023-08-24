@@ -1,6 +1,6 @@
 #include "fixtures.hpp"
 
-TEST_F(PelicanUnitTest, TestGetID) {
+TEST_F(PelicanTest, TestGetID) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "ID: " << this->node.get()->getID() << std::endl;
@@ -9,7 +9,7 @@ TEST_F(PelicanUnitTest, TestGetID) {
     ASSERT_EQ(this->node.get()->getID(), 1);
 }
 
-TEST_F(PelicanUnitTest, TestGetModel) {
+TEST_F(PelicanTest, TestGetModel) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "Model: " << this->node.get()->getModel() << std::endl;
@@ -17,7 +17,7 @@ TEST_F(PelicanUnitTest, TestGetModel) {
     ASSERT_EQ(this->node.get()->getModel(), "/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/X3/model.sdf");
 }
 
-TEST_F(PelicanUnitTest, TestGetMass) {
+TEST_F(PelicanTest, TestGetMass) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "Mass: " << this->node.get()->getMass() << std::endl;
@@ -25,7 +25,7 @@ TEST_F(PelicanUnitTest, TestGetMass) {
     ASSERT_GT(this->node.get()->getMass(), 0);
 }
 
-TEST_F(PelicanUnitTest, TestGetCurrentTerm) {
+TEST_F(PelicanTest, TestGetCurrentTerm) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "Term: " << this->node.get()->getCurrentTerm() << std::endl;
@@ -33,13 +33,13 @@ TEST_F(PelicanUnitTest, TestGetCurrentTerm) {
     ASSERT_GE(this->node.get()->getCurrentTerm(), 0);
 }
 
-TEST_F(PelicanUnitTest, TestGetInstance) {
+TEST_F(PelicanTest, TestGetInstance) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    ASSERT_EQ(typeid(this->node.get()->getInstance()), typeid(std::shared_ptr<PelicanUnit>));
+    ASSERT_EQ(typeid(this->node.get()->getInstance()), typeid(std::shared_ptr<Pelican>));
 }
 
-TEST_F(PelicanUnitTest, TestGetMaxHbs) {
+TEST_F(PelicanTest, TestGetMaxHbs) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "MaxHbs: " << this->node.get()->getMaxHbs() << std::endl;
@@ -47,7 +47,7 @@ TEST_F(PelicanUnitTest, TestGetMaxHbs) {
     ASSERT_GE(this->node.get()->getMaxHbs(), 0);
 }
 
-TEST_F(PelicanUnitTest, TestGetRole) {
+TEST_F(PelicanTest, TestGetRole) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     std::cout << "Role: " << this->node.get()->getRole() << std::endl;

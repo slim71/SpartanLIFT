@@ -1,6 +1,6 @@
 #include "pelican.hpp"
 
-void PelicanUnit::sendHeartbeat() const {
+void Pelican::sendHeartbeat() const {
     this->logInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
@@ -15,11 +15,11 @@ void PelicanUnit::sendHeartbeat() const {
     }
 }
 
-void PelicanUnit::stopHeartbeat() {
+void Pelican::stopHeartbeat() {
     this->hb_transmission_timer_->cancel();
 }
 
-void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
+void Pelican::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
         this->logWarning(
@@ -69,7 +69,7 @@ void PelicanUnit::storeHeartbeat(const comms::msg::Heartbeat msg) {
     }
 }
 
-void PelicanUnit::flushHeartbeats() {
+void Pelican::flushHeartbeats() {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
     this->received_hbs_.clear();
 }
