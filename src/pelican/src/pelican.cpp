@@ -2,9 +2,9 @@
 #include "pugixml.hpp"
 
 // Initialize the static instance pointer to a weak pointer
-std::weak_ptr<PelicanUnit> PelicanUnit::instance_;
+std::weak_ptr<Pelican> Pelican::instance_;
 
-PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
+Pelican::Pelican() : Node("Pelican") {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -24,7 +24,7 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
     // was started. Needed by every type of agent and never canceled
     this->sub_to_local_pos_topic_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
         this->local_pos_topic_, this->px4_qos_,
-        std::bind(&PelicanUnit::printData, this, std::placeholders::_1), this->reentrant_opt_
+        std::bind(&Pelican::printData, this, std::placeholders::_1), this->reentrant_opt_
     );
 
     this->parseModel();
@@ -35,7 +35,7 @@ PelicanUnit::PelicanUnit() : Node("PelicanUnit") {
     this->becomeFollower();
 }
 
-PelicanUnit::~PelicanUnit() {
+Pelican::~Pelican() {
     // TODO: Check for resource leaks: Make sure that you are releasing all resources (memory,
     //  publishers, subscribers, timers, etc.) correctly when shutting down the node.
     //  If there are any resource leaks, it can lead to invalid contexts or other errors.
@@ -49,7 +49,7 @@ PelicanUnit::~PelicanUnit() {
     this->stopBallotThread();
 }
 
-void PelicanUnit::parseModel() {
+void Pelican::parseModel() {
     this->logDebug("Trying to load model {}", this->getModel());
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
@@ -72,7 +72,7 @@ void PelicanUnit::parseModel() {
     }
 }
 
-void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
+void Pelican::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
     std::cout << "\n\n";
     std::cout << "RECEIVED VehicleLocalPosition DATA" << std::endl;
     std::cout << "=============================" << std::endl;
@@ -94,9 +94,9 @@ void PelicanUnit::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr
     std::cout << "heading: " << msg->heading << std::endl;     // [rad]
 }
 
-void PelicanUnit::signalHandler(int signum) {
+void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
-    std::shared_ptr<PelicanUnit> node = getInstance();
+    std::shared_ptr<Pelican> node = getInstance();
     if (node) {
         node->stopBallotThread();
     }
@@ -104,25 +104,25 @@ void PelicanUnit::signalHandler(int signum) {
     rclcpp::shutdown();
 }
 
-void PelicanUnit::startBallotThread() {
+void Pelican::startBallotThread() {
     if (!this->ballot_thread_.joinable()) {
-        this->ballot_thread_ = std::thread(&PelicanUnit::ballotCheckingThread, this);
+        this->ballot_thread_ = std::thread(&Pelican::ballotCheckingThread, this);
     }
 }
 
-void PelicanUnit::stopBallotThread() {
+void Pelican::stopBallotThread() {
     if (this->ballot_thread_.joinable()) {
         this->setIsTerminated();
         this->ballot_thread_.join();
     }
 }
 
-void PelicanUnit::prepareCommonCallbacks() { // for followers and candidates
+void Pelican::prepareCommonCallbacks() { // for followers and candidates
     /******************* Subscribrers ****************************/
     if (!this->sub_to_leader_election_topic_) {
         this->sub_to_leader_election_topic_ = this->create_subscription<comms::msg::Datapad>(
             this->leader_election_topic_, this->standard_qos_,
-            std::bind(&PelicanUnit::storeCandidacy, this, std::placeholders::_1),
+            std::bind(&Pelican::storeCandidacy, this, std::placeholders::_1),
             this->reentrant_opt_
         );
     }
@@ -138,7 +138,7 @@ void PelicanUnit::prepareCommonCallbacks() { // for followers and candidates
     if (!this->sub_to_heartbeat_topic_) {
         this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
             this->heartbeat_topic_, this->standard_qos_,
-            std::bind(&PelicanUnit::storeHeartbeat, this, std::placeholders::_1),
+            std::bind(&Pelican::storeHeartbeat, this, std::placeholders::_1),
             this->reentrant_opt_
         );
     }

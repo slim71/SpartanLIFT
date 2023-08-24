@@ -1,6 +1,6 @@
 #include "pelican.hpp"
 
-void PelicanUnit::becomeLeader() {
+void Pelican::becomeLeader() {
     this->logInfo("Becoming Leader");
     this->setRole(leader);
     this->flushHeartbeats();
@@ -17,12 +17,12 @@ void PelicanUnit::becomeLeader() {
 
     this->sendHeartbeat(); // To promptly notify all agents about the new leader
     this->hb_transmission_timer_ = this->create_wall_timer(
-        this->heartbeat_period_, std::bind(&PelicanUnit::sendHeartbeat, this),
+        this->heartbeat_period_, std::bind(&Pelican::sendHeartbeat, this),
         this->reentrant_group_
     );
 }
 
-void PelicanUnit::becomeFollower() {
+void Pelican::becomeFollower() {
     this->logInfo("Becoming Follower");
     this->setRole(follower);
     this->prepareCommonCallbacks();
@@ -30,7 +30,7 @@ void PelicanUnit::becomeFollower() {
 
     this->sub_to_request_vote_rpc_topic_ = this->create_subscription<comms::msg::RequestVoteRPC>(
         this->request_vote_rpc_topic_, this->standard_qos_,
-        std::bind(&PelicanUnit::serveVoteRequest, this, std::placeholders::_1), this->reentrant_opt_
+        std::bind(&Pelican::serveVoteRequest, this, std::placeholders::_1), this->reentrant_opt_
     );
 
     this->election_timer_ = this->create_wall_timer(
@@ -47,7 +47,7 @@ void PelicanUnit::becomeFollower() {
     );
 }
 
-void PelicanUnit::becomeCandidate() {
+void Pelican::becomeCandidate() {
     this->logInfo("Becoming Candidate");
     this->setRole(candidate);
     this->prepareCommonCallbacks();
@@ -109,17 +109,17 @@ void PelicanUnit::becomeCandidate() {
     };
 }
 
-bool PelicanUnit::isLeader() const {
+bool Pelican::isLeader() const {
     this->logDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
 }
 
-bool PelicanUnit::isFollower() const {
+bool Pelican::isFollower() const {
     this->logDebug("Agent is follower? {}", this->getRole() == follower);
     return (this->getRole() == follower);
 }
 
-bool PelicanUnit::isCandidate() const {
+bool Pelican::isCandidate() const {
     this->logDebug("Agent is candidate? {}", this->getRole() == candidate);
     return (this->getRole() == candidate);
 }

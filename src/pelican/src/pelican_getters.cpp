@@ -1,44 +1,44 @@
 #include "pelican.hpp"
 
-int PelicanUnit::getID() const {
+int Pelican::getID() const {
     return this->id_;
 }
 
-std::string PelicanUnit::getModel() const {
+std::string Pelican::getModel() const {
     return this->model_;
 }
 
-double PelicanUnit::getMass() const {
+double Pelican::getMass() const {
     return this->mass_;
 }
 
-possible_roles PelicanUnit::getRole() const {
+possible_roles Pelican::getRole() const {
     return this->role_;
 }
 
-int PelicanUnit::getCurrentTerm() const {
+int Pelican::getCurrentTerm() const {
     return this->current_term_;
 }
 
-std::shared_ptr<PelicanUnit> PelicanUnit::getInstance() {
+std::shared_ptr<Pelican> Pelican::getInstance() {
     return instance_.lock();
 }
 
-std::chrono::milliseconds PelicanUnit::getBallotWaitTime() const {
+std::chrono::milliseconds Pelican::getBallotWaitTime() const {
     return this->new_ballot_waittime_;
 }
 
-int PelicanUnit::getNumberOfHbs() const {
+int Pelican::getNumberOfHbs() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
     return this->received_hbs_.size();
 }
 
-heartbeat PelicanUnit::getLastHb() const {
+heartbeat Pelican::getLastHb() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
     return this->received_hbs_.back();
 }
 
-int PelicanUnit::getMaxHbs() const {
+int Pelican::getMaxHbs() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
     return this->received_hbs_.size();
 }

@@ -9,7 +9,7 @@ TEST(SmokeTests, ParseModelFailing) {
     EXPECT_THROW(
         {
             try {
-                PelicanUnit pelican;
+                Pelican pelican;
             } catch (const std::exception& e) {
                 EXPECT_STREQ("Agent model could not be parsed!", e.what());
                 throw; // Re-throw the exception for Google Test to catch
@@ -38,9 +38,9 @@ TEST(SmokeTests, NodeStartingCorrectly) {
     rclcpp::init(argc, argv);
 
     // Instantiation
-    rclcpp::Node::SharedPtr node = std::make_shared<PelicanUnit>();
+    rclcpp::Node::SharedPtr node = std::make_shared<Pelican>();
     // Set the instance pointer to the shared pointer of the main node
-    PelicanUnit::setInstance(node);
+    Pelican::setInstance(node);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
@@ -76,11 +76,11 @@ TEST(SmokeTests, SignalHandling) {
     rclcpp::init(argc, argv);
 
     // Instantiation
-    rclcpp::Node::SharedPtr node = std::make_shared<PelicanUnit>();
+    rclcpp::Node::SharedPtr node = std::make_shared<Pelican>();
     // Set the instance pointer to the shared pointer of the main node
-    PelicanUnit::setInstance(node);
+    Pelican::setInstance(node);
     // Register the signal handler for SIGINT (CTRL+C)
-    std::signal(SIGINT, PelicanUnit::signalHandler);
+    std::signal(SIGINT, Pelican::signalHandler);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);

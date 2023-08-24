@@ -1,6 +1,6 @@
 #include "pelican.hpp"
 
-void PelicanUnit::vote(int id_to_vote, double candidate_mass) const {
+void Pelican::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
     if (this->isCandidate() && this->checkExternalLeaderElected()) {
         return;
@@ -17,7 +17,7 @@ void PelicanUnit::vote(int id_to_vote, double candidate_mass) const {
     this->pub_to_leader_election_topic_->publish(msg);
 }
 
-void PelicanUnit::requestVote() {
+void Pelican::requestVote() {
     // Do not serve request in case another leader has been already chosen
     if (this->isCandidate() && this->checkExternalLeaderElected()) {
         return;
@@ -37,7 +37,7 @@ void PelicanUnit::requestVote() {
     this->pub_to_request_vote_rpc_topic_->publish(req);
 }
 
-void PelicanUnit::leaderElection() {
+void Pelican::leaderElection() {
     // As for followers, even the candidates has stored all the votes
     this->votes_mutex_.lock();
 
@@ -137,7 +137,7 @@ void PelicanUnit::leaderElection() {
     this->resetVotingWindow();
 }
 
-void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
+void Pelican::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
         [](comms::msg::Datapad::SharedPtr first, comms::msg::Datapad::SharedPtr second) {
@@ -147,7 +147,7 @@ void PelicanUnit::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
-bool PelicanUnit::checkForExternalLeader() {
+bool Pelican::checkForExternalLeader() {
     // If the (external) leader’s term is at least as large as the candidate’s current term,
     // then the candidate recognizes the leader as legitimate and returns to follower state
 
@@ -173,12 +173,12 @@ bool PelicanUnit::checkForExternalLeader() {
     }
 }
 
-void PelicanUnit::resetVotingWindow() {
+void Pelican::resetVotingWindow() {
     this->unsetVotingCompleted();
     this->setRandomBallotWaittime();
 }
 
-void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
+void Pelican::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "\n\n";
     std::cout << "AGENT " << this->getID() << " RECEIVED DATAPAD DATA" << std::endl;
     std::cout << "=============================" << std::endl;
@@ -204,19 +204,19 @@ void PelicanUnit::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
             this->voting_timer->reset();
         } else {
             this->voting_timer = this->create_wall_timer(
-                this->voting_max_time_, std::bind(&PelicanUnit::setVotingCompleted, this),
+                this->voting_max_time_, std::bind(&Pelican::setVotingCompleted, this),
                 this->reentrant_group_
             );
         }
     }
 }
 
-void PelicanUnit::flushVotes() {
+void Pelican::flushVotes() {
     std::lock_guard<std::mutex> lock(this->votes_mutex_);
     this->received_votes_.clear();
 }
 
-void PelicanUnit::ballotCheckingThread() {
+void Pelican::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
     while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
            !this->checkIsTerminated()) {
@@ -230,25 +230,25 @@ void PelicanUnit::ballotCheckingThread() {
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
 }
 
-void PelicanUnit::clearElectionStatus() {
+void Pelican::clearElectionStatus() {
     this->unsetExternalLeaderElected();
     this->unsetLeaderElected();
     this->setLeader();
 }
 
-void PelicanUnit::setElectionStatus(int id) {
+void Pelican::setElectionStatus(int id) {
     this->setExternalLeaderElected();
     this->setLeaderElected();
     this->setLeader(id);
 }
 
-void PelicanUnit::cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
+void Pelican::cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
     if (timer) {
         timer->cancel();
     }
 }
 
-void PelicanUnit::resetTimer(rclcpp::TimerBase::SharedPtr& timer) {
+void Pelican::resetTimer(rclcpp::TimerBase::SharedPtr& timer) {
     if (timer) {
         timer->reset();
     }

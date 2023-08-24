@@ -1,4 +1,4 @@
-PelicanUnit:
+Pelican:
   ros__parameters:
     model: "install/pelican/share/pelican/models/X3/model.sdf"
     id: 1

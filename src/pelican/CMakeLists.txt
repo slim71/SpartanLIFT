@@ -80,17 +80,17 @@ if(BUILD_TESTING)
 endif()
 
 # One for each node: create executable
-add_executable(pelican_unit
+add_executable(pelican
               ${MAIN}
               ${SOURCES}
 )
-target_include_directories(pelican_unit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(pelican_unit rclcpp px4_msgs comms)
-target_link_libraries(pelican_unit Pelican_class)
+target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+ament_target_dependencies(pelican rclcpp px4_msgs comms)
+target_link_libraries(pelican Pelican_class)
 # TODO: delete executables "pelican_listener"
 # Once: install executables
 install(
-  TARGETS pelican_unit
+  TARGETS pelican
   DESTINATION lib/${PROJECT_NAME} # lib folder inside ROS2 workspace
 )
 install(

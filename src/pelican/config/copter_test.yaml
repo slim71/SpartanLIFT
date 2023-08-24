@@ -1,4 +1,4 @@
-PelicanUnit:
+Pelican:
   ros__parameters:
     model: "/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/X3/model.sdf"
     id: 1
