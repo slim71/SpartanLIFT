@@ -26,15 +26,15 @@ target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/in
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt)
 
 set(MAIN 
-    src/pelican_main.cpp)
+    src/main.cpp)
 
 set(SOURCES
-    src/pelican_roles.cpp 
-    src/pelican_heartbeat.cpp 
-    src/pelican_election.cpp
-    src/pelican_checkers.cpp
-    src/pelican_getters.cpp
-    src/pelican_setters.cpp
+    src/roles.cpp 
+    src/heartbeat.cpp 
+    src/election.cpp
+    src/checkers.cpp
+    src/getters.cpp
+    src/setters.cpp
 )
 
 set(TEST_SOURCES
@@ -87,7 +87,6 @@ add_executable(pelican
 target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 ament_target_dependencies(pelican rclcpp px4_msgs comms)
 target_link_libraries(pelican Pelican_class)
-# TODO: delete executables "pelican_listener"
 # Once: install executables
 install(
   TARGETS pelican
