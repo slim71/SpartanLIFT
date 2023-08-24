@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     // Set the instance pointer to the shared pointer of the main node
     PelicanUnit::setInstance(node);
     // Register the signal handler for SIGINT (CTRL+C)
-    signal(SIGINT, PelicanUnit::signalHandler);
+    std::signal(SIGINT, PelicanUnit::signalHandler);
 
     executor.add_node(node);
 
