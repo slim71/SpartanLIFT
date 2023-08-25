@@ -12,6 +12,9 @@
 #include <random>
 #include <rclcpp/rclcpp.hpp>
 #include <signal.h>
+#include <string>
+
+using std::literals::string_literals::operator""s;
 
 // TODO: try the Enum Macro Trick
 enum possible_roles { tbd, candidate, follower, leader };
@@ -155,8 +158,7 @@ class Pelican : public rclcpp::Node {
         rclcpp::Subscription<comms::msg::Datapad>::SharedPtr sub_to_leader_election_topic_;
         rclcpp::Publisher<comms::msg::Datapad>::SharedPtr pub_to_leader_election_topic_;
 
-        // TODO: "personalize" with agent ID
-        std::string local_pos_topic_ {"/fmu/out/vehicle_local_position"};
+        std::string local_pos_topic_; // i.e. "/fmu/out/vehicle_local_position";
         rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
             sub_to_local_pos_topic_;
 

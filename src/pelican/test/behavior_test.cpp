@@ -8,7 +8,7 @@ TEST_F(PelicanTest, TestRoleCoherence) {
 
 }
 
-// TODO: not working for some reason; data not sent if no simulation is run?
+// FIXME: not working for some reason; data not sent if no simulation is run?
 // TEST_F(PelicanTest, TestPositionPublisher) {
 //     this->PositionPublisherTester();
 //
