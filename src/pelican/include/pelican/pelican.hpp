@@ -151,7 +151,7 @@ class Pelican : public rclcpp::Node {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
         };
 
-        std::string leader_election_topic_ {"/fleet/leader_selection"};
+        std::string leader_election_topic_ {"/fleet/leader_election"};
         rclcpp::Subscription<comms::msg::Datapad>::SharedPtr sub_to_leader_election_topic_;
         rclcpp::Publisher<comms::msg::Datapad>::SharedPtr pub_to_leader_election_topic_;
 
@@ -179,7 +179,7 @@ class Pelican : public rclcpp::Node {
 
         rclcpp::TimerBase::SharedPtr hb_transmission_timer_;
         rclcpp::TimerBase::SharedPtr election_timer_;
-        rclcpp::TimerBase::SharedPtr voting_timer;
+        rclcpp::TimerBase::SharedPtr voting_timer_;
 
         // default memory ordering: std::memory_order_seq_cst -->
         // it guarantees sequential consistency (total global ordering) between all atomic

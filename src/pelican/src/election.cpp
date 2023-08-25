@@ -200,10 +200,10 @@ void Pelican::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     // Votes received are supposedly from followers, so if no more votes come within a time frame,
     // the elections is finished
     if (this->getRole() == candidate) {
-        if (this->voting_timer != nullptr) { // Make the timer restart
-            this->voting_timer->reset();
+        if (this->voting_timer_ != nullptr) { // Make the timer restart
+            this->voting_timer_->reset();
         } else {
-            this->voting_timer = this->create_wall_timer(
+            this->voting_timer_ = this->create_wall_timer(
                 this->voting_max_time_, std::bind(&Pelican::setVotingCompleted, this),
                 this->reentrant_group_
             );

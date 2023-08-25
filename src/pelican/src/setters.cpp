@@ -28,7 +28,7 @@ void Pelican::setRole(possible_roles r) {
 }
 
 void Pelican::setElectionCompleted() {
-    this->voting_timer->cancel();
+    this->voting_timer_->cancel();
     std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
     this->election_completed_ = true;
 }

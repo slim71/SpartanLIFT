@@ -36,10 +36,6 @@ Pelican::Pelican() : Node("Pelican") {
 }
 
 Pelican::~Pelican() {
-    // TODO: Check for resource leaks: Make sure that you are releasing all resources (memory,
-    //  publishers, subscribers, timers, etc.) correctly when shutting down the node.
-    //  If there are any resource leaks, it can lead to invalid contexts or other errors.
-
     this->logDebug("Destructor for agent {}", this->getID());
 
     // Cancel all timers; no problem arises if they're not initialized
@@ -47,6 +43,34 @@ Pelican::~Pelican() {
 
     this->logDebug("Trying to kill the thread");
     this->stopBallotThread();
+
+    // Cancel active timers
+    this->cancelTimer(this->hb_transmission_timer_);
+    this->cancelTimer(this->election_timer_);
+    this->cancelTimer(this->voting_timer_);
+
+    // Unsubscribe from topics
+    this->sub_to_leader_election_topic_.reset();
+    this->sub_to_local_pos_topic_.reset();
+    this->sub_to_heartbeat_topic_.reset();
+    this->sub_to_request_vote_rpc_topic_.reset();
+
+    // Release mutexes
+    std::lock_guard<std::mutex> lock_hbs(this->hbs_mutex_);
+    std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
+    std::lock_guard<std::mutex> lock_election_completed(this->election_completed_mutex_);
+    std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
+    std::lock_guard<std::mutex> lock_candidate(this->candidate_mutex_);
+    std::lock_guard<std::mutex> lock_external_leader(this->external_leader_mutex_);
+    std::lock_guard<std::mutex> lock_leader(this->leader_mutex_);
+    std::lock_guard<std::mutex> lock_terminated(this->terminated_mutex_);
+
+    // Clear shared resources
+    this->received_hbs_.clear();
+    this->received_votes_.clear();
+
+    // Reset shared pointers
+    this->instance_.reset();
 }
 
 void Pelican::parseModel() {
