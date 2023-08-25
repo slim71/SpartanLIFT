@@ -65,7 +65,7 @@ void PelicanTest::HeartbeatPublisherTester() {
 void PelicanTest::DatapadPublisherTester() {
 
     this->data_sub = this->node->create_subscription<comms::msg::Datapad>(
-        "/fleet/leader_selection", this->standard_qos_, 
+        "/fleet/leader_election", this->standard_qos_, 
         [this](const comms::msg::Datapad::SharedPtr msg) { 
             std::lock_guard<std::mutex> lock(this->data_ok_mutex);
             this->data_ok = true; 
