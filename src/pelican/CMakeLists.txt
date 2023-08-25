@@ -41,6 +41,7 @@ set(TEST_SOURCES
     test/fixtures.cpp
     test/getters_test.cpp
     test/smoke.cpp
+    test/behavior_test.cpp
 )
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")

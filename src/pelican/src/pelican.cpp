@@ -133,8 +133,7 @@ void Pelican::prepareCommonCallbacks() { // for followers and candidates
         );
     }
 
-    // not for leaders --> all agents, to avoid multiple leaders (this should not happen, since Raft
-    // guarantees safety)
+    // all agents, to avoid multiple leaders (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {
         this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
             this->heartbeat_topic_, this->standard_qos_,
