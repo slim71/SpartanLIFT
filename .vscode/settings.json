@@ -132,5 +132,7 @@
     },
 
     "clang-format.executable": "/usr/bin/clang-format-17",
-    "clang-format.style": "file:/home/slim71/Documents/git/SpartanLIFT/.vscode/.clang-format"
+    "clang-format.style": "file:/home/slim71/Documents/git/SpartanLIFT/.vscode/.clang-format",
+    "C_Cpp.default.cppStandard": "c++14",
+    "C_Cpp.default.cStandard": "c17"
 }

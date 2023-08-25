@@ -19,6 +19,7 @@ Pelican::Pelican() : Node("Pelican") {
     // with itself (thanks to mutexes)
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
+    this->local_pos_topic_ = "/fmu/out/"s + std::to_string(this->getID()) + "vehicle_local_position"s;
     // Subscriber, listening for VehicleLocalPosition messages
     // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module
     // was started. Needed by every type of agent and never canceled
