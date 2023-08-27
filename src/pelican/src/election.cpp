@@ -1,4 +1,5 @@
 #include "pelican.hpp"
+#include "logger.hpp"
 
 void Pelican::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
@@ -6,7 +7,7 @@ void Pelican::vote(int id_to_vote, double candidate_mass) const {
         return;
     }
 
-    this->logInfo("Voting: {}", id_to_vote);
+    this->logger_.logInfo("Voting: {}", id_to_vote);
 
     auto msg = comms::msg::Datapad();
     msg.term_id = this->getCurrentTerm();
@@ -23,7 +24,7 @@ void Pelican::requestVote() {
         return;
     }
 
-    this->logDebug("Requesting votes to other agents...");
+    this->logger_.logDebug("Requesting votes to other agents...");
 
     this->pub_to_request_vote_rpc_topic_ = this->create_publisher<comms::msg::RequestVoteRPC>(
         this->request_vote_rpc_topic_, this->standard_qos_
@@ -49,9 +50,9 @@ void Pelican::leaderElection() {
             }
         );
 
-        this->logDebug("Logging recorded votes..");
+        this->logger_.logDebug("Logging recorded votes..");
         for (const comms::msg::Datapad::SharedPtr& recvote : this->received_votes_) {
-            this->logDebug(
+            this->logger_.logDebug(
                 "agent {} voted for {} (mass {}) during term {} ", recvote->voter_id,
                 recvote->proposed_leader, recvote->candidate_mass, recvote->term_id
             );
@@ -88,9 +89,9 @@ void Pelican::leaderElection() {
             return a.total < b.total;
         });
 
-        this->logDebug("Logging clusters..");
+        this->logger_.logDebug("Logging clusters..");
         for (const vote_count& canvote : ballot) {
-            this->logDebug(
+            this->logger_.logDebug(
                 "Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total
             );
         };
@@ -99,7 +100,7 @@ void Pelican::leaderElection() {
             std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
                 return v.candidate_id == this->getID();
             });
-        this->logDebug(
+        this->logger_.logDebug(
             "cluster for this node: candidate_id={} total={}",
             (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total
         );
@@ -109,12 +110,12 @@ void Pelican::leaderElection() {
             // If cluster_for_this_node is the last element of the ballot vector, either this
             // candidate has won the election or there's a tie
             if ((*cluster_for_this_node).total == ballot.back().total) {
-                this->logDebug("Victory or not?");
+                this->logger_.logDebug("Victory or not?");
 
                 if ((ballot.size() == 1) ||
                     (*cluster_for_this_node).total !=
                         (ballot.end()[-2]).total) { // this candidate has won
-                    this->logDebug("I've won!");
+                    this->logger_.logDebug("I've won!");
                     // I've been chosen!
                     this->setElectionCompleted();
                     this->setLeader(this->getID());
@@ -122,7 +123,7 @@ void Pelican::leaderElection() {
                     return;
                 }
 
-                this->logDebug("Tie or timeout");
+                this->logger_.logDebug("Tie or timeout");
             }
         }
         // Otherwise, let the winning candidate send its heartbeat as leader confirmation
@@ -167,7 +168,7 @@ bool Pelican::checkForExternalLeader() {
         return true;
     } else {
         // reject external leader and continue as no heartbeat arrived
-        this->logDebug("Most recent heartbeat has old term");
+        this->logger_.logDebug("Most recent heartbeat has old term");
         this->clearElectionStatus();
         return false;
     }
@@ -188,7 +189,7 @@ void Pelican::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
     std::cout << "\n\n";
 
-    this->logDebug(
+    this->logger_.logDebug(
         "Received vote| agent {} voted for {} (mass {}) during term {} ", msg->voter_id,
         msg->proposed_leader, msg->candidate_mass, msg->term_id
     );
@@ -220,11 +221,11 @@ void Pelican::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
     while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
            !this->checkIsTerminated()) {
-        this->logDebug("Ballot checking...");
+        this->logger_.logDebug("Ballot checking...");
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    this->logInfo("Ballot finished");
+    this->logger_.logInfo("Ballot finished");
 
     // Notify the main thread to stop waiting
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same

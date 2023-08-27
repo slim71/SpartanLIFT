@@ -29,13 +29,14 @@ set(MAIN
     src/main.cpp)
 
 set(SOURCES
+    src/types.cpp
+    src/logger.cpp
     src/roles.cpp 
     src/heartbeat.cpp 
     src/election.cpp
     src/checkers.cpp
     src/getters.cpp
     src/setters.cpp
-    src/types.cpp
 )
 
 set(TEST_SOURCES

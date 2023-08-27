@@ -1,10 +1,11 @@
 #include "pelican.hpp"
 #include "pugixml.hpp"
+#include "logger.hpp"
 
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
 
-Pelican::Pelican() : Node("Pelican") {
+Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -30,19 +31,21 @@ Pelican::Pelican() : Node("Pelican") {
 
     this->parseModel();
 
+    this->logger_.setID(this->getID());
+
     // Log parameters values
-    this->logInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
+    this->logger_.logInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
 
     this->becomeFollower();
 }
 
 Pelican::~Pelican() {
-    this->logDebug("Destructor for agent {}", this->getID());
+    this->logger_.logDebug("Destructor for agent {}", this->getID());
 
     // Cancel all timers; no problem arises if they're not initialized
     this->hb_transmission_timer_->cancel();
 
-    this->logDebug("Trying to kill the thread");
+    this->logger_.logDebug("Trying to kill the thread");
     this->stopBallotThread();
 
     // Cancel active timers
@@ -75,7 +78,7 @@ Pelican::~Pelican() {
 }
 
 void Pelican::parseModel() {
-    this->logDebug("Trying to load model {}", this->getModel());
+    this->logger_.logDebug("Trying to load model {}", this->getModel());
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
 
@@ -88,7 +91,7 @@ void Pelican::parseModel() {
             }
         }
     } else {
-        this->logError(
+        this->logger_.logError(
             "Model file {} could not be loaded! Error description: {}", this->getModel(),
             result.description()
         );

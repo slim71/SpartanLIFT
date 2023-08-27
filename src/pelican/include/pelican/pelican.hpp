@@ -5,7 +5,6 @@
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
 #include <chrono>
-#include <fmt/core.h>
 #include <iostream>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <queue>
@@ -14,6 +13,7 @@
 #include <signal.h>
 #include <string>
 #include "types.hpp"
+#include "logger.hpp"
 
 using std::literals::string_literals::operator""s;
 
@@ -40,11 +40,9 @@ class Pelican : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
+        LoggerModule logger_;
+
     private: // Member functions
-        template<typename... Args> void logInfo(std::string s, Args... args) const;
-        template<typename... Args> void logError(std::string s, Args... args) const;
-        template<typename... Args> void logWarning(std::string s, Args... args) const;
-        template<typename... Args> void logDebug(std::string s, Args... args) const;
         template<typename T> void resetSharedPointer(std::shared_ptr<T>& subscription);
 
         void parseModel();
@@ -213,7 +211,6 @@ class Pelican : public rclcpp::Node {
 };
 
 // Including templates definitions
-#include "logger.tpp"
 #include "templates.tpp"
 
 #endif
