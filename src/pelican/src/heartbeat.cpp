@@ -1,7 +1,8 @@
 #include "pelican.hpp"
+#include "logger.hpp"
 
 void Pelican::sendHeartbeat() const {
-    this->logInfo("Sending heartbeat");
+    this->logger_.logInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->getCurrentTerm();
@@ -11,7 +12,7 @@ void Pelican::sendHeartbeat() const {
     if (this->pub_to_heartbeat_topic_) {
         this->pub_to_heartbeat_topic_->publish(hb);
     } else {
-        this->logError("Publisher to heartbeat topic is not defined!");
+        this->logger_.logError("Publisher to heartbeat topic is not defined!");
     }
 }
 
@@ -22,7 +23,7 @@ void Pelican::stopHeartbeat() {
 void Pelican::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logWarning(
+        this->logger_.logWarning(
             "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id,
             this->getCurrentTerm()
         );
@@ -34,10 +35,10 @@ void Pelican::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // For any node; this should not apply to leaders
     this->setElectionStatus(msg.leader_id);
 
-    this->logDebug("Resetting election_timer_...");
+    this->logger_.logDebug("Resetting election_timer_...");
     this->resetTimer(this->election_timer_
     ); // Reset the election_timer_, used to be sure there's a leader, to election_timeout
-    this->logDebug(
+    this->logger_.logDebug(
         "After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count() / 10
     );
 
@@ -51,7 +52,7 @@ void Pelican::storeHeartbeat(const comms::msg::Heartbeat msg) {
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
 
-    this->logInfo("Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id);
+    this->logger_.logInfo("Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id);
 
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
@@ -64,7 +65,7 @@ void Pelican::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (this->getRole() == leader) { // Switch back to follower!
         // This should never be needed, since Raft guarantees safety
-        this->logWarning("As a leader, I've received a heartbeat from some other leader agent");
+        this->logger_.logWarning("As a leader, I've received a heartbeat from some other leader agent");
         this->becomeFollower();
     }
 }

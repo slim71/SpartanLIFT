@@ -1,8 +1,9 @@
 #include "pelican.hpp"
+#include "logger.hpp"
 
 void Pelican::becomeLeader() {
     this->setRole(leader);
-    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->flushHeartbeats();
 
     // Unsubscribe from topics
@@ -24,7 +25,7 @@ void Pelican::becomeLeader() {
 
 void Pelican::becomeFollower() {
     this->setRole(follower);
-    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     this->setRandomElectionTimeout();
 
@@ -38,7 +39,7 @@ void Pelican::becomeFollower() {
         [this]() {
             this->cancelTimer(this->election_timer_);
             if (this->getRole() == follower) {
-                this->logWarning("No heartbeat received within the 'election_timeout' window; "
+                this->logger_.logWarning("No heartbeat received within the 'election_timeout' window; "
                                  "switching to candidate...");
                 this->becomeCandidate(); // transition to Candidate state
             }
@@ -49,7 +50,7 @@ void Pelican::becomeFollower() {
 
 void Pelican::becomeCandidate() {
     this->setRole(candidate);
-    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     this->cancelTimer(this->election_timer_);
     this->resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
@@ -70,11 +71,11 @@ void Pelican::becomeCandidate() {
 
         this->flushVotes();
 
-        this->logDebug("Going to sleep for {} ms...", this->getBallotWaitTime().count());
+        this->logger_.logDebug("Going to sleep for {} ms...", this->getBallotWaitTime().count());
         std::this_thread::sleep_for(this->getBallotWaitTime());
 
         this->increaseCurrentTerm();
-        this->logInfo("New voting round for term {}", this->getCurrentTerm());
+        this->logger_.logInfo("New voting round for term {}", this->getCurrentTerm());
 
         this->vote(this->getID(), this->getMass());
         this->requestVote();
@@ -87,17 +88,17 @@ void Pelican::becomeCandidate() {
         this->cv.wait(lock, [this]() {
             return (this->checkVotingCompleted() || this->checkForExternalLeader());
         });
-        this->logDebug("Main thread free from ballot lock");
+        this->logger_.logDebug("Main thread free from ballot lock");
 
         if (this->checkForExternalLeader()) {
-            this->logInfo("External leader elected");
+            this->logger_.logInfo("External leader elected");
             this->setElectionCompleted();
             this->becomeFollower();
             continue; // or break, should be the same since the condition is set
         }
 
         if (this->checkVotingCompleted()) {
-            this->logInfo(
+            this->logger_.logInfo(
                 "Voting completed for term {}. Checking if I'm the winner...",
                 this->getCurrentTerm()
             );
@@ -110,16 +111,16 @@ void Pelican::becomeCandidate() {
 }
 
 bool Pelican::isLeader() const {
-    this->logDebug("Agent is leader? {}", this->getRole() == leader);
+    this->logger_.logDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
 }
 
 bool Pelican::isFollower() const {
-    this->logDebug("Agent is follower? {}", this->getRole() == follower);
+    this->logger_.logDebug("Agent is follower? {}", this->getRole() == follower);
     return (this->getRole() == follower);
 }
 
 bool Pelican::isCandidate() const {
-    this->logDebug("Agent is candidate? {}", this->getRole() == candidate);
+    this->logger_.logDebug("Agent is candidate? {}", this->getRole() == candidate);
     return (this->getRole() == candidate);
 }
