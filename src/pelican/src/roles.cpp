@@ -1,8 +1,8 @@
 #include "pelican.hpp"
 
 void Pelican::becomeLeader() {
-    this->logInfo("Becoming Leader");
     this->setRole(leader);
+    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->flushHeartbeats();
 
     // Unsubscribe from topics
@@ -23,8 +23,8 @@ void Pelican::becomeLeader() {
 }
 
 void Pelican::becomeFollower() {
-    this->logInfo("Becoming Follower");
     this->setRole(follower);
+    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     this->setRandomElectionTimeout();
 
@@ -48,8 +48,8 @@ void Pelican::becomeFollower() {
 }
 
 void Pelican::becomeCandidate() {
-    this->logInfo("Becoming Candidate");
     this->setRole(candidate);
+    this->logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     this->cancelTimer(this->election_timer_);
     this->resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic

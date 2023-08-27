@@ -50,6 +50,6 @@ TEST_F(PelicanTest, TestGetMaxHbs) {
 TEST_F(PelicanTest, TestGetRole) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << "Role: " << this->node.get()->getRole() << std::endl;
+    std::cout << "Role: " << roles_to_string(this->node.get()->getRole()) << " (" << this->node.get()->getRole() << ")" << std::endl;
     ASSERT_EQ(typeid(this->node.get()->getRole()), typeid(possible_roles::tbd));
 }

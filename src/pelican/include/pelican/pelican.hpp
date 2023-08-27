@@ -13,22 +13,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <signal.h>
 #include <string>
+#include "types.hpp"
 
 using std::literals::string_literals::operator""s;
-
-// TODO: try the Enum Macro Trick
-enum possible_roles { tbd, candidate, follower, leader };
-
-struct vote_count {
-        int candidate_id;
-        int total;
-};
-
-struct heartbeat {
-        int term;
-        int leader;
-        rclcpp::Time timestamp;
-};
 
 // TODO: make more classes and use a "outer class-container" for the agent?
 class Pelican : public rclcpp::Node {

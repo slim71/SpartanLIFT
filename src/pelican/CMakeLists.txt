@@ -35,6 +35,7 @@ set(SOURCES
     src/checkers.cpp
     src/getters.cpp
     src/setters.cpp
+    src/types.cpp
 )
 
 set(TEST_SOURCES
