@@ -19,7 +19,7 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
     // with itself (thanks to mutexes)
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
-    this->hb_core_.initSetup();
+    this->hb_core_.initSetup(&(this->logger_));
 
     this->local_pos_topic_ = "/fmu/out/agent"s + std::to_string(this->getID()) + "/vehicle_local_position"s;
     // Subscriber, listening for VehicleLocalPosition messages

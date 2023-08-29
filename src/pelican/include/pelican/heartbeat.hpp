@@ -6,6 +6,7 @@
 #include "comms/msg/heartbeat.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
+#include "logger.hpp"
 
 class Pelican;
 
@@ -14,7 +15,7 @@ class HeartbeatModule {
         explicit HeartbeatModule(Pelican*);
         ~HeartbeatModule();
 
-        void initSetup(); // TODO: add reference to the logger module
+        void initSetup(LoggerModule*);
         void setupPublisher();
         void setTransmissionTimer();
         void resetSubscription();
@@ -35,6 +36,7 @@ class HeartbeatModule {
 
     private:
         Pelican* node_;
+        LoggerModule* logger_;
 
         int max_hbs_;
 
