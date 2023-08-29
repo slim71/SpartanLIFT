@@ -31,11 +31,14 @@ set(MAIN
 set(SOURCES
     src/types.cpp
     src/logger.cpp
+    src/utilities.cpp
+    src/pelican.cpp
     src/roles.cpp 
     src/heartbeat.cpp 
     src/election.cpp
     src/checkers.cpp
-    src/getters.cpp
+    src/pelican_getters.cpp
+    src/heartbeat_getters.cpp
     src/setters.cpp
 )
 

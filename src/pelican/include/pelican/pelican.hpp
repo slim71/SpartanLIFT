@@ -2,11 +2,10 @@
 #define _PELICAN_HPP_
 
 #include "comms/msg/datapad.hpp"
-#include "comms/msg/heartbeat.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
+#include "px4_msgs/msg/vehicle_local_position.hpp"
 #include <chrono>
 #include <iostream>
-#include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <queue>
 #include <random>
 #include <rclcpp/rclcpp.hpp>
@@ -14,10 +13,10 @@
 #include <string>
 #include "types.hpp"
 #include "logger.hpp"
+#include "heartbeat.hpp"
 
 using std::literals::string_literals::operator""s;
 
-// TODO: make more classes and use a "outer class-container" for the agent?
 class Pelican : public rclcpp::Node {
     public:
         explicit Pelican();
@@ -28,30 +27,37 @@ class Pelican : public rclcpp::Node {
         double getMass() const;
         possible_roles getRole() const;
         int getCurrentTerm() const;
-        int getNumberOfHbs() const;
-        heartbeat getLastHb() const;
-        int getMaxHbs() const;
-
-        bool isLeader() const;
-        bool isFollower() const;
-        bool isCandidate() const;
+        rclcpp::SubscriptionOptions getReentrantOptions() const;
+        rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
 
         static void signalHandler(int signum);
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
+        bool isLeader() const;
+        bool isFollower() const;
+        bool isCandidate() const;
+
+        void resetElectionTimer();
+
+        void commenceFollowerOperations();
+        void setElectionStatus(int id);
+
+        // TODO: move to private
         LoggerModule logger_;
+        HeartbeatModule hb_core_;
 
     private: // Member functions
-        template<typename T> void resetSharedPointer(std::shared_ptr<T>& subscription);
-
-        void parseModel();
-
-        void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const;
 
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
+
+        void setRole(possible_roles r);
+
+        void parseModel();
+
+        void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const;
 
         void requestVote();
         void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
@@ -75,17 +81,11 @@ class Pelican : public rclcpp::Node {
         void setVotingCompleted();
         void unsetVotingCompleted();
 
-        void sendHeartbeat() const;
-        void stopHeartbeat();
-        void storeHeartbeat(const comms::msg::Heartbeat msg);
-        void flushHeartbeats();
-
         void ballotCheckingThread();
         void stopBallotThread();
         void startBallotThread();
 
         bool checkForExternalLeader();
-        void setElectionStatus(int id);
         void clearElectionStatus();
 
         bool checkExternalLeaderElected() const;
@@ -95,15 +95,12 @@ class Pelican : public rclcpp::Node {
         void setRandomElectionTimeout();
         void setRandomBallotWaittime();
         std::chrono::milliseconds getBallotWaitTime() const;
-        void cancelTimer(rclcpp::TimerBase::SharedPtr& t);
-        void resetTimer(rclcpp::TimerBase::SharedPtr& t);
 
         bool checkLeaderElected() const;
         void setLeaderElected();
         void unsetLeaderElected();
 
         void setLeader(int id = -1);
-        void setRole(possible_roles r);
         void setMass(double m);
         void increaseCurrentTerm();
 
@@ -117,13 +114,11 @@ class Pelican : public rclcpp::Node {
         std::string model_;
         double mass_ {0.0};
 
-        possible_roles role_ {tbd};
         int leader_id_ {0};
 
+        possible_roles role_ {tbd};
+
         int current_term_ {0};
-
-        int max_hbs_ {100}; // heartbeat period is 100ms, so this keeps a log of 10s
-
         std::thread ballot_thread_;
         static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
 
@@ -139,6 +134,9 @@ class Pelican : public rclcpp::Node {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
         };
 
+        rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr reentrant_group_;
+
         std::string leader_election_topic_ {"/fleet/leader_election"};
         rclcpp::Subscription<comms::msg::Datapad>::SharedPtr sub_to_leader_election_topic_;
         rclcpp::Publisher<comms::msg::Datapad>::SharedPtr pub_to_leader_election_topic_;
@@ -147,16 +145,9 @@ class Pelican : public rclcpp::Node {
         rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
             sub_to_local_pos_topic_;
 
-        std::string heartbeat_topic_ {"/fleet/heartbeat"};
-        rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr sub_to_heartbeat_topic_;
-        rclcpp::Publisher<comms::msg::Heartbeat>::SharedPtr pub_to_heartbeat_topic_;
-
         std::string request_vote_rpc_topic_ {"/fleet/request_vote_rpc"};
         rclcpp::Publisher<comms::msg::RequestVoteRPC>::SharedPtr pub_to_request_vote_rpc_topic_;
         rclcpp::Subscription<comms::msg::RequestVoteRPC>::SharedPtr sub_to_request_vote_rpc_topic_;
-
-        rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
-        rclcpp::CallbackGroup::SharedPtr reentrant_group_;
 
         std::mt19937 random_engine_ {std::random_device {}()
         }; // mersenne_twister_engine seeded with random_device()
@@ -164,7 +155,6 @@ class Pelican : public rclcpp::Node {
             150, 300
         }; // inclusive; intended as milliseconds
 
-        rclcpp::TimerBase::SharedPtr hb_transmission_timer_;
         rclcpp::TimerBase::SharedPtr election_timer_;
         rclcpp::TimerBase::SharedPtr voting_timer_;
 
@@ -181,7 +171,6 @@ class Pelican : public rclcpp::Node {
 
         std::condition_variable cv;
 
-        mutable std::mutex hbs_mutex_;                // to use with received_hbs
         mutable std::mutex votes_mutex_;              // to use with received_votes_
         mutable std::mutex election_completed_mutex_; // to use with election_completed_
         mutable std::mutex voting_completed_mutex_;   // to use with voting_completed_
@@ -198,15 +187,10 @@ class Pelican : public rclcpp::Node {
         // "election_timeout_" is thes same time window used by a follower to decide whether or not
         // to candidate as leader. using another variable only for clarity purposes
         std::chrono::milliseconds new_ballot_waittime_;
-        std::chrono::milliseconds heartbeat_period_ {100
-        }; // not random, it has to be lower than the election_timeout_
         std::chrono::milliseconds voting_max_time_ {100
         }; // tried using the same as it would be the period of a functioning leader's heartbeat;
            // works for now
 
-        // Wondered if using a std::deque would be better, but in the end I don't expect many items
-        // here
-        std::vector<heartbeat> received_hbs_;
         std::vector<comms::msg::Datapad::SharedPtr> received_votes_;
 };
 

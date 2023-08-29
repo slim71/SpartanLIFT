@@ -156,13 +156,13 @@ bool Pelican::checkForExternalLeader() {
         return false;
     }
 
-    if (this->getNumberOfHbs() == 0) {
+    if (this->hb_core_.getNumberOfHbs() == 0) {
         // Standard behavior: boolean is more important than the heartbeat
         // This is equal to "no heartbeat received YET, but external leader is there"
         return true;
     }
 
-    auto last_hb_received = this->getLastHb();
+    auto last_hb_received = this->hb_core_.getLastHb();
 
     if (last_hb_received.term >= this->getCurrentTerm()) {
         return true;
@@ -243,14 +243,10 @@ void Pelican::setElectionStatus(int id) {
     this->setLeader(id);
 }
 
-void Pelican::cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
-    if (timer) {
-        timer->cancel();
-    }
-}
-
-void Pelican::resetTimer(rclcpp::TimerBase::SharedPtr& timer) {
-    if (timer) {
-        timer->reset();
-    }
+void Pelican::resetElectionTimer() {
+    // Reset the election_timer_, used to be sure there's a leader, to election_timeout
+    resetTimer(this->election_timer_); 
+    this->logger_.logDebug(
+        "After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count() / 10
+    );
 }

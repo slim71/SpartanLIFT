@@ -1,11 +1,10 @@
 #include "pelican.hpp"
 #include "pugixml.hpp"
-#include "logger.hpp"
 
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
 
-Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()) {
+Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -19,6 +18,8 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()) {
     // parallel to each other Almost every callback can be executed in parallel to one another or
     // with itself (thanks to mutexes)
     this->reentrant_opt_.callback_group = this->reentrant_group_;
+
+    this->hb_core_.initSetup();
 
     this->local_pos_topic_ = "/fmu/out/agent"s + std::to_string(this->getID()) + "/vehicle_local_position"s;
     // Subscriber, listening for VehicleLocalPosition messages
@@ -42,25 +43,19 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()) {
 Pelican::~Pelican() {
     this->logger_.logDebug("Destructor for agent {}", this->getID());
 
-    // Cancel all timers; no problem arises if they're not initialized
-    this->hb_transmission_timer_->cancel();
-
-    this->logger_.logDebug("Trying to kill the thread");
+    this->logger_.logDebug("Trying to kill the ballot thread");
     this->stopBallotThread();
 
     // Cancel active timers
-    this->cancelTimer(this->hb_transmission_timer_);
-    this->cancelTimer(this->election_timer_);
-    this->cancelTimer(this->voting_timer_);
+    cancelTimer(this->election_timer_);
+    cancelTimer(this->voting_timer_);
 
     // Unsubscribe from topics
     this->sub_to_leader_election_topic_.reset();
     this->sub_to_local_pos_topic_.reset();
-    this->sub_to_heartbeat_topic_.reset();
     this->sub_to_request_vote_rpc_topic_.reset();
 
     // Release mutexes
-    std::lock_guard<std::mutex> lock_hbs(this->hbs_mutex_);
     std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
     std::lock_guard<std::mutex> lock_election_completed(this->election_completed_mutex_);
     std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
@@ -70,7 +65,6 @@ Pelican::~Pelican() {
     std::lock_guard<std::mutex> lock_terminated(this->terminated_mutex_);
 
     // Clear shared resources
-    this->received_hbs_.clear();
     this->received_votes_.clear();
 
     // Reset shared pointers
@@ -161,18 +155,6 @@ void Pelican::prepareCommonCallbacks() { // for followers and candidates
         );
     }
 
-    // all agents, to avoid multiple leaders (this should not happen, since Raft guarantees safety)
-    if (!this->sub_to_heartbeat_topic_) {
-        this->sub_to_heartbeat_topic_ = this->create_subscription<comms::msg::Heartbeat>(
-            this->heartbeat_topic_, this->standard_qos_,
-            std::bind(&Pelican::storeHeartbeat, this, std::placeholders::_1),
-            this->reentrant_opt_
-        );
-    }
+    
 
-    /******************* Publishers ****************************/
-    this->resetSharedPointer(this->pub_to_heartbeat_topic_);
-
-    /*********************** Timers ****************************/
-    this->cancelTimer(this->hb_transmission_timer_);
 }
