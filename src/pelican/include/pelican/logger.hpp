@@ -10,8 +10,8 @@ class Pelican;
 
 class LoggerModule {
     public:
-        LoggerModule(rclcpp::Logger);
-        LoggerModule(rclcpp::Logger, int);
+        explicit LoggerModule(rclcpp::Logger);
+        explicit LoggerModule(rclcpp::Logger, int);
 
         template<typename... Args> void logInfo(std::string s, Args... args) const;
         template<typename... Args> void logError(std::string s, Args... args) const;

@@ -1,3 +1,6 @@
+#ifndef _TYPES_HPP_
+#define _TYPES_HPP_
+
 #include <rclcpp/rclcpp.hpp>
 
 struct vote_count {
@@ -23,3 +26,5 @@ enum possible_roles { ROLES(F) NumPossibleRoles };
 
 std::string roles_to_string(possible_roles);
 possible_roles string_to_roles(const std::string&);
+
+#endif
