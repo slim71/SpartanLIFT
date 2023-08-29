@@ -1,26 +1,24 @@
 #include "pelican.hpp"
 #include "logger.hpp"
+#include "types.hpp"
+#include "utilities.hpp"
 
 void Pelican::becomeLeader() {
     this->setRole(leader);
     this->logger_.logInfo("Becoming {}", roles_to_string(this->getRole()));
-    this->flushHeartbeats();
+    this->hb_core_.flushStorage();
 
     // Unsubscribe from topics
-    this->resetSharedPointer(this->sub_to_heartbeat_topic_);
-    // This is not needed by leaders, since Raft guarantees safety and there's for an additional
-    // check to avoid multiple leaders
-    this->resetSharedPointer(this->sub_to_leader_election_topic_);
-    this->resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
+    this->hb_core_.resetSubscription();
+    // This is not needed by leaders, since Raft guarantees safety;
+    // it's just an additional check to avoid multiple leaders
+    resetSharedPointer(this->sub_to_leader_election_topic_); // TODO: define a public access
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // TODO: define a public access
 
-    this->pub_to_heartbeat_topic_ =
-        this->create_publisher<comms::msg::Heartbeat>(this->heartbeat_topic_, this->standard_qos_);
+    this->hb_core_.setupPublisher();
 
-    this->sendHeartbeat(); // To promptly notify all agents about the new leader
-    this->hb_transmission_timer_ = this->create_wall_timer(
-        this->heartbeat_period_, std::bind(&Pelican::sendHeartbeat, this),
-        this->reentrant_group_
-    );
+    this->hb_core_.sendNow(); // To promptly notify all agents about the new leader
+    this->hb_core_.setTransmissionTimer();
 }
 
 void Pelican::becomeFollower() {
@@ -37,7 +35,7 @@ void Pelican::becomeFollower() {
     this->election_timer_ = this->create_wall_timer(
         this->election_timeout_,
         [this]() {
-            this->cancelTimer(this->election_timer_);
+            cancelTimer(this->election_timer_);
             if (this->getRole() == follower) {
                 this->logger_.logWarning("No heartbeat received within the 'election_timeout' window; "
                                  "switching to candidate...");
@@ -52,8 +50,8 @@ void Pelican::becomeCandidate() {
     this->setRole(candidate);
     this->logger_.logInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
-    this->cancelTimer(this->election_timer_);
-    this->resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
+    cancelTimer(this->election_timer_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
 
     this->clearElectionStatus();
     this->unsetVotingCompleted();
@@ -108,6 +106,10 @@ void Pelican::becomeCandidate() {
 
         // No other possible reasons to exit the condition_variable wait
     };
+}
+
+void Pelican::commenceFollowerOperations() {
+    this->becomeFollower();
 }
 
 bool Pelican::isLeader() const {

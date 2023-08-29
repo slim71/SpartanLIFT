@@ -28,17 +28,10 @@ std::chrono::milliseconds Pelican::getBallotWaitTime() const {
     return this->new_ballot_waittime_;
 }
 
-int Pelican::getNumberOfHbs() const {
-    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
-    return this->received_hbs_.size();
+rclcpp::SubscriptionOptions Pelican::getReentrantOptions() const {
+    return this->reentrant_opt_;
 }
 
-heartbeat Pelican::getLastHb() const {
-    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
-    return this->received_hbs_.back();
-}
-
-int Pelican::getMaxHbs() const {
-    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
-    return this->received_hbs_.size();
+rclcpp::CallbackGroup::SharedPtr Pelican::getReentrantGroup() const {
+    return this->reentrant_group_;
 }

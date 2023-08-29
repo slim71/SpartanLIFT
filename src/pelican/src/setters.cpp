@@ -1,4 +1,5 @@
 #include "pelican.hpp"
+#include "types.hpp"
 
 void Pelican::setLeaderElected() {
     std::lock_guard<std::mutex> lock(this->leader_mutex_);
