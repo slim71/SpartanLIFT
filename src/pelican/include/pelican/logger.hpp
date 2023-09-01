@@ -1,11 +1,11 @@
 #ifndef _LOGGER_HPP_
 #define _LOGGER_HPP_
 
-#include <string>
-#include <rclcpp/logger.hpp>
-#include <fmt/core.h>
-#include <rclcpp/rclcpp.hpp>
 #include "types.hpp"
+#include <fmt/core.h>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <string>
 
 class Pelican;
 

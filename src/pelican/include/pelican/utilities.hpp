@@ -1,9 +1,9 @@
 #ifndef _UTILITIES_HPP_
 #define _UTILITIES_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <iostream>
 #include "types.hpp"
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 void resetTimer(rclcpp::TimerBase::SharedPtr&);
 void cancelTimer(rclcpp::TimerBase::SharedPtr&);

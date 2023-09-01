@@ -16,8 +16,8 @@ struct heartbeat {
 
 /***************** Enum Macros / X-Macros ****************/
 // Macro "constructors" for type and string tables
-#define AS_BARE(a) a ,
-#define AS_STR(a) #a ,
+#define AS_BARE(a) a,
+#define AS_STR(a) #a,
 
 /************************ Modules ************************/
 // Table; _ for any substitution

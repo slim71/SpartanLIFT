@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-const char* modules_names[] = { MODULES(AS_STR) nullptr };
+const char* modules_names[] = {MODULES(AS_STR) nullptr};
 const char* roles_names[] = {ROLES(AS_STR) nullptr};
 
 std::string roles_to_string(possible_roles role) {
@@ -30,7 +30,6 @@ possible_modules string_to_modules(const std::string& s) {
 
     return m;
 }
-
 
 std::ostream& operator<<(std::ostream& os, const possible_modules& m) {
     os << modules_to_string(m);

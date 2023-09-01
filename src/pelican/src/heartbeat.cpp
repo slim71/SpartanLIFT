@@ -21,7 +21,7 @@ HeartbeatModule::~HeartbeatModule() {
 
 void HeartbeatModule::initSetup(LoggerModule* logger) {
     /******************* Subscribrers ****************************/
-    // Used by all kinds of agents to avoid multiple leaders 
+    // Used by all kinds of agents to avoid multiple leaders
     // (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {
         this->sub_to_heartbeat_topic_ = this->node_->create_subscription<comms::msg::Heartbeat>(
@@ -41,9 +41,10 @@ void HeartbeatModule::initSetup(LoggerModule* logger) {
 }
 
 void HeartbeatModule::setupPublisher() {
-    if(!this->pub_to_heartbeat_topic_) {
-        this->pub_to_heartbeat_topic_ =
-            this->node_->create_publisher<comms::msg::Heartbeat>(this->heartbeat_topic_, this->qos_);
+    if (!this->pub_to_heartbeat_topic_) {
+        this->pub_to_heartbeat_topic_ = this->node_->create_publisher<comms::msg::Heartbeat>(
+            this->heartbeat_topic_, this->qos_
+        );
     }
 }
 
@@ -119,8 +120,9 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
 
-    this->sendLogInfo("Received heartbeat from agent {} during term {}", 
-                    msg.leader_id, msg.term_id);
+    this->sendLogInfo(
+        "Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id
+    );
 
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
