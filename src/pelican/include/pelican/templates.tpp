@@ -5,5 +5,4 @@ template<typename T> void resetSharedPointer(std::shared_ptr<T>& ptr) {
     ptr.reset();
 }
 
-
 #endif

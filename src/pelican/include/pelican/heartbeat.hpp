@@ -1,12 +1,12 @@
 #ifndef _HEARTBEAT_HPP_
 #define _HEARTBEAT_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <iostream>
 #include "comms/msg/heartbeat.hpp"
+#include "logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
-#include "logger.hpp"
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
 
 class Pelican;
 
@@ -29,12 +29,11 @@ class HeartbeatModule {
         void sendNow();
 
     private: // Member functions
-
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
         template<typename... Args> void sendLogError(std::string, Args...) const;
-        
+
         void sendHeartbeat() const;
         void stopHeartbeat();
         void storeHeartbeat(const comms::msg::Heartbeat msg);
