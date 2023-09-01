@@ -64,10 +64,12 @@ void HeartbeatModule::setTransmissionTimer() {
 }
 
 void HeartbeatModule::sendNow() {
-    // One-off transmission allowed for special cases
+    // One-off transmission; allowed for special occasions
     this->logger_->logInfo("One-off heartbeat transmission", hb_module);
     this->sendHeartbeat();
 }
+
+/**************** Private member function *********************/
 
 void HeartbeatModule::sendHeartbeat() const {
     this->logger_->logInfo("Sending heartbeat", hb_module);
@@ -101,10 +103,10 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     // If it comes to this, the msg.term is at least equal to the node's current term
 
-    // For any node; this should not apply to leaders
+    // Executed by any node, but this should not apply to leaders
     this->node_->setElectionStatus(msg.leader_id);
 
-    this->logger_->logDebug("Resetting election_timer_...", hb_module);
+    this->logger_->logDebug("Resetting election_timer_", hb_module);
     this->node_->resetElectionTimer();
 
     // Keep heartbeat vector limited
@@ -130,7 +132,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     this->hbs_mutex_.unlock();
 
     if (this->node_->getRole() == leader) { // Switch back to follower!
-        // This should never be needed, since Raft guarantees safety
+        // !This should never be needed, since Raft guarantees safety!
         this->logger_->logWarning("As a leader, I've received a heartbeat from some other leader agent", hb_module);
         this->node_->commenceFollowerOperations();
     }
