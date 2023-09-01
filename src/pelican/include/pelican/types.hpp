@@ -44,5 +44,7 @@ enum possible_roles { ROLES(AS_BARE) NumPossibleRoles };
 
 std::string roles_to_string(possible_roles);
 possible_roles string_to_roles(const std::string&);
+std::ostream& operator<<(std::ostream&, const possible_modules&);
+std::ostream& operator<<(std::ostream&, const possible_roles&);
 
 #endif
