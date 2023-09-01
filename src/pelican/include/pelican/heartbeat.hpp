@@ -18,8 +18,8 @@ class HeartbeatModule {
         void initSetup(LoggerModule*);
         void setupPublisher();
         void setTransmissionTimer();
-        void resetSubscription();
 
+        void resetSubscription();
         void flushStorage();
 
         int getNumberOfHbs() const;
@@ -28,13 +28,13 @@ class HeartbeatModule {
 
         void sendNow();
 
-    private:
+    private: // Member functions
         void sendHeartbeat() const;
         void stopHeartbeat();
         void storeHeartbeat(const comms::msg::Heartbeat msg);
         void flushHeartbeats();
 
-    private:
+    private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
