@@ -5,7 +5,7 @@
 
 void Pelican::becomeLeader() {
     this->setRole(leader);
-    this->logger_.logInfo("Becoming {}", main_module, roles_to_string(this->getRole()));
+    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
     this->hb_core_.flushStorage();
 
     // Unsubscribe from topics
@@ -23,7 +23,7 @@ void Pelican::becomeLeader() {
 
 void Pelican::becomeFollower() {
     this->setRole(follower);
-    this->logger_.logInfo("Becoming {}", main_module, roles_to_string(this->getRole()));
+    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     this->setRandomElectionTimeout();
 
@@ -37,8 +37,8 @@ void Pelican::becomeFollower() {
         [this]() {
             cancelTimer(this->election_timer_);
             if (this->getRole() == follower) {
-                this->logger_.logWarning("No heartbeat received within the 'election_timeout' window; "
-                                 "switching to candidate...", main_module);
+                this->sendLogWarning("No heartbeat received within the 'election_timeout' window; "
+                                 "switching to candidate...");
                 this->becomeCandidate(); // transition to Candidate state
             }
         },
@@ -48,7 +48,7 @@ void Pelican::becomeFollower() {
 
 void Pelican::becomeCandidate() {
     this->setRole(candidate);
-    this->logger_.logInfo("Becoming {}", main_module, roles_to_string(this->getRole()));
+    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
     this->prepareCommonCallbacks();
     cancelTimer(this->election_timer_);
     resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
@@ -69,11 +69,11 @@ void Pelican::becomeCandidate() {
 
         this->flushVotes();
 
-        this->logger_.logDebug("Going to sleep for {} ms...", main_module, this->getBallotWaitTime().count());
+        this->sendLogDebug("Going to sleep for {} ms...", this->getBallotWaitTime().count());
         std::this_thread::sleep_for(this->getBallotWaitTime());
 
         this->increaseCurrentTerm();
-        this->logger_.logInfo("New voting round for term {}", main_module, this->getCurrentTerm());
+        this->sendLogInfo("New voting round for term {}", this->getCurrentTerm());
 
         this->vote(this->getID(), this->getMass());
         this->requestVote();
@@ -86,18 +86,18 @@ void Pelican::becomeCandidate() {
         this->cv.wait(lock, [this]() {
             return (this->checkVotingCompleted() || this->checkForExternalLeader());
         });
-        this->logger_.logDebug("Main thread free from ballot lock", main_module);
+        this->sendLogDebug("Main thread free from ballot lock");
 
         if (this->checkForExternalLeader()) {
-            this->logger_.logInfo("External leader elected", main_module);
+            this->sendLogInfo("External leader elected");
             this->setElectionCompleted();
             this->becomeFollower();
             continue; // or break, should be the same since the condition is set
         }
 
         if (this->checkVotingCompleted()) {
-            this->logger_.logInfo(
-                "Voting completed for term {}. Checking if I'm the winner...", main_module,
+            this->sendLogInfo(
+                "Voting completed for term {}. Checking if I'm the winner...",
                 this->getCurrentTerm()
             );
             this->leaderElection(
@@ -113,16 +113,16 @@ void Pelican::commenceFollowerOperations() {
 }
 
 bool Pelican::isLeader() const {
-    this->logger_.logDebug("Agent is leader? {}", main_module, this->getRole() == leader);
+    this->sendLogDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
 }
 
 bool Pelican::isFollower() const {
-    this->logger_.logDebug("Agent is follower? {}", main_module, this->getRole() == follower);
+    this->sendLogDebug("Agent is follower? {}", this->getRole() == follower);
     return (this->getRole() == follower);
 }
 
 bool Pelican::isCandidate() const {
-    this->logger_.logDebug("Agent is candidate? {}", main_module, this->getRole() == candidate);
+    this->sendLogDebug("Agent is candidate? {}", this->getRole() == candidate);
     return (this->getRole() == candidate);
 }

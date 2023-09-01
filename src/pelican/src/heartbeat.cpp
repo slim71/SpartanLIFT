@@ -65,14 +65,14 @@ void HeartbeatModule::setTransmissionTimer() {
 
 void HeartbeatModule::sendNow() {
     // One-off transmission; allowed for special occasions
-    this->logger_->logInfo("One-off heartbeat transmission", hb_module);
+    this->sendLogInfo("One-off heartbeat transmission");
     this->sendHeartbeat();
 }
 
 /**************** Private member function *********************/
 
 void HeartbeatModule::sendHeartbeat() const {
-    this->logger_->logInfo("Sending heartbeat", hb_module);
+    this->sendLogInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->node_->getCurrentTerm();
@@ -82,20 +82,20 @@ void HeartbeatModule::sendHeartbeat() const {
     if (this->pub_to_heartbeat_topic_) {
         this->pub_to_heartbeat_topic_->publish(hb);
     } else {
-        this->logger_->logError("Publisher to heartbeat topic is not defined!", hb_module);
+        this->sendLogError("Publisher to heartbeat topic is not defined!");
     }
 }
 
 void HeartbeatModule::stopHeartbeat() {
-    this->logger_->logInfo("Stopping heartbeat transmissions", hb_module);
+    this->sendLogInfo("Stopping heartbeat transmissions");
     cancelTimer(this->hb_transmission_timer_);
 }
 
 void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->node_->getCurrentTerm()) {
         // Ignore heartbeat
-        this->logger_->logWarning(
-            "Ignoring heartbeat received with previous term ID ({} vs {})", hb_module, msg.term_id,
+        this->sendLogWarning(
+            "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id,
             this->node_->getCurrentTerm()
         );
         return;
@@ -106,7 +106,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // Executed by any node, but this should not apply to leaders
     this->node_->setElectionStatus(msg.leader_id);
 
-    this->logger_->logDebug("Resetting election_timer_", hb_module);
+    this->sendLogDebug("Resetting election_timer_");
     this->node_->resetElectionTimer();
 
     // Keep heartbeat vector limited
@@ -119,7 +119,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
 
-    this->logger_->logInfo("Received heartbeat from agent {} during term {}", hb_module, 
+    this->sendLogInfo("Received heartbeat from agent {} during term {}", 
                     msg.leader_id, msg.term_id);
 
     this->hbs_mutex_.lock();
@@ -133,7 +133,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     if (this->node_->getRole() == leader) { // Switch back to follower!
         // !This should never be needed, since Raft guarantees safety!
-        this->logger_->logWarning("As a leader, I've received a heartbeat from some other leader agent", hb_module);
+        this->sendLogWarning("As a leader, I've received a heartbeat from some other leader agent");
         this->node_->commenceFollowerOperations();
     }
 }
