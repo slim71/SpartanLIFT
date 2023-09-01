@@ -5,6 +5,7 @@
 #include <rclcpp/logger.hpp>
 #include <fmt/core.h>
 #include <rclcpp/rclcpp.hpp>
+#include "types.hpp"
 
 class Pelican;
 
@@ -13,10 +14,10 @@ class LoggerModule {
         explicit LoggerModule(rclcpp::Logger);
         explicit LoggerModule(rclcpp::Logger, int);
 
-        template<typename... Args> void logInfo(std::string s, Args... args) const;
-        template<typename... Args> void logError(std::string s, Args... args) const;
-        template<typename... Args> void logWarning(std::string s, Args... args) const;
-        template<typename... Args> void logDebug(std::string s, Args... args) const;
+        template<typename... Args> void logInfo(std::string s, possible_modules m, Args... args) const;
+        template<typename... Args> void logError(std::string s, possible_modules m, Args... args) const;
+        template<typename... Args> void logWarning(std::string s, possible_modules m, Args... args) const;
+        template<typename... Args> void logDebug(std::string s, possible_modules m, Args... args) const;
 
         int getID() const;
         void setID(int);

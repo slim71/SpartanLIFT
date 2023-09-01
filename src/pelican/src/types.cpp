@@ -30,3 +30,14 @@ possible_modules string_to_modules(const std::string& s) {
 
     return m;
 }
+
+
+std::ostream& operator<<(std::ostream& os, const possible_modules& m) {
+    os << modules_to_string(m);
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const possible_roles& r) {
+    os << roles_to_string(r);
+    return os;
+}

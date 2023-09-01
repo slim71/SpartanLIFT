@@ -35,15 +35,15 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
     this->logger_.setID(this->getID());
 
     // Log parameters values
-    this->logger_.logInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
+    this->logger_.logInfo("Loaded model {} | Agent mass: {}", main_module, this->getModel(), this->getMass());
 
     this->becomeFollower();
 }
 
 Pelican::~Pelican() {
-    this->logger_.logDebug("Destructor for agent {}", this->getID());
+    this->logger_.logDebug("Destructor for agent {}", main_module, this->getID());
 
-    this->logger_.logDebug("Trying to kill the ballot thread");
+    this->logger_.logDebug("Trying to kill the ballot thread", main_module);
     this->stopBallotThread();
 
     // Cancel active timers
@@ -72,7 +72,7 @@ Pelican::~Pelican() {
 }
 
 void Pelican::parseModel() {
-    this->logger_.logDebug("Trying to load model {}", this->getModel());
+    this->logger_.logDebug("Trying to load model {}", main_module, this->getModel());
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
 
@@ -86,7 +86,7 @@ void Pelican::parseModel() {
         }
     } else {
         this->logger_.logError(
-            "Model file {} could not be loaded! Error description: {}", this->getModel(),
+            "Model file {} could not be loaded! Error description: {}", main_module, this->getModel(),
             result.description()
         );
         // Abort everything
