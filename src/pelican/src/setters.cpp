@@ -14,17 +14,17 @@ void Pelican::unsetLeaderElected() {
 void Pelican::setRandomBallotWaittime() {
     this->new_ballot_waittime_ =
         std::chrono::milliseconds {this->random_distribution_(this->random_engine_)};
-    this->logger_.logDebug("new_ballot_waittime_ set to {}", main_module, this->new_ballot_waittime_.count());
+    this->sendLogDebug("new_ballot_waittime_ set to {}", this->new_ballot_waittime_.count());
 }
 
 void Pelican::setRandomElectionTimeout() {
     this->election_timeout_ =
         std::chrono::milliseconds {this->random_distribution_(this->random_engine_)};
-    this->logger_.logDebug("election_timeout_ set to {}", main_module, this->election_timeout_.count());
+    this->sendLogDebug("election_timeout_ set to {}", this->election_timeout_.count());
 }
 
 void Pelican::setRole(possible_roles r) {
-    this->logger_.logDebug("Setting role to {}", main_module, static_cast<int>(r));
+    this->sendLogDebug("Setting role to {}", static_cast<int>(r));
     this->role_ = r;
 }
 

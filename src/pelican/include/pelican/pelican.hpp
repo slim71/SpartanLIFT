@@ -49,6 +49,11 @@ class Pelican : public rclcpp::Node {
 
     private: // Member functions
 
+        template<typename... Args> void sendLogInfo(std::string, Args...) const;
+        template<typename... Args> void sendLogDebug(std::string, Args...) const;
+        template<typename... Args> void sendLogWarning(std::string, Args...) const;
+        template<typename... Args> void sendLogError(std::string, Args...) const;
+
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
@@ -195,6 +200,6 @@ class Pelican : public rclcpp::Node {
 };
 
 // Including templates definitions
-#include "templates.tpp"
+#include "pelican_templates.tpp"
 
 #endif

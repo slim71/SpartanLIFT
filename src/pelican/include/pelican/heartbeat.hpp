@@ -29,6 +29,12 @@ class HeartbeatModule {
         void sendNow();
 
     private: // Member functions
+
+        template<typename... Args> void sendLogInfo(std::string, Args...) const;
+        template<typename... Args> void sendLogDebug(std::string, Args...) const;
+        template<typename... Args> void sendLogWarning(std::string, Args...) const;
+        template<typename... Args> void sendLogError(std::string, Args...) const;
+        
         void sendHeartbeat() const;
         void stopHeartbeat();
         void storeHeartbeat(const comms::msg::Heartbeat msg);
@@ -55,5 +61,7 @@ class HeartbeatModule {
         std::vector<heartbeat> received_hbs_;
         mutable std::mutex hbs_mutex_;
 };
+
+#include "heartbeat_templates.tpp"
 
 #endif
