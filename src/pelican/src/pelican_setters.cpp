@@ -1,0 +1,19 @@
+#include "pelican.hpp"
+#include "types.hpp"
+
+void Pelican::setRole(possible_roles r) {
+    this->sendLogDebug("Setting role to {}", static_cast<int>(r));
+    this->role_ = r;
+}
+
+void Pelican::increaseCurrentTerm() {
+    this->current_term_++;
+}
+
+void Pelican::setMass(double m) {
+    this->mass_ = m;
+}
+
+void Pelican::setInstance(rclcpp::Node::SharedPtr instance) {
+    instance_ = std::static_pointer_cast<Pelican>(instance);
+}

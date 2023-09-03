@@ -21,6 +21,19 @@ HeartbeatModule::~HeartbeatModule() {
 
 void HeartbeatModule::initSetup(LoggerModule* logger) {
     /******************* Subscribrers ****************************/
+    this->setupSubscription();
+
+    /******************* Publishers ****************************/
+    resetSharedPointer(this->pub_to_heartbeat_topic_);
+
+    /*********************** Timers ****************************/
+    cancelTimer(this->hb_transmission_timer_);
+
+    this->logger_ = logger;
+}
+
+void HeartbeatModule::setupSubscription() {
+
     // Used by all kinds of agents to avoid multiple leaders
     // (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {
@@ -30,14 +43,6 @@ void HeartbeatModule::initSetup(LoggerModule* logger) {
             this->node_->getReentrantOptions()
         );
     }
-
-    /******************* Publishers ****************************/
-    resetSharedPointer(this->pub_to_heartbeat_topic_);
-
-    /*********************** Timers ****************************/
-    cancelTimer(this->hb_transmission_timer_);
-
-    this->logger_ = logger;
 }
 
 void HeartbeatModule::setupPublisher() {
@@ -105,10 +110,10 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // If it comes to this, the msg.term is at least equal to the node's current term
 
     // Executed by any node, but this should not apply to leaders
-    this->node_->setElectionStatus(msg.leader_id);
+    this->node_->requestSetElectionStatus(msg.leader_id);
 
     this->sendLogDebug("Resetting election_timer_");
-    this->node_->resetElectionTimer();
+    this->node_->requestResetElectionTimer();
 
     // Keep heartbeat vector limited
     if (this->getNumberOfHbs() >= this->getMaxHbs()) {

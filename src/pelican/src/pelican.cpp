@@ -4,7 +4,7 @@
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
 
-Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this) {
+Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this), el_core_(this) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -20,6 +20,7 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
     this->hb_core_.initSetup(&(this->logger_));
+    this->el_core_.initSetup(&(this->logger_));
 
     this->local_pos_topic_ = "/fmu/out/agent"s + std::to_string(this->getID()) + "/vehicle_local_position"s;
     // Subscriber, listening for VehicleLocalPosition messages
@@ -43,32 +44,13 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
 Pelican::~Pelican() {
     this->sendLogDebug("Destructor for agent {}", this->getID());
 
-    this->sendLogDebug("Trying to kill the ballot thread");
-    this->stopBallotThread();
-
-    // Cancel active timers
-    cancelTimer(this->election_timer_);
-    cancelTimer(this->voting_timer_);
-
     // Unsubscribe from topics
-    this->sub_to_leader_election_topic_.reset();
     this->sub_to_local_pos_topic_.reset();
-    this->sub_to_request_vote_rpc_topic_.reset();
-
-    // Release mutexes
-    std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
-    std::lock_guard<std::mutex> lock_election_completed(this->election_completed_mutex_);
-    std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
-    std::lock_guard<std::mutex> lock_candidate(this->candidate_mutex_);
-    std::lock_guard<std::mutex> lock_external_leader(this->external_leader_mutex_);
-    std::lock_guard<std::mutex> lock_leader(this->leader_mutex_);
-    std::lock_guard<std::mutex> lock_terminated(this->terminated_mutex_);
-
-    // Clear shared resources
-    this->received_votes_.clear();
 
     // Reset shared pointers
     this->instance_.reset();
+
+    // TODO: explicitly call modules' destructors?
 }
 
 void Pelican::parseModel() {
@@ -120,41 +102,26 @@ void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
     std::shared_ptr<Pelican> node = getInstance();
     if (node) {
-        node->stopBallotThread();
+        node->el_core_.signalStopBallotThread();
     }
 
     rclcpp::shutdown();
 }
 
-void Pelican::startBallotThread() {
-    if (!this->ballot_thread_.joinable()) {
-        this->ballot_thread_ = std::thread(&Pelican::ballotCheckingThread, this);
-    }
+heartbeat Pelican::requestLastHb() {
+    return this->hb_core_.getLastHb();
 }
 
-void Pelican::stopBallotThread() {
-    if (this->ballot_thread_.joinable()) {
-        this->setIsTerminated();
-        this->ballot_thread_.join();
-    }
+int Pelican::requestNumberOfHbs() {
+    return this->hb_core_.getNumberOfHbs();
 }
 
-void Pelican::prepareCommonCallbacks() { // for followers and candidates
-    /******************* Subscribrers ****************************/
-    if (!this->sub_to_leader_election_topic_) {
-        this->sub_to_leader_election_topic_ = this->create_subscription<comms::msg::Datapad>(
-            this->leader_election_topic_, this->standard_qos_,
-            std::bind(&Pelican::storeCandidacy, this, std::placeholders::_1),
-            this->reentrant_opt_
-        );
-    }
+// TODO: ponder about bool return value
+void Pelican::requestSetElectionStatus(int i) {
+    this->el_core_.setElectionStatus(i);
+}
 
-    if (!this->pub_to_leader_election_topic_) {
-        this->pub_to_leader_election_topic_ = this->create_publisher<comms::msg::Datapad>(
-            this->leader_election_topic_, this->standard_qos_
-        );
-    }
-
-    
-
+// TODO: ponder about bool return value
+void Pelican::requestResetElectionTimer() {
+    this->el_core_.resetElectionTimer();
 }

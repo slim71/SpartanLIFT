@@ -36,10 +36,12 @@ set(SOURCES
     src/roles.cpp 
     src/heartbeat.cpp 
     src/election.cpp
-    src/checkers.cpp
+    src/election_checkers.cpp
     src/pelican_getters.cpp
+    src/election_getters.cpp
     src/heartbeat_getters.cpp
-    src/setters.cpp
+    src/election_setters.cpp
+    src/pelican_setters.cpp
 )
 
 set(TEST_SOURCES
