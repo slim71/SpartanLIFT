@@ -17,6 +17,7 @@ class HeartbeatModule {
 
         void initSetup(LoggerModule*);
         void setupPublisher();
+        void setupSubscription();
         void setTransmissionTimer();
 
         void resetSubscription();

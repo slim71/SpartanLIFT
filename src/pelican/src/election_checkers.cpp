@@ -1,27 +1,27 @@
-#include "pelican.hpp"
+#include "election.hpp"
 
-bool Pelican::checkElectionCompleted() const {
+bool ElectionModule::checkElectionCompleted() const {
     // Ensure safe access to election_timed_out
     std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
     return this->election_completed_;
 }
 
-bool Pelican::checkVotingCompleted() const {
+bool ElectionModule::checkVotingCompleted() const {
     std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
     return this->voting_completed_;
 }
 
-bool Pelican::checkExternalLeaderElected() const {
+bool ElectionModule::checkExternalLeaderElected() const {
     std::lock_guard<std::mutex> lock(this->external_leader_mutex_);
     return this->external_leader_elected_;
 }
 
-bool Pelican::checkLeaderElected() const {
+bool ElectionModule::checkLeaderElected() const {
     std::lock_guard<std::mutex> lock(this->leader_mutex_);
     return this->leader_elected_;
 }
 
-bool Pelican::checkIsTerminated() const {
+bool ElectionModule::checkIsTerminated() const {
     std::lock_guard<std::mutex> lock(this->terminated_mutex_);
     return this->is_terminated_;
 }

@@ -24,10 +24,6 @@ std::shared_ptr<Pelican> Pelican::getInstance() {
     return instance_.lock();
 }
 
-std::chrono::milliseconds Pelican::getBallotWaitTime() const {
-    return this->new_ballot_waittime_;
-}
-
 rclcpp::SubscriptionOptions Pelican::getReentrantOptions() const {
     return this->reentrant_opt_;
 }

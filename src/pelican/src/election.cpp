@@ -1,44 +1,75 @@
+#include "election.hpp"
 #include "pelican.hpp"
 #include "logger.hpp"
 
-void Pelican::vote(int id_to_vote, double candidate_mass) const {
+ElectionModule::ElectionModule(Pelican* node) : node_(node) {
+
+}
+
+ElectionModule::~ElectionModule() {
+    this->sendLogDebug("Trying to kill the ballot thread");
+    this->stopBallotThread();
+
+    // Cancel active timers
+    cancelTimer(this->election_timer_);
+    cancelTimer(this->voting_timer_);
+
+    // Unsubscribe from topics
+    this->sub_to_leader_election_topic_.reset();
+    this->sub_to_request_vote_rpc_topic_.reset();
+
+    // Release mutexes
+    std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
+    std::lock_guard<std::mutex> lock_election_completed(this->election_completed_mutex_);
+    std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
+    std::lock_guard<std::mutex> lock_external_leader(this->external_leader_mutex_);
+    std::lock_guard<std::mutex> lock_leader(this->leader_mutex_);
+    std::lock_guard<std::mutex> lock_terminated(this->terminated_mutex_);
+    std::lock_guard<std::mutex> lock_candidate(this->candidate_mutex_);
+
+    // Clear shared resources
+    this->received_votes_.clear();
+
+}
+
+void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
-    if (this->isCandidate() && this->checkExternalLeaderElected()) {
+    if (this->node_->isCandidate() && this->checkExternalLeaderElected()) {
         return;
     }
 
     this->sendLogInfo("Voting: {}", id_to_vote);
 
     auto msg = comms::msg::Datapad();
-    msg.term_id = this->getCurrentTerm();
-    msg.voter_id = this->getID();
+    msg.term_id = this->node_->getCurrentTerm();
+    msg.voter_id = this->node_->getID();
     msg.proposed_leader = id_to_vote;
     msg.candidate_mass = candidate_mass;
 
     this->pub_to_leader_election_topic_->publish(msg);
 }
 
-void Pelican::requestVote() {
+void ElectionModule::requestVote() {
     // Do not serve request in case another leader has been already chosen
-    if (this->isCandidate() && this->checkExternalLeaderElected()) {
+    if (this->node_->isCandidate() && this->checkExternalLeaderElected()) {
         return;
     }
 
     this->sendLogDebug("Requesting votes to other agents...");
 
-    this->pub_to_request_vote_rpc_topic_ = this->create_publisher<comms::msg::RequestVoteRPC>(
+    this->pub_to_request_vote_rpc_topic_ = this->node_->create_publisher<comms::msg::RequestVoteRPC>(
         this->request_vote_rpc_topic_, this->standard_qos_
     );
 
     comms::msg::RequestVoteRPC req;
     req.do_vote = true;
-    req.solicitant_id = this->getID();
-    req.term_id = this->getCurrentTerm();
+    req.solicitant_id = this->node_->getID();
+    req.term_id = this->node_->getCurrentTerm();
 
     this->pub_to_request_vote_rpc_topic_->publish(req);
 }
 
-void Pelican::leaderElection() {
+void ElectionModule::leaderElection() {
     // As for followers, even the candidates has stored all the votes
     this->votes_mutex_.lock();
 
@@ -98,7 +129,7 @@ void Pelican::leaderElection() {
 
         auto cluster_for_this_node =
             std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
-                return v.candidate_id == this->getID();
+                return v.candidate_id == this->node_->getID();
             });
         this->sendLogDebug(
             "cluster for this node: candidate_id={} total={}",
@@ -118,8 +149,8 @@ void Pelican::leaderElection() {
                     this->sendLogDebug("I've won!");
                     // I've been chosen!
                     this->setElectionCompleted();
-                    this->setLeader(this->getID());
-                    this->becomeLeader();
+                    this->setLeader(this->node_->getID());
+                    this->node_->commenceLeaderOperations();
                     return;
                 }
 
@@ -138,7 +169,7 @@ void Pelican::leaderElection() {
     this->resetVotingWindow();
 }
 
-void Pelican::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
+void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
         [](comms::msg::Datapad::SharedPtr first, comms::msg::Datapad::SharedPtr second) {
@@ -148,7 +179,7 @@ void Pelican::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
-bool Pelican::checkForExternalLeader() {
+bool ElectionModule::checkForExternalLeader() {
     // If the (external) leader’s term is at least as large as the candidate’s current term,
     // then the candidate recognizes the leader as legitimate and returns to follower state
 
@@ -156,15 +187,15 @@ bool Pelican::checkForExternalLeader() {
         return false;
     }
 
-    if (this->hb_core_.getNumberOfHbs() == 0) {
+    if (this->node_->requestNumberOfHbs() == 0) {
         // Standard behavior: boolean is more important than the heartbeat
         // This is equal to "no heartbeat received YET, but external leader is there"
         return true;
     }
 
-    auto last_hb_received = this->hb_core_.getLastHb();
+    auto last_hb_received = this->node_->requestLastHb();
 
-    if (last_hb_received.term >= this->getCurrentTerm()) {
+    if (last_hb_received.term >= this->node_->getCurrentTerm()) {
         return true;
     } else {
         // reject external leader and continue as no heartbeat arrived
@@ -174,14 +205,14 @@ bool Pelican::checkForExternalLeader() {
     }
 }
 
-void Pelican::resetVotingWindow() {
+void ElectionModule::resetVotingWindow() {
     this->unsetVotingCompleted();
     this->setRandomBallotWaittime();
 }
 
-void Pelican::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
+void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "\n\n";
-    std::cout << "AGENT " << this->getID() << " RECEIVED DATAPAD DATA" << std::endl;
+    std::cout << "AGENT " << this->node_->getID() << " RECEIVED DATAPAD DATA" << std::endl;
     std::cout << "=============================" << std::endl;
     std::cout << "term_id: " << msg->term_id << std::endl;
     std::cout << "voter_id: " << msg->voter_id << std::endl;
@@ -200,24 +231,24 @@ void Pelican::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
 
     // Votes received are supposedly from followers, so if no more votes come within a time frame,
     // the elections is finished
-    if (this->getRole() == candidate) {
+    if (this->node_->getRole() == candidate) {
         if (this->voting_timer_ != nullptr) { // Make the timer restart
             this->voting_timer_->reset();
         } else {
-            this->voting_timer_ = this->create_wall_timer(
-                this->voting_max_time_, std::bind(&Pelican::setVotingCompleted, this),
-                this->reentrant_group_
+            this->voting_timer_ = this->node_->create_wall_timer(
+                this->voting_max_time_, std::bind(&ElectionModule::setVotingCompleted, this),
+                this->node_->getReentrantGroup()
             );
         }
     }
 }
 
-void Pelican::flushVotes() {
+void ElectionModule::flushVotes() {
     std::lock_guard<std::mutex> lock(this->votes_mutex_);
     this->received_votes_.clear();
 }
 
-void Pelican::ballotCheckingThread() {
+void ElectionModule::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
     while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
            !this->checkIsTerminated()) {
@@ -231,22 +262,158 @@ void Pelican::ballotCheckingThread() {
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
 }
 
-void Pelican::clearElectionStatus() {
+void ElectionModule::clearElectionStatus() {
     this->unsetExternalLeaderElected();
     this->unsetLeaderElected();
     this->setLeader();
 }
 
-void Pelican::setElectionStatus(int id) {
+void ElectionModule::setElectionStatus(int id) {
     this->setExternalLeaderElected();
     this->setLeaderElected();
     this->setLeader(id);
 }
 
-void Pelican::resetElectionTimer() {
+void ElectionModule::resetElectionTimer() {
     // Reset the election_timer_, used to be sure there's a leader, to election_timeout
     resetTimer(this->election_timer_); 
     this->sendLogDebug(
         "After resetting, timer is {} ms",this->election_timer_->time_until_trigger().count() / 10
     );
+}
+
+void ElectionModule::startBallotThread() {
+    if (!this->ballot_thread_.joinable()) {
+        this->ballot_thread_ = std::thread(&ElectionModule::ballotCheckingThread, this);
+    }
+}
+
+void ElectionModule::stopBallotThread() {
+    if (this->ballot_thread_.joinable()) {
+        this->setIsTerminated();
+        this->ballot_thread_.join();
+    }
+}
+
+void ElectionModule::initSetup(LoggerModule* l) { // for followers and candidates
+    this->logger_ = l;
+
+    this->prepareTopics();
+
+}
+
+void ElectionModule::prepareTopics() {
+
+    /******************* Subscribrers ****************************/
+    if (!this->sub_to_leader_election_topic_) {
+        this->sub_to_leader_election_topic_ = this->node_->create_subscription<comms::msg::Datapad>(
+            this->leader_election_topic_, this->standard_qos_,
+            std::bind(&ElectionModule::storeCandidacy, this, std::placeholders::_1),
+            this->node_->getReentrantOptions()
+        );
+    }
+
+    /******************* Publishers ****************************/
+    if (!this->pub_to_leader_election_topic_) {
+        this->pub_to_leader_election_topic_ = this->node_->create_publisher<comms::msg::Datapad>(
+            this->leader_election_topic_, this->standard_qos_
+        );
+    }
+
+}
+
+void ElectionModule::signalStopBallotThread() {
+    this->stopBallotThread();
+}
+
+void ElectionModule::followerActions() {
+    this->setRandomElectionTimeout();
+
+    this->sub_to_request_vote_rpc_topic_ = this->node_->create_subscription<comms::msg::RequestVoteRPC>(
+        this->request_vote_rpc_topic_, this->standard_qos_,
+        std::bind(&ElectionModule::serveVoteRequest, this, std::placeholders::_1), 
+        this->node_->getReentrantOptions()
+    );
+
+    this->election_timer_ = this->node_->create_wall_timer(
+        this->election_timeout_,
+        [this]() {
+            cancelTimer(this->election_timer_);
+            if (this->node_->getRole() == follower) {
+                this->sendLogWarning("No heartbeat received within the 'election_timeout' window; "
+                                 "switching to candidate...");
+                this->node_->commenceCandidateOperations(); // transition to Candidate state
+            }
+        },
+        this->node_->getReentrantGroup()
+    );
+}
+
+void ElectionModule::candidateActions() {
+    // the candidate repeats this until:
+    // (a) it wins the election                         --> election_completed_ = true
+    // (b) another server establishes itself as leader  --> election_completed_ = false +
+    // external_leader_elected = true (?) (c) a period of time goes by with no winner      -->
+    // nothing signaling this, just restart from a newer term_id
+    while (!this->checkElectionCompleted()) {
+        // For the first execution the init phase has been done before the while loop
+
+        this->flushVotes();
+
+        this->sendLogDebug("Going to sleep for {} ms...", this->getBallotWaitTime().count());
+        std::this_thread::sleep_for(this->getBallotWaitTime());
+
+        this->node_->increaseCurrentTerm();
+        this->sendLogInfo("New voting round for term {}", this->node_->getCurrentTerm());
+
+        this->vote(this->node_->getID(), this->node_->getMass());
+        this->requestVote();
+
+        this->startBallotThread();
+
+        // Wait until voting is completed (aka no more votes are registered in a time frame) or
+        // timed-out, which is checked by another thread
+        std::unique_lock<std::mutex> lock(this->candidate_mutex_);
+        this->cv.wait(lock, [this]() {
+            return (this->checkVotingCompleted() || this->checkForExternalLeader());
+        });
+        this->sendLogDebug("Main thread free from ballot lock");
+
+        if (this->checkForExternalLeader()) {
+            this->sendLogInfo("External leader elected");
+            this->setElectionCompleted();
+            this->node_->commenceFollowerOperations();
+            continue; // or break, should be the same since the condition is set
+        }
+
+        if (this->checkVotingCompleted()) {
+            this->sendLogInfo(
+                "Voting completed for term {}. Checking if I'm the winner...",
+                this->node_->getCurrentTerm()
+            );
+            this->leaderElection(
+            ); // if this node is not the leader, election_completed_ is not true
+        }
+
+        // No other possible reasons to exit the condition_variable wait
+    };
+}
+
+void ElectionModule::resetSubscriptions() {
+    // This is not needed by leaders, since Raft guarantees safety;
+    // it's just an additional check to avoid multiple leaders
+    resetSharedPointer(this->sub_to_leader_election_topic_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
+}
+
+void ElectionModule::prepareForCandidateActions() {
+    cancelTimer(this->election_timer_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
+
+    this->clearElectionStatus();
+    this->unsetVotingCompleted();
+    this->unsetElectionCompleted();
+
+    // init of new_ballot_waittime_
+    this->setRandomBallotWaittime();
 }
