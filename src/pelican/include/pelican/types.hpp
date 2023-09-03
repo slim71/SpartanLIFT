@@ -3,6 +3,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#define EXTERNAL_OFF "No main module present: external functionalities deactivated!"
+
 struct vote_count {
         int candidate_id;
         int total;

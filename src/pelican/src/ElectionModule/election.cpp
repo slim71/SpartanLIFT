@@ -1,10 +1,13 @@
-#include "election.hpp"
-#include "pelican.hpp"
+#include "ElectionModule/election.hpp"
 #include "logger.hpp"
+#include "pelican.hpp"
 
-ElectionModule::ElectionModule(Pelican* node) : node_(node) {
-
+/************************** Ctors/Dctors ***************************/
+ElectionModule::ElectionModule() {
+    this->node_ = nullptr;
 }
+
+ElectionModule::ElectionModule(Pelican* node) : node_(node) {}
 
 ElectionModule::~ElectionModule() {
     this->sendLogDebug("Trying to kill the ballot thread");
@@ -29,46 +32,40 @@ ElectionModule::~ElectionModule() {
 
     // Clear shared resources
     this->received_votes_.clear();
-
 }
 
-void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
-    // Do not even vote in case another leader has been already chosen
-    if (this->node_->isCandidate() && this->checkExternalLeaderElected()) {
-        return;
+/************************** Setup methods **************************/
+void ElectionModule::initSetup(LoggerModule* l) { // for followers and candidates
+    this->logger_ = l;
+
+    this->prepareTopics();
+}
+
+void ElectionModule::prepareTopics() {
+    if (!this->node_) {
+        throw EXTERNAL_OFF;
     }
 
-    this->sendLogInfo("Voting: {}", id_to_vote);
-
-    auto msg = comms::msg::Datapad();
-    msg.term_id = this->node_->getCurrentTerm();
-    msg.voter_id = this->node_->getID();
-    msg.proposed_leader = id_to_vote;
-    msg.candidate_mass = candidate_mass;
-
-    this->pub_to_leader_election_topic_->publish(msg);
-}
-
-void ElectionModule::requestVote() {
-    // Do not serve request in case another leader has been already chosen
-    if (this->node_->isCandidate() && this->checkExternalLeaderElected()) {
-        return;
+    /******************* Subscribrers ****************************/
+    // If no error has been thrown, node_ is actually set and this can be executed
+    if (!this->sub_to_leader_election_topic_) {
+        this->sub_to_leader_election_topic_ = this->node_->create_subscription<comms::msg::Datapad>(
+            this->leader_election_topic_, this->standard_qos_,
+            std::bind(&ElectionModule::storeCandidacy, this, std::placeholders::_1),
+            this->gatherReentrantOptions()
+        );
     }
 
-    this->sendLogDebug("Requesting votes to other agents...");
-
-    this->pub_to_request_vote_rpc_topic_ = this->node_->create_publisher<comms::msg::RequestVoteRPC>(
-        this->request_vote_rpc_topic_, this->standard_qos_
-    );
-
-    comms::msg::RequestVoteRPC req;
-    req.do_vote = true;
-    req.solicitant_id = this->node_->getID();
-    req.term_id = this->node_->getCurrentTerm();
-
-    this->pub_to_request_vote_rpc_topic_->publish(req);
+    /******************* Publishers ****************************/
+    // If no error has been thrown, node_ is actually set and this can be executed
+    if (!this->pub_to_leader_election_topic_) {
+        this->pub_to_leader_election_topic_ = this->node_->create_publisher<comms::msg::Datapad>(
+            this->leader_election_topic_, this->standard_qos_
+        );
+    }
 }
 
+/********************** Core functionalities ***********************/
 void ElectionModule::leaderElection() {
     // As for followers, even the candidates has stored all the votes
     this->votes_mutex_.lock();
@@ -83,7 +80,7 @@ void ElectionModule::leaderElection() {
 
         this->sendLogDebug("Logging recorded votes..");
         for (const comms::msg::Datapad::SharedPtr& recvote : this->received_votes_) {
-            this->sendLogDebug( 
+            this->sendLogDebug(
                 "agent {} voted for {} (mass {}) during term {} ", recvote->voter_id,
                 recvote->proposed_leader, recvote->candidate_mass, recvote->term_id
             );
@@ -122,14 +119,14 @@ void ElectionModule::leaderElection() {
 
         this->sendLogDebug("Logging clusters..");
         for (const vote_count& canvote : ballot) {
-            this->sendLogDebug( 
+            this->sendLogDebug(
                 "Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total
             );
         };
 
         auto cluster_for_this_node =
             std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
-                return v.candidate_id == this->node_->getID();
+                return v.candidate_id == this->gatherAgentID();
             });
         this->sendLogDebug(
             "cluster for this node: candidate_id={} total={}",
@@ -149,8 +146,8 @@ void ElectionModule::leaderElection() {
                     this->sendLogDebug("I've won!");
                     // I've been chosen!
                     this->setElectionCompleted();
-                    this->setLeader(this->node_->getID());
-                    this->node_->commenceLeaderOperations();
+                    this->setLeader(this->gatherAgentID());
+                    this->signalTransitionToLeader();
                     return;
                 }
 
@@ -169,6 +166,28 @@ void ElectionModule::leaderElection() {
     this->resetVotingWindow();
 }
 
+void ElectionModule::requestVote() {
+    // Do not serve request in case another leader has been already chosen
+    if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
+        return;
+    }
+
+    this->sendLogDebug("Requesting votes to other agents...");
+
+    // If no error has been thrown, node_ is actually set and this can be executed
+    this->pub_to_request_vote_rpc_topic_ =
+        this->node_->create_publisher<comms::msg::RequestVoteRPC>(
+            this->request_vote_rpc_topic_, this->standard_qos_
+        );
+
+    comms::msg::RequestVoteRPC req;
+    req.do_vote = true;
+    req.solicitant_id = this->gatherAgentID();
+    req.term_id = this->gatherCurrentTerm();
+
+    this->pub_to_request_vote_rpc_topic_->publish(req);
+}
+
 void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
@@ -179,40 +198,26 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) cons
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
-bool ElectionModule::checkForExternalLeader() {
-    // If the (external) leader’s term is at least as large as the candidate’s current term,
-    // then the candidate recognizes the leader as legitimate and returns to follower state
-
-    if (!this->checkExternalLeaderElected()) {
-        return false;
+void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
+    // Do not even vote in case another leader has been already chosen
+    if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
+        return;
     }
 
-    if (this->node_->requestNumberOfHbs() == 0) {
-        // Standard behavior: boolean is more important than the heartbeat
-        // This is equal to "no heartbeat received YET, but external leader is there"
-        return true;
-    }
+    this->sendLogInfo("Voting: {}", id_to_vote);
 
-    auto last_hb_received = this->node_->requestLastHb();
+    auto msg = comms::msg::Datapad();
+    msg.term_id = this->gatherCurrentTerm();
+    msg.voter_id = this->gatherAgentID();
+    msg.proposed_leader = id_to_vote;
+    msg.candidate_mass = candidate_mass;
 
-    if (last_hb_received.term >= this->node_->getCurrentTerm()) {
-        return true;
-    } else {
-        // reject external leader and continue as no heartbeat arrived
-        this->sendLogDebug("Most recent heartbeat has old term");
-        this->clearElectionStatus();
-        return false;
-    }
-}
-
-void ElectionModule::resetVotingWindow() {
-    this->unsetVotingCompleted();
-    this->setRandomBallotWaittime();
+    this->pub_to_leader_election_topic_->publish(msg);
 }
 
 void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "\n\n";
-    std::cout << "AGENT " << this->node_->getID() << " RECEIVED DATAPAD DATA" << std::endl;
+    std::cout << "AGENT " << this->gatherAgentID() << " RECEIVED DATAPAD DATA" << std::endl;
     std::cout << "=============================" << std::endl;
     std::cout << "term_id: " << msg->term_id << std::endl;
     std::cout << "voter_id: " << msg->voter_id << std::endl;
@@ -231,13 +236,14 @@ void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
 
     // Votes received are supposedly from followers, so if no more votes come within a time frame,
     // the elections is finished
-    if (this->node_->getRole() == candidate) {
+    if (this->gatherAgentRole() == candidate) {
         if (this->voting_timer_ != nullptr) { // Make the timer restart
             this->voting_timer_->reset();
         } else {
+            // If no error has been thrown, node_ is actually set and this can be executed
             this->voting_timer_ = this->node_->create_wall_timer(
                 this->voting_max_time_, std::bind(&ElectionModule::setVotingCompleted, this),
-                this->node_->getReentrantGroup()
+                this->gatherReentrantGroup()
             );
         }
     }
@@ -248,6 +254,7 @@ void ElectionModule::flushVotes() {
     this->received_votes_.clear();
 }
 
+/************************* Ballot-related **************************/
 void ElectionModule::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
     while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
@@ -262,90 +269,40 @@ void ElectionModule::ballotCheckingThread() {
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
 }
 
-void ElectionModule::clearElectionStatus() {
-    this->unsetExternalLeaderElected();
-    this->unsetLeaderElected();
-    this->setLeader();
-}
-
-void ElectionModule::setElectionStatus(int id) {
-    this->setExternalLeaderElected();
-    this->setLeaderElected();
-    this->setLeader(id);
-}
-
-void ElectionModule::resetElectionTimer() {
-    // Reset the election_timer_, used to be sure there's a leader, to election_timeout
-    resetTimer(this->election_timer_); 
-    this->sendLogDebug(
-        "After resetting, timer is {} ms",this->election_timer_->time_until_trigger().count() / 10
-    );
-}
-
 void ElectionModule::startBallotThread() {
     if (!this->ballot_thread_.joinable()) {
         this->ballot_thread_ = std::thread(&ElectionModule::ballotCheckingThread, this);
     }
 }
 
-void ElectionModule::stopBallotThread() {
-    if (this->ballot_thread_.joinable()) {
-        this->setIsTerminated();
-        this->ballot_thread_.join();
-    }
-}
-
-void ElectionModule::initSetup(LoggerModule* l) { // for followers and candidates
-    this->logger_ = l;
-
-    this->prepareTopics();
-
-}
-
-void ElectionModule::prepareTopics() {
-
-    /******************* Subscribrers ****************************/
-    if (!this->sub_to_leader_election_topic_) {
-        this->sub_to_leader_election_topic_ = this->node_->create_subscription<comms::msg::Datapad>(
-            this->leader_election_topic_, this->standard_qos_,
-            std::bind(&ElectionModule::storeCandidacy, this, std::placeholders::_1),
-            this->node_->getReentrantOptions()
-        );
-    }
-
-    /******************* Publishers ****************************/
-    if (!this->pub_to_leader_election_topic_) {
-        this->pub_to_leader_election_topic_ = this->node_->create_publisher<comms::msg::Datapad>(
-            this->leader_election_topic_, this->standard_qos_
-        );
-    }
-
-}
-
-void ElectionModule::signalStopBallotThread() {
-    this->stopBallotThread();
-}
-
+/************ Actions initiated from outside the module ************/
 void ElectionModule::followerActions() {
+    if (!this->node_) {
+        throw EXTERNAL_OFF;
+    }
+
     this->setRandomElectionTimeout();
 
-    this->sub_to_request_vote_rpc_topic_ = this->node_->create_subscription<comms::msg::RequestVoteRPC>(
-        this->request_vote_rpc_topic_, this->standard_qos_,
-        std::bind(&ElectionModule::serveVoteRequest, this, std::placeholders::_1), 
-        this->node_->getReentrantOptions()
-    );
+    // If no error has been thrown, node_ is actually set and this can be executed
+    this->sub_to_request_vote_rpc_topic_ =
+        this->node_->create_subscription<comms::msg::RequestVoteRPC>(
+            this->request_vote_rpc_topic_, this->standard_qos_,
+            std::bind(&ElectionModule::serveVoteRequest, this, std::placeholders::_1),
+            this->gatherReentrantOptions()
+        );
 
+    // If no error has been thrown, node_ is actually set and this can be executed
     this->election_timer_ = this->node_->create_wall_timer(
         this->election_timeout_,
         [this]() {
             cancelTimer(this->election_timer_);
-            if (this->node_->getRole() == follower) {
+            if (this->gatherAgentRole() == follower) {
                 this->sendLogWarning("No heartbeat received within the 'election_timeout' window; "
-                                 "switching to candidate...");
-                this->node_->commenceCandidateOperations(); // transition to Candidate state
+                                     "switching to candidate...");
+                this->signalTransitionToCandidate();
             }
         },
-        this->node_->getReentrantGroup()
+        this->gatherReentrantGroup()
     );
 }
 
@@ -360,13 +317,13 @@ void ElectionModule::candidateActions() {
 
         this->flushVotes();
 
-        this->sendLogDebug("Going to sleep for {} ms...", this->getBallotWaitTime().count());
-        std::this_thread::sleep_for(this->getBallotWaitTime());
+        this->sendLogDebug("Going to sleep for {} ms...", this->new_ballot_waittime_.count());
+        std::this_thread::sleep_for(this->new_ballot_waittime_);
 
-        this->node_->increaseCurrentTerm();
-        this->sendLogInfo("New voting round for term {}", this->node_->getCurrentTerm());
+        this->signalNewTerm();
+        this->sendLogInfo("New voting round for term {}", this->gatherCurrentTerm());
 
-        this->vote(this->node_->getID(), this->node_->getMass());
+        this->vote(this->gatherAgentID(), this->gatherAgentMass());
         this->requestVote();
 
         this->startBallotThread();
@@ -382,14 +339,14 @@ void ElectionModule::candidateActions() {
         if (this->checkForExternalLeader()) {
             this->sendLogInfo("External leader elected");
             this->setElectionCompleted();
-            this->node_->commenceFollowerOperations();
+            this->signalTransitionToFollower();
             continue; // or break, should be the same since the condition is set
         }
 
         if (this->checkVotingCompleted()) {
             this->sendLogInfo(
                 "Voting completed for term {}. Checking if I'm the winner...",
-                this->node_->getCurrentTerm()
+                this->gatherCurrentTerm()
             );
             this->leaderElection(
             ); // if this node is not the leader, election_completed_ is not true
@@ -397,13 +354,6 @@ void ElectionModule::candidateActions() {
 
         // No other possible reasons to exit the condition_variable wait
     };
-}
-
-void ElectionModule::resetSubscriptions() {
-    // This is not needed by leaders, since Raft guarantees safety;
-    // it's just an additional check to avoid multiple leaders
-    resetSharedPointer(this->sub_to_leader_election_topic_);
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
 }
 
 void ElectionModule::prepareForCandidateActions() {
@@ -416,4 +366,12 @@ void ElectionModule::prepareForCandidateActions() {
 
     // init of new_ballot_waittime_
     this->setRandomBallotWaittime();
+}
+
+/************* Both from outside and inside the module *************/
+void ElectionModule::stopBallotThread() {
+    if (this->ballot_thread_.joinable()) {
+        this->setIsTerminated();
+        this->ballot_thread_.join();
+    }
 }
