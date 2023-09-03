@@ -102,11 +102,16 @@ void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
     std::shared_ptr<Pelican> node = getInstance();
     if (node) {
-        node->el_core_.signalStopBallotThread();
+        node->el_core_.stopBallotThread();
     }
 
     rclcpp::shutdown();
 }
+
+// As a structure, I've decided no direct communications among modules
+// is to be done. Everything passes though the main module and is redirected
+// to the appropriate one
+// TODO: can be done as ROS2 services?
 
 heartbeat Pelican::requestLastHb() {
     return this->hb_core_.getLastHb();
@@ -117,11 +122,11 @@ int Pelican::requestNumberOfHbs() {
 }
 
 // TODO: ponder about bool return value
-void Pelican::requestSetElectionStatus(int i) {
+void Pelican::signalSetElectionStatus(int i) {
     this->el_core_.setElectionStatus(i);
 }
 
 // TODO: ponder about bool return value
-void Pelican::requestResetElectionTimer() {
+void Pelican::signalResetElectionTimer() {
     this->el_core_.resetElectionTimer();
 }
