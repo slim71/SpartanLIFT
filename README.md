@@ -66,3 +66,8 @@ document setuptools warning/problem for python packages
 // a few orders of magnitude less than MTBF so that the system makes steady progress
 
 rclcpp::create_wall_timer is a factory function that creates an object of a class that derives from rclcpp::TimerBase and uses the wall clock as the timer's time source.
+
+I've prefered not to create more nodes to keep a centralized architecture. Some request/serve function couples could be coded as ROS2 services though.
+
+The architecture is then single node, multi module: each node represents a whole Agent, which is comprised of multiple specialized modules exchanging data.
+Even more, I've decided not to let data "flow" directly from one module to another: each of them should pass through the main module to receive data handled by a third one.

@@ -31,6 +31,7 @@ class ElectionModule {
 
         // Both from outside and inside the module
         void stopBallotThread();
+        void flushVotes();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -44,7 +45,6 @@ class ElectionModule {
         void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
         void vote(int id_to_vote, double candidate_mass) const;
         void storeCandidacy(const comms::msg::Datapad::SharedPtr msg);
-        void flushVotes();
         void resetVotingWindow();
 
         // External communications
