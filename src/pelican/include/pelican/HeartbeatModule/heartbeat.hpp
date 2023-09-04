@@ -2,7 +2,7 @@
 #define _HEARTBEAT_HPP_
 
 #include "comms/msg/heartbeat.hpp"
-#include "logger.hpp"
+#include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
 #include <iostream>
