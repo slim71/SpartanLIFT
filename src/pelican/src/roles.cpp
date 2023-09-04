@@ -6,7 +6,7 @@
 void Pelican::becomeLeader() {
     this->setRole(leader);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
-    this->hb_core_.flushStorage();
+    this->hb_core_.flushHeartbeats();
     // TODO: flushVotes?
 
     // Unsubscribe from topics
@@ -16,7 +16,7 @@ void Pelican::becomeLeader() {
     this->hb_core_.setupPublisher();
 
     this->hb_core_.sendNow(); // To promptly notify all agents about the new leader
-    this->hb_core_.setTransmissionTimer();
+    this->hb_core_.setupTransmissionTimer();
 }
 
 void Pelican::becomeFollower() {

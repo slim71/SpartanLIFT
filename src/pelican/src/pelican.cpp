@@ -122,11 +122,11 @@ int Pelican::requestNumberOfHbs() {
 }
 
 // TODO: ponder about bool return value
-void Pelican::signalSetElectionStatus(int i) {
+void Pelican::requestSetElectionStatus(int i) {
     this->el_core_.setElectionStatus(i);
 }
 
 // TODO: ponder about bool return value
-void Pelican::signalResetElectionTimer() {
+void Pelican::requestResetElectionTimer() {
     this->el_core_.resetElectionTimer();
 }

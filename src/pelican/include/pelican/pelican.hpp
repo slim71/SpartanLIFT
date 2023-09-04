@@ -10,7 +10,7 @@
 #include <string>
 #include "types.hpp"
 #include "logger.hpp"
-#include "heartbeat.hpp"
+#include "HeartbeatModule/heartbeat.hpp"
 #include "ElectionModule/election.hpp"
 
 using std::literals::string_literals::operator""s;
@@ -44,8 +44,8 @@ class Pelican : public rclcpp::Node {
 
         heartbeat requestLastHb();
         int requestNumberOfHbs();
-        void signalSetElectionStatus(int);
-        void signalResetElectionTimer();
+        void requestSetElectionStatus(int);
+        void requestResetElectionTimer();
 
     private: // Member functions
         LoggerModule logger_;
