@@ -1,6 +1,6 @@
 #include "ElectionModule/election.hpp"
 #include "LoggerModule/logger.hpp"
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 
 /************************** Ctors/Dctors ***************************/
 ElectionModule::ElectionModule() {

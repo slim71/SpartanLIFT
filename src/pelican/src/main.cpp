@@ -1,4 +1,4 @@
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 
 int main(int argc, char* argv[]) {
     std::cout << "Starting Pelican node..." << std::endl;

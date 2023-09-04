@@ -17,9 +17,11 @@ using std::literals::string_literals::operator""s;
 
 class Pelican : public rclcpp::Node {
     public:
+        // Ctors/Dctors
         explicit Pelican();
         ~Pelican();
 
+        // Getters
         int getID() const;
         std::string getModel() const;
         double getMass() const;
@@ -28,24 +30,27 @@ class Pelican : public rclcpp::Node {
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
 
+        // Core functionalities
         static void signalHandler(int signum);
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
-        bool isLeader() const;
-        bool isFollower() const;
-        bool isCandidate() const;
-
+        // Actions initiated from outside the module
         void commenceFollowerOperations();
         void commenceLeaderOperations();
         void commenceCandidateOperations();
 
-        void increaseCurrentTerm();
-
+        // Handle data exchange among modules
         heartbeat requestLastHb();
         int requestNumberOfHbs();
         void requestSetElectionStatus(int);
         void requestResetElectionTimer();
+
+        // Others
+        void increaseCurrentTerm();
+        bool isLeader() const;
+        bool isFollower() const;
+        bool isCandidate() const;
 
     private: // Member functions
         LoggerModule logger_;
@@ -61,13 +66,12 @@ class Pelican : public rclcpp::Node {
         void becomeFollower();
         void becomeCandidate();
 
+        void setMass(double m);
         void setRole(possible_roles r);
 
         void parseModel();
 
         void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const;
-
-        void setMass(double m);
 
     private: // Attributes
         int id_;

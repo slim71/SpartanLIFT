@@ -1,9 +1,10 @@
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "pugixml.hpp"
 
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
 
+/************************** Ctors/Dctors ***************************/
 Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this), el_core_(this) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
@@ -51,6 +52,7 @@ Pelican::~Pelican() {
     this->instance_.reset();
 }
 
+/********************** Core functionalities ***********************/
 void Pelican::parseModel() {
     this->sendLogDebug("Trying to load model {}", this->getModel());
     pugi::xml_document doc;
@@ -74,6 +76,17 @@ void Pelican::parseModel() {
     }
 }
 
+void Pelican::signalHandler(int signum) {
+    // Stop the thread gracefully
+    std::shared_ptr<Pelican> node = getInstance();
+    if (node) {
+        node->el_core_.stopBallotThread();
+    }
+
+    rclcpp::shutdown();
+}
+
+/****************************** Other ******************************/
 void Pelican::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
     std::cout << "\n\n";
     std::cout << "RECEIVED VehicleLocalPosition DATA" << std::endl;
@@ -94,38 +107,4 @@ void Pelican::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg
     std::cout << "ay: " << msg->ay << std::endl;               // [m/s^2]
     std::cout << "az: " << msg->az << std::endl;               // [m/s^2]
     std::cout << "heading: " << msg->heading << std::endl;     // [rad]
-}
-
-void Pelican::signalHandler(int signum) {
-    // Stop the thread gracefully
-    std::shared_ptr<Pelican> node = getInstance();
-    if (node) {
-        node->el_core_.stopBallotThread();
-    }
-
-    rclcpp::shutdown();
-}
-
-// As a structure, I've decided no direct communications among modules
-// is to be done. Everything passes though the main module and is redirected
-// to the appropriate one
-
-heartbeat Pelican::requestLastHb() {
-    return this->hb_core_.getLastHb();
-}
-
-int Pelican::requestNumberOfHbs() {
-    return this->hb_core_.getNumberOfHbs();
-}
-
-void Pelican::requestSetElectionStatus(int i) {
-    // If there's some problem with the Election Module,
-    // the code will just throw an error and terminate
-    this->el_core_.setElectionStatus(i);
-}
-
-void Pelican::requestResetElectionTimer() {
-    // If there's some problem with the Election Module,
-    // the code will just throw an error and terminate
-    this->el_core_.resetElectionTimer();
 }

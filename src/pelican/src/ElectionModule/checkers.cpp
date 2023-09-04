@@ -1,5 +1,5 @@
 #include "ElectionModule/election.hpp"
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 
 bool ElectionModule::checkElectionCompleted() const {
     // Ensure safe access to election_timed_out

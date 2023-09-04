@@ -1,4 +1,4 @@
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "types.hpp"
 
 void Pelican::setRole(possible_roles r) {
