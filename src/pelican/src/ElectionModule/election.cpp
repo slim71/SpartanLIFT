@@ -1,5 +1,5 @@
 #include "ElectionModule/election.hpp"
-#include "logger.hpp"
+#include "LoggerModule/logger.hpp"
 #include "pelican.hpp"
 
 /************************** Ctors/Dctors ***************************/
@@ -32,6 +32,9 @@ ElectionModule::~ElectionModule() {
 
     // Clear shared resources
     this->received_votes_.clear();
+    
+    this->node_ = nullptr;
+    this->logger_ = nullptr;
 }
 
 /************************** Setup methods **************************/
@@ -46,7 +49,7 @@ void ElectionModule::prepareTopics() {
         throw EXTERNAL_OFF;
     }
 
-    /******************* Subscribrers ****************************/
+    /********************** Subscribrers **********************/
     // If no error has been thrown, node_ is actually set and this can be executed
     if (!this->sub_to_leader_election_topic_) {
         this->sub_to_leader_election_topic_ = this->node_->create_subscription<comms::msg::Datapad>(
@@ -56,7 +59,7 @@ void ElectionModule::prepareTopics() {
         );
     }
 
-    /******************* Publishers ****************************/
+    /*********************** Publishers ***********************/
     // If no error has been thrown, node_ is actually set and this can be executed
     if (!this->pub_to_leader_election_topic_) {
         this->pub_to_leader_election_topic_ = this->node_->create_publisher<comms::msg::Datapad>(

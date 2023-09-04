@@ -30,7 +30,6 @@ set(MAIN
 
 set(SOURCES
     src/types.cpp
-    src/logger.cpp
     src/utilities.cpp
     src/pelican.cpp
     src/roles.cpp
@@ -49,6 +48,10 @@ set(HEARTBEAT_SOURCES
     src/HeartbeatModule/heartbeat.cpp
     src/HeartbeatModule/getters.cpp
     src/HeartbeatModule/external_comms.cpp
+)
+
+set(LOGGER_SOURCES
+    src/LoggerModule/logger.cpp
 )
 
 set(TEST_SOURCES
@@ -100,6 +103,7 @@ add_executable(pelican
               ${SOURCES}
               ${ELECTION_SOURCES}
               ${HEARTBEAT_SOURCES}
+              ${LOGGER_SOURCES}
 )
 target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 ament_target_dependencies(pelican rclcpp px4_msgs comms)

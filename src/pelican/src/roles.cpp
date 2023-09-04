@@ -1,5 +1,5 @@
 #include "pelican.hpp"
-#include "logger.hpp"
+#include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
 

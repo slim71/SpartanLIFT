@@ -3,7 +3,7 @@
 
 #include "comms/msg/datapad.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
-#include "logger.hpp"
+#include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include <iostream>
 #include <random>

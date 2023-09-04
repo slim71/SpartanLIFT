@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <string>
 #include "types.hpp"
-#include "logger.hpp"
+#include "LoggerModule/logger.hpp"
 #include "HeartbeatModule/heartbeat.hpp"
 #include "ElectionModule/election.hpp"
 
