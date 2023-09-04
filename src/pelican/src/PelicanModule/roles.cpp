@@ -1,8 +1,38 @@
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
 
+/************** Actions initiated from outside the module *************/
+void Pelican::commenceFollowerOperations() {
+    this->becomeFollower();
+}
+
+void Pelican::commenceLeaderOperations() {
+    this->becomeLeader();
+}
+
+void Pelican::commenceCandidateOperations() {
+    this->becomeCandidate();
+}
+
+/************************** Public methods ***************************/
+bool Pelican::isLeader() const {
+    this->sendLogDebug("Agent is leader? {}", this->getRole() == leader);
+    return (this->getRole() == leader);
+}
+
+bool Pelican::isFollower() const {
+    this->sendLogDebug("Agent is follower? {}", this->getRole() == follower);
+    return (this->getRole() == follower);
+}
+
+bool Pelican::isCandidate() const {
+    this->sendLogDebug("Agent is candidate? {}", this->getRole() == candidate);
+    return (this->getRole() == candidate);
+}
+
+/************************** Private methods ***************************/
 void Pelican::becomeLeader() {
     this->setRole(leader);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
@@ -36,31 +66,4 @@ void Pelican::becomeCandidate() {
 
     this->el_core_.prepareForCandidateActions();
     this->el_core_.candidateActions();
-}
-
-void Pelican::commenceFollowerOperations() {
-    this->becomeFollower();
-}
-
-void Pelican::commenceLeaderOperations() {
-    this->becomeLeader();
-}
-
-void Pelican::commenceCandidateOperations() {
-    this->becomeCandidate();
-}
-
-bool Pelican::isLeader() const {
-    this->sendLogDebug("Agent is leader? {}", this->getRole() == leader);
-    return (this->getRole() == leader);
-}
-
-bool Pelican::isFollower() const {
-    this->sendLogDebug("Agent is follower? {}", this->getRole() == follower);
-    return (this->getRole() == follower);
-}
-
-bool Pelican::isCandidate() const {
-    this->sendLogDebug("Agent is candidate? {}", this->getRole() == candidate);
-    return (this->getRole() == candidate);
 }

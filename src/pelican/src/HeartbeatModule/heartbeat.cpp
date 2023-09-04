@@ -1,5 +1,5 @@
 #include "HeartbeatModule/heartbeat.hpp"
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 
 /************************** Ctors/Dctors ***************************/
 HeartbeatModule::HeartbeatModule() {

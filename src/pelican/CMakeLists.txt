@@ -20,7 +20,7 @@ find_package(fmt)
 find_library(PUGIXML_DIR pugixml)
 
 # Create a library to allow separation of headers and sources
-add_library(Pelican_class src/pelican.cpp)
+add_library(Pelican_class src/PelicanModule/pelican.cpp)
 ament_target_dependencies(Pelican_class rclcpp px4_msgs comms)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt)
@@ -31,10 +31,14 @@ set(MAIN
 set(SOURCES
     src/types.cpp
     src/utilities.cpp
-    src/pelican.cpp
-    src/roles.cpp
-    src/pelican_getters.cpp
-    src/pelican_setters.cpp
+)
+
+set(PELICAN_SOURCES
+    src/PelicanModule/pelican.cpp
+    src/PelicanModule/getters.cpp
+    src/PelicanModule/setters.cpp
+    src/PelicanModule/roles.cpp
+    src/PelicanModule/module_comms.cpp
 )
 
 set(ELECTION_SOURCES
@@ -101,6 +105,7 @@ endif()
 add_executable(pelican
               ${MAIN}
               ${SOURCES}
+              ${PELICAN_SOURCES}
               ${ELECTION_SOURCES}
               ${HEARTBEAT_SOURCES}
               ${LOGGER_SOURCES}

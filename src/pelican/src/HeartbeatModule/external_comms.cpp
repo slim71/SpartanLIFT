@@ -1,5 +1,5 @@
 #include "HeartbeatModule/heartbeat.hpp"
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "types.hpp"
 
 // Considering that external functionalities are not active
