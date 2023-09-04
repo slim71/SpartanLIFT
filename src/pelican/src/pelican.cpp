@@ -49,8 +49,6 @@ Pelican::~Pelican() {
 
     // Reset shared pointers
     this->instance_.reset();
-
-    // TODO: explicitly call modules' destructors?
 }
 
 void Pelican::parseModel() {
@@ -111,7 +109,6 @@ void Pelican::signalHandler(int signum) {
 // As a structure, I've decided no direct communications among modules
 // is to be done. Everything passes though the main module and is redirected
 // to the appropriate one
-// TODO: can be done as ROS2 services?
 
 heartbeat Pelican::requestLastHb() {
     return this->hb_core_.getLastHb();
@@ -121,12 +118,14 @@ int Pelican::requestNumberOfHbs() {
     return this->hb_core_.getNumberOfHbs();
 }
 
-// TODO: ponder about bool return value
 void Pelican::requestSetElectionStatus(int i) {
+    // If there's some problem with the Election Module,
+    // the code will just throw an error and terminate
     this->el_core_.setElectionStatus(i);
 }
 
-// TODO: ponder about bool return value
 void Pelican::requestResetElectionTimer() {
+    // If there's some problem with the Election Module,
+    // the code will just throw an error and terminate
     this->el_core_.resetElectionTimer();
 }

@@ -7,7 +7,7 @@ void Pelican::becomeLeader() {
     this->setRole(leader);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
     this->hb_core_.flushHeartbeats();
-    // TODO: flushVotes?
+    this->el_core_.flushVotes();
 
     // Unsubscribe from topics
     this->hb_core_.resetSubscription();
