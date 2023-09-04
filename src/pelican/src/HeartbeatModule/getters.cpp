@@ -1,4 +1,4 @@
-#include "heartbeat.hpp"
+#include "HeartbeatModule/heartbeat.hpp"
 
 int HeartbeatModule::getNumberOfHbs() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
