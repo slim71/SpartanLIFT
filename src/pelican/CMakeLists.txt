@@ -83,7 +83,12 @@ if(BUILD_TESTING)
   # Add all source files related to tests
   ament_add_gtest(${PROJECT_NAME}_test 
                   ${TEST_SOURCES}
-                  ${SOURCES})
+                  ${SOURCES}
+                  ${PELICAN_SOURCES}
+                  ${ELECTION_SOURCES}
+                  ${HEARTBEAT_SOURCES}
+                  ${LOGGER_SOURCES}
+  )
   # Add needed include directories
   target_include_directories(${PROJECT_NAME}_test 
                             PUBLIC

@@ -1,5 +1,6 @@
 #include "fixtures.hpp"
 
+/************************** SetUp/TearDown *************************/
 void PelicanTest::SetUp() {
     std::string pelican_share_directory = ament_index_cpp::get_package_share_directory("pelican");
     std::string config_file_path = pelican_share_directory + "/config/copter_test.yaml";
@@ -21,54 +22,55 @@ void PelicanTest::SetUp() {
     }
 
     // Instantiation
-    this->node = std::make_shared<Pelican>();
+    this->node_ = std::make_shared<Pelican>();
     // Set the instance pointer to the shared pointer of the main node
-    Pelican::setInstance(this->node);
+    Pelican::setInstance(this->node_);
 
-    this->reentrant_group_ = this->node->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    this->reentrant_group_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
-    this->executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-    this->executor->add_node(this->node);
+    this->executor_ = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
+    this->executor_->add_node(this->node_);
 
-    this->spin_thread = std::thread([this](){this->executor->spin();});
+    this->spin_thread_ = std::thread([this](){this->executor_->spin();});
 }
 
 void PelicanTest::TearDown() {
-    this->executor->cancel();
-    this->spin_thread.join(); // Wait for thread completion
+    this->executor_->cancel();
+    this->spin_thread_.join(); // Wait for thread completion
     rclcpp::shutdown();
 }
 
+/********************** Other member functions *********************/
 void PelicanTest::PositionPublisherTester() {
 
-    this->pos_sub = this->node->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
+    this->pos_sub_ = this->node_->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
         "/fmu/out/vehicle_local_position", this->px4_qos_, 
         [this](const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) { 
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex);
-            this->data_ok = true; 
+            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            this->data_ok_ = true; 
         },
-        this->reentrant_opt_);
+        this->node_->getReentrantOptions());
 }
 
 void PelicanTest::HeartbeatPublisherTester() {
 
-    this->hb_sub = this->node->create_subscription<comms::msg::Heartbeat>(
+    this->hb_sub_ = this->node_->create_subscription<comms::msg::Heartbeat>(
         "/fleet/heartbeat", this->standard_qos_, 
         [this](const comms::msg::Heartbeat::SharedPtr msg) { 
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex);
-            this->data_ok = true; 
+            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            this->data_ok_ = true; 
         },
-        this->reentrant_opt_);
+        this->node_->getReentrantOptions());
 }
 
 void PelicanTest::DatapadPublisherTester() {
 
-    this->data_sub = this->node->create_subscription<comms::msg::Datapad>(
+    this->data_sub_ = this->node_->create_subscription<comms::msg::Datapad>(
         "/fleet/leader_election", this->standard_qos_, 
         [this](const comms::msg::Datapad::SharedPtr msg) { 
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex);
-            this->data_ok = true; 
+            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            this->data_ok_ = true; 
         },
-        this->reentrant_opt_);
+        this->node_->getReentrantOptions());
 }
