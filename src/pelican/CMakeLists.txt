@@ -59,10 +59,10 @@ set(LOGGER_SOURCES
 )
 
 set(TEST_SOURCES
-    test/fixtures.cpp
-    test/getters_test.cpp
-    test/smoke.cpp
-    test/behavior_test.cpp
+    test/src/fixtures.cpp
+    test/src/getters_tests.cpp
+    test/src/smoke.cpp
+    test/src/behavior_tests.cpp
 )
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")
@@ -92,7 +92,7 @@ if(BUILD_TESTING)
   # Add needed include directories
   target_include_directories(${PROJECT_NAME}_test 
                             PUBLIC
-                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>;${CMAKE_CURRENT_SOURCE_DIR}/test/include/"
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
