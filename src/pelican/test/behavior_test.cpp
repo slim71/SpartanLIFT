@@ -4,7 +4,7 @@ TEST_F(PelicanTest, TestRoleCoherence) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // this is a XOR statement: only one must be true
-    ASSERT_TRUE((this->node.get()->isLeader() != this->node.get()->isFollower()) != this->node.get()->isCandidate());
+    ASSERT_TRUE((this->node_.get()->isLeader() != this->node_.get()->isFollower()) != this->node_.get()->isCandidate());
 
 }
 
@@ -28,15 +28,15 @@ TEST_F(PelicanTest, TestRoleCoherence) {
 TEST_F(PelicanTest, TestHeartbeatPublisher) {
     this->HeartbeatPublisherTester();
 
-    while(!this->node->isLeader()) {
+    while(!this->node_->isLeader()) {
 
     }
 
     bool passed = false;
     for(int i=0; i < 10; i++) {
-        this->data_ok_mutex.lock();
-        bool a = this->data_ok;
-        this->data_ok_mutex.unlock();
+        this->data_ok_mutex_.lock();
+        bool a = this->data_ok_;
+        this->data_ok_mutex_.unlock();
 
         if(a) {
             SUCCEED();
@@ -56,9 +56,9 @@ TEST_F(PelicanTest, TestDatapadPublisher) {
 
     bool passed = false;
     for(int i=0; i < 10; i++) {
-        this->data_ok_mutex.lock();
-        bool a = this->data_ok;
-        this->data_ok_mutex.unlock();
+        this->data_ok_mutex_.lock();
+        bool a = this->data_ok_;
+        this->data_ok_mutex_.unlock();
 
         if(a) {
             SUCCEED();

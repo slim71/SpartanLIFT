@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "pelican.hpp"
+#include "PelicanModule/pelican.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 TEST(SmokeTests, ParseModelFailing) {
@@ -22,7 +22,7 @@ TEST(SmokeTests, ParseModelFailing) {
 }
 
 TEST(SmokeTests, NodeStartingCorrectly) {
-    // may throw ament_index_cpp::PackageNotFoundError exception
+    // May throw ament_index_cpp::PackageNotFoundError exception
     std::string pelican_share_directory = ament_index_cpp::get_package_share_directory("pelican");
     std::string config_file_path = pelican_share_directory + "/config/copter_test.yaml";
 
