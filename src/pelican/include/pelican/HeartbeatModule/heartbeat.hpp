@@ -7,6 +7,7 @@
 #include "utilities.hpp"
 #include <iostream>
 #include <rclcpp/rclcpp.hpp>
+#include <vector>
 
 class Pelican;
 

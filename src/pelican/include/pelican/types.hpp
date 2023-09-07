@@ -16,6 +16,8 @@ struct heartbeat {
         rclcpp::Time timestamp;
 };
 
+std::ostream& operator<<(std::ostream&, const heartbeat&);
+
 /***************** Enum Macros / X-Macros ****************/
 // Macro "constructors" for type and string tables
 #define AS_BARE(a) a,

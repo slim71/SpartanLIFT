@@ -63,6 +63,7 @@ set(TEST_SOURCES
     test/src/getters_tests.cpp
     test/src/smoke.cpp
     test/src/behavior_tests.cpp
+    test/src/heartbeat_tests.cpp
 )
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")
@@ -79,9 +80,9 @@ if(BUILD_TESTING)
   # ament_lint_auto_find_test_dependencies()
 
   # Find GTests
-  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
   # Add all source files related to tests
-  ament_add_gtest(${PROJECT_NAME}_test 
+  ament_add_gmock(${PROJECT_NAME}_test 
                   ${TEST_SOURCES}
                   ${SOURCES}
                   ${PELICAN_SOURCES}
@@ -94,6 +95,7 @@ if(BUILD_TESTING)
                             PUBLIC
                             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>;${CMAKE_CURRENT_SOURCE_DIR}/test/include/"
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+
   )
   # Add dependencies if needed
   ament_target_dependencies(${PROJECT_NAME}_test rclcpp px4_msgs comms)

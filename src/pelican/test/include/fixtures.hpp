@@ -1,5 +1,6 @@
-#include "gtest/gtest.h"
 #include "PelicanModule/pelican.hpp"
+#include "gtest/gtest.h"
+#include "types.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 class PelicanTest : public ::testing::Test {
@@ -26,15 +27,40 @@ class PelicanTest : public ::testing::Test {
         rclcpp::Subscription<comms::msg::Datapad>::SharedPtr data_sub_;
 
         rclcpp::QoS px4_qos_ {rclcpp::QoS(
-                rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
-                rmw_qos_profile_sensor_data
-            )};
+            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
+            rmw_qos_profile_sensor_data
+        )};
         rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
         rclcpp::QoS standard_qos_ {
-                rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
-            };
+            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
+        };
 
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
+};
+
+class HeartbeatTest : public ::testing::Test {
+    protected: // Attributes
+        HeartbeatModule core_;
+
+};
+
+class ElectionTest : public ::testing::Test {
+    protected: // Member functions
+        void SetUp() override;
+        void TearDown() override;
+
+    protected: // Attributes
+        std::shared_ptr<HeartbeatModule> node_;
+    
+};
+
+// CHECK: needed? feasible?
+class LoggerTest : public ::testing::Test {
+    protected: // Member functions
+        void SetUp() override;
+        void TearDown() override;
+
+    protected: // Attributes
 
 };
