@@ -8,7 +8,8 @@
                 "/opt/ros/humble/bin/**",
                 "/usr/include/**",
                 "/home/slim71/Documents/git/pugixml",
-                "/opt/ros/humble/include/ament_index_cpp"
+                "/opt/ros/humble/include/ament_index_cpp",
+                "/usr/src/gmock/include/*"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

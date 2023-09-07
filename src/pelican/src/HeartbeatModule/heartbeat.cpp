@@ -94,6 +94,8 @@ void HeartbeatModule::sendNow() {
 
 /******************** Private member functions *********************/
 void HeartbeatModule::sendHeartbeat() const {
+    // In case of missing MainModule, we could consider sending the ERROR_HB,
+    // but to no use. Let the module just throw an exception
     this->sendLogInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
