@@ -59,11 +59,12 @@ set(LOGGER_SOURCES
 )
 
 set(TEST_SOURCES
+    test/src/smoke.cpp
     test/src/fixtures.cpp
     test/src/getters_tests.cpp
-    test/src/smoke.cpp
     test/src/behavior_tests.cpp
     test/src/heartbeat_tests.cpp
+    test/src/logger_tests.cpp
 )
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")

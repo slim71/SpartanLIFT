@@ -1,4 +1,8 @@
 #include "fixtures.hpp"
+#include <rclcpp/logger.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+using rclcpp::get_logger;
 
 /************************** SetUp/TearDown *************************/
 void PelicanTest::SetUp() {
@@ -39,11 +43,10 @@ void PelicanTest::TearDown() {
     rclcpp::shutdown();
 }
 
-// void HeartbeatTest::SetUp() {
-//     // Instantiation
-//     this->core_ = HeartbeatModule();
-
-// }
+void LoggerTest::SetUp() {
+    this->l_ = std::make_shared<rclcpp::Logger>(get_logger("TestLogger"));
+    this->core_ = std::make_shared<LoggerModule>(*this->l_);
+}
 
 /********************** Other member functions *********************/
 void PelicanTest::PositionPublisherTester() {

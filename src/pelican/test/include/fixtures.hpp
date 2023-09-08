@@ -1,6 +1,8 @@
+#include "HeartbeatModule/heartbeat.hpp"
+#include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
-#include "gtest/gtest.h"
 #include "types.hpp"
+#include "gtest/gtest.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 class PelicanTest : public ::testing::Test {
@@ -42,25 +44,21 @@ class PelicanTest : public ::testing::Test {
 class HeartbeatTest : public ::testing::Test {
     protected: // Attributes
         HeartbeatModule core_;
-
 };
 
 class ElectionTest : public ::testing::Test {
     protected: // Member functions
         void SetUp() override;
-        void TearDown() override;
 
     protected: // Attributes
         std::shared_ptr<HeartbeatModule> node_;
-    
 };
 
-// CHECK: needed? feasible?
 class LoggerTest : public ::testing::Test {
     protected: // Member functions
         void SetUp() override;
-        void TearDown() override;
 
     protected: // Attributes
-
+        std::shared_ptr<rclcpp::Logger> l_;
+        std::shared_ptr<LoggerModule> core_;
 };

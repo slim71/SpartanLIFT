@@ -24,7 +24,7 @@ class LoggerModule {
 
     private:
         rclcpp::Logger logger_;
-        int id_;
+        int id_ {0};
 };
 
 // Including templates definitions
