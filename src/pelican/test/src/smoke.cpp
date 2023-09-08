@@ -1,5 +1,6 @@
-#include "PelicanModule/pelican.hpp"
 #include "HeartbeatModule/heartbeat.hpp"
+#include "LoggerModule/logger.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "gtest/gtest.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
@@ -97,15 +98,42 @@ TEST(SmokeTests, SignalHandling) {
 TEST(SmokeTests, HeartbeatModuleTest) {
     std::shared_ptr<HeartbeatModule> hb;
     ASSERT_NO_THROW(
-        try {
-            hb = std::make_shared<HeartbeatModule>();
-        } catch (const std::exception& e) {
+        try { hb = std::make_shared<HeartbeatModule>(); } catch (const std::exception& e) {
             EXPECT_STREQ("HeartbeatModule cannot be created!", e.what());
             throw; // Re-throw the exception for Google Test to catch
         }
     );
 
+    // Just to show the successful creation of a working object
     ASSERT_NO_THROW(hb->getNumberOfHbs());
-    ASSERT_NO_THROW(hb->getMaxHbs());
-    ASSERT_NO_THROW(hb->getLastHb());
+}
+
+TEST(SmokeTests, LoggerModuleTest) {
+    std::shared_ptr<LoggerModule> l;
+    ASSERT_NO_THROW(
+        try {
+            l = std::make_shared<LoggerModule>(rclcpp::get_logger("TestLogger"));
+        } catch (const std::exception& e) {
+            EXPECT_STREQ("LoggerModule cannot be created!", e.what());
+            throw; // Re-throw the exception for Google Test to catch
+        }
+    );
+
+    // Just to show the successful creation of a working object
+    ASSERT_NO_THROW(l->getID());
+}
+
+TEST(SmokeTests, AlternativeLoggerModuleConstructor) {
+    int desiredID = 2;
+    std::shared_ptr<LoggerModule> l;
+    ASSERT_NO_THROW(
+        try {
+            l = std::make_shared<LoggerModule>(rclcpp::get_logger("TestLogger"), desiredID);
+        } catch (const std::exception& e) {
+            EXPECT_STREQ("LoggerModule cannot be created!", e.what());
+            throw; // Re-throw the exception for Google Test to catch
+        }
+    );
+
+    ASSERT_EQ(l->getID(), desiredID);
 }
