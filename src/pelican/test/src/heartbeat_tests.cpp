@@ -1,7 +1,5 @@
 #include "fixtures.hpp"
 #include "types.hpp"
-#include <gmock/gmock-matchers.h>
-#include <gmock/gmock.h>
 
 /********************* Simple methods testing **********************/
 
@@ -9,7 +7,7 @@
 // the 'humble' tag ThrowsMessage (as other functions) is not defined
 // EXPECT_THAT(
 //       [this]() { this->core_.setupPublisher(); },
-//       ThrowsMessage<std::runtime_error>(HasSubstr("EXTERNAL_OFF"))
+//       ThrowsMessage<std::runtime_error>(HasSubstr(EXTERNAL_OFF))
 // );
 
 TEST_F(HeartbeatTest, CannotSetupPublisher) {

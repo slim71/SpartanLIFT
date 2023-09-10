@@ -5,6 +5,7 @@
 #include "comms/msg/request_vote_rpc.hpp"
 #include "LoggerModule/logger.hpp"
 #include "types.hpp"
+#include "utilities.hpp"
 #include <iostream>
 #include <random>
 
@@ -20,6 +21,8 @@ class ElectionModule {
         // Setup methods
         void initSetup(LoggerModule*);
         void prepareTopics();
+
+        int getLeaderID();
 
         // Actions initiated from outside the module
         void resetElectionTimer();

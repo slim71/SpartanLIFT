@@ -1,13 +1,15 @@
 #include "ElectionModule/election.hpp"
 #include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
+#include "types.hpp"
 
 /************************** Ctors/Dctors ***************************/
 ElectionModule::ElectionModule() {
     this->node_ = nullptr;
+    this->logger_ = nullptr;
 }
 
-ElectionModule::ElectionModule(Pelican* node) : node_(node) {}
+ElectionModule::ElectionModule(Pelican* node) : node_(node), logger_{nullptr} {}
 
 ElectionModule::~ElectionModule() {
     this->sendLogDebug("Trying to kill the ballot thread");
@@ -18,8 +20,8 @@ ElectionModule::~ElectionModule() {
     cancelTimer(this->voting_timer_);
 
     // Unsubscribe from topics
-    this->sub_to_leader_election_topic_.reset();
-    this->sub_to_request_vote_rpc_topic_.reset();
+    resetSharedPointer(this->sub_to_leader_election_topic_);//.reset();
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);//.reset();
 
     // Release mutexes
     std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);

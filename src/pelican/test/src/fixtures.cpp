@@ -38,7 +38,8 @@ void PelicanTest::SetUp() {
 }
 
 void PelicanTest::TearDown() {
-    this->executor_->cancel();
+    if(this->executor_)
+        this->executor_->cancel();
     this->spin_thread_.join(); // Wait for thread completion
     rclcpp::shutdown();
 }
