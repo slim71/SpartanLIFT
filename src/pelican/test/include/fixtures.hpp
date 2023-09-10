@@ -1,6 +1,7 @@
-#include "HeartbeatModule/heartbeat.hpp"
-#include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
+#include "LoggerModule/logger.hpp"
+#include "HeartbeatModule/heartbeat.hpp"
+#include "ElectionModule/election.hpp"
 #include "types.hpp"
 #include "gtest/gtest.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
@@ -42,16 +43,13 @@ class PelicanTest : public ::testing::Test {
 };
 
 class HeartbeatTest : public ::testing::Test {
-    protected: // Attributes
+    protected:
         HeartbeatModule core_;
 };
 
 class ElectionTest : public ::testing::Test {
-    protected: // Member functions
-        void SetUp() override;
-
-    protected: // Attributes
-        std::shared_ptr<HeartbeatModule> node_;
+    protected:
+        ElectionModule core_;
 };
 
 class LoggerTest : public ::testing::Test {

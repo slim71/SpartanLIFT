@@ -1,6 +1,7 @@
+#include "PelicanModule/pelican.hpp"
 #include "HeartbeatModule/heartbeat.hpp"
 #include "LoggerModule/logger.hpp"
-#include "PelicanModule/pelican.hpp"
+#include "ElectionModule/election.hpp"
 #include "gtest/gtest.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
@@ -136,4 +137,20 @@ TEST(SmokeTests, AlternativeLoggerModuleConstructor) {
     );
 
     ASSERT_EQ(l->getID(), desiredID);
+}
+
+TEST(SmokeTests, ElectionModuleTest) {
+    std::shared_ptr<ElectionModule> e;
+    ASSERT_NO_THROW(
+        try {
+            e = std::make_shared<ElectionModule>();
+        } catch (const std::exception& e) {
+            EXPECT_STREQ("ElectionModule cannot be created!", e.what());
+            throw; // Re-throw the exception for Google Test to catch
+        }
+    );
+
+    // Just to show the successful creation of a working object
+    ASSERT_NO_THROW(e->getLeaderID());
+
 }

@@ -10,6 +10,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
 endif()
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -44,6 +46,7 @@ set(PELICAN_SOURCES
 set(ELECTION_SOURCES
     src/ElectionModule/election.cpp
     src/ElectionModule/setters.cpp
+    src/ElectionModule/getters.cpp
     src/ElectionModule/checkers.cpp
     src/ElectionModule/external_comms.cpp
 )
@@ -64,6 +67,7 @@ set(TEST_SOURCES
     test/src/getters_tests.cpp
     test/src/behavior_tests.cpp
     test/src/heartbeat_tests.cpp
+    test/src/election_tests.cpp
     test/src/logger_tests.cpp
 )
 
@@ -81,9 +85,9 @@ if(BUILD_TESTING)
   # ament_lint_auto_find_test_dependencies()
 
   # Find GTests
-  find_package(ament_cmake_gmock REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   # Add all source files related to tests
-  ament_add_gmock(${PROJECT_NAME}_test 
+  ament_add_gtest(${PROJECT_NAME}_test 
                   ${TEST_SOURCES}
                   ${SOURCES}
                   ${PELICAN_SOURCES}

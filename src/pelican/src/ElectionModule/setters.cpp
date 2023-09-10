@@ -6,9 +6,10 @@
 void ElectionModule::resetElectionTimer() {
     // Reset the election_timer_, used to be sure there's a leader, to election_timeout
     resetTimer(this->election_timer_);
-    this->sendLogDebug(
-        "After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count() / 10
-    );
+    if(this->election_timer_)
+        this->sendLogDebug(
+            "After resetting, timer is {} ms", this->election_timer_->time_until_trigger().count() / 10
+        );
 }
 
 void ElectionModule::resetSubscriptions() {

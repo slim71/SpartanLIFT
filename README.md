@@ -71,3 +71,5 @@ I've prefered not to create more nodes to keep a centralized architecture. Some 
 
 The architecture is then single node, multi module: each node represents a whole Agent, which is comprised of multiple specialized modules exchanging data.
 Even more, I've decided not to let data "flow" directly from one module to another: each of them should pass through the main module to receive data handled by a third one.
+
+TODO: valgrind on tests and project
