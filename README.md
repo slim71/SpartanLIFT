@@ -73,3 +73,33 @@ The architecture is then single node, multi module: each node represents a whole
 Even more, I've decided not to let data "flow" directly from one module to another: each of them should pass through the main module to receive data handled by a third one.
 
 TODO: valgrind on tests and project
+
+gather[...]
+    secondary module asks data owned by another secondary module
+    will go through a main module method
+        OR
+    simply asks the main module for data
+
+confirm[...]
+    secondary module asks flag to main module
+
+signal[...]
+    secondary module triggers data change
+    (signalHandler excluded)
+
+commence[...]
+    main module actually initiates operations triggered by a secondary module
+
+is[...]
+    main module computes and returns flag to secondary module
+
+get[...]
+    owner module returns data owned by it
+
+request[...]
+    main module asks data to a secondary module
+
+signal -> commence
+request -> get
+confirm -> is
+gather -> request/get

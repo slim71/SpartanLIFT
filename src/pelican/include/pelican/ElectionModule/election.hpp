@@ -44,7 +44,7 @@ class ElectionModule {
 
         // Core functionalities
         void leaderElection();
-        void requestVote();
+        void triggerVotes();
         void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
         void vote(int id_to_vote, double candidate_mass) const;
         void storeCandidacy(const comms::msg::Datapad::SharedPtr msg);

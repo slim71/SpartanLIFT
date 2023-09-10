@@ -12,6 +12,7 @@ int ElectionModule::gatherAgentID() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering Agent ID");
     return this->node_->getID();
 }
 
@@ -20,6 +21,7 @@ double ElectionModule::gatherAgentMass() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering Agent mass");
     return this->node_->getMass();
 }
 
@@ -28,6 +30,7 @@ possible_roles ElectionModule::gatherAgentRole() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering Agent role");
     return this->node_->getRole();
 }
 
@@ -36,6 +39,7 @@ int ElectionModule::gatherCurrentTerm() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering current term ID");
     return this->node_->getCurrentTerm();
 }
 
@@ -44,6 +48,7 @@ int ElectionModule::gatherNumberOfHbs() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering number of heartbeats");
     return this->node_->requestNumberOfHbs();
 }
 
@@ -52,6 +57,7 @@ heartbeat ElectionModule::gatherLastHb() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering last heartbeat");
     return this->node_->requestLastHb();
 }
 
@@ -60,6 +66,7 @@ rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering reentrant group");
     return this->node_->getReentrantGroup();
 }
 
@@ -68,6 +75,7 @@ rclcpp::SubscriptionOptions ElectionModule::gatherReentrantOptions() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering reentreant options");
     return this->node_->getReentrantOptions();
 }
 
@@ -77,6 +85,7 @@ bool ElectionModule::confirmAgentIsCandidate() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Triggering increase of term ID");
     return this->node_->isCandidate();
 }
 
@@ -86,7 +95,8 @@ void ElectionModule::signalNewTerm() const {
         throw EXTERNAL_OFF;
     }
 
-    this->node_->increaseCurrentTerm();
+    this->sendLogDebug("Triggering increase of term ID");
+    this->node_->commenceIncreaseCurrentTerm();
 }
 
 void ElectionModule::signalTransitionToLeader() const {
@@ -94,6 +104,7 @@ void ElectionModule::signalTransitionToLeader() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Triggering transitioning to Leader");
     this->node_->commenceLeaderOperations();
 }
 
@@ -102,6 +113,7 @@ void ElectionModule::signalTransitionToCandidate() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Triggering transitioning to Candidate");
     this->node_->commenceCandidateOperations();
 }
 
@@ -110,5 +122,6 @@ void ElectionModule::signalTransitionToFollower() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Triggering transitioning to Follower");
     this->node_->commenceFollowerOperations();
 }

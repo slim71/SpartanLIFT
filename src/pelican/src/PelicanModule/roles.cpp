@@ -5,14 +5,17 @@
 
 /************** Actions initiated from outside the module *************/
 void Pelican::commenceFollowerOperations() {
+    this->sendLogDebug("Received signal for transitioning to Follower");
     this->becomeFollower();
 }
 
 void Pelican::commenceLeaderOperations() {
+    this->sendLogDebug("Received signal for transitioning to Leader");
     this->becomeLeader();
 }
 
 void Pelican::commenceCandidateOperations() {
+    this->sendLogDebug("Received signal for transitioning to Candidate");
     this->becomeCandidate();
 }
 
