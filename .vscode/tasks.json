@@ -47,6 +47,43 @@
             "command": "colcon build --cmake-target clean",
             "problemMatcher": "$gcc"
         },
+        //ROS2 chain
+        {
+            "label": "sourceros",
+            "detail": "Source the ROS2 global workspace",
+            "type": "shell",
+            "command": "source /opt/ros/humble/setup.bash",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "colconbuild",
+            "detail": "Test the target",
+            "type": "shell",
+            "command": "colcon build --packages-select ${input:package}",
+            "problemMatcher": "$gcc",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                    "sourceros", "sourcews"
+            ]
+        },
+        {
+            "label": "sourcews",
+            "detail": "Source the local workspace",
+            "type": "shell",
+            "command": "source install/setup.bash",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "colcontest",
+            "detail": "Test the target",
+            "type": "shell",
+            "command": "colcon test --event-handlers console_cohesion+ --packages-select ${input:package}",
+            "problemMatcher": "$gcc",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                    "sourcews", "colconbuild"
+            ]
+        },
         {
             "label": "purge",
             "detail": "Purge workspace by deleting all generated files.",
