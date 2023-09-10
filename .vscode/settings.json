@@ -1,28 +1,27 @@
 {
-    "python.analysis.typeCheckingMode": "basic",
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.insertSpaces": true,
-        "editor.tabSize": 4,
-        "editor.detectIndentation": false
-    },
-    "python.linting.flake8Enabled": false,
-    "python.formatting.provider": "black",
+    
     "python.analysis.extraPaths": [
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
+    "python.analysis.typeCheckingMode": "basic",
     "python.autoComplete.extraPaths": [
         "/opt/ros/humble/lib/python3.10/site-packages",
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "python.envFile": "${workspaceFolder}/.env",
     "python.formatting.autopep8Path": "/usr/bin/autopep8",
-    "python.formatting.autopep8Args": [
-        "--max-line-length=100"
-    ],
+    "python.formatting.autopep8Args": ["--max-line-length=100"],
+    "python.formatting.provider": "black",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+    },
 
     "ros.distro": "humble",
     "ros.rosSetupScript": "/home/slim71/Documents/git/SpartanLIFT/thesis_ws/install/setup.bash",
@@ -119,7 +118,6 @@
         "*.tpp": "cpp"
     },
 
-    "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
     "uncrustify.configPath.linux": "/opt/ros/humble/lib/python3.10/site-packages/ament_uncrustify/configuration/ament_code_style.cfg",
     
     "search.exclude": {
@@ -134,5 +132,6 @@
     "clang-format.executable": "/usr/bin/clang-format-17",
     "clang-format.style": "file:/home/slim71/Documents/git/SpartanLIFT/.vscode/.clang-format",
     "C_Cpp.default.cppStandard": "c++14",
-    "C_Cpp.default.cStandard": "c17"
+    "C_Cpp.default.cStandard": "c17",
+    "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
 }
