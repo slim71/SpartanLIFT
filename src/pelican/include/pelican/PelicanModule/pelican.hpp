@@ -43,11 +43,11 @@ class Pelican : public rclcpp::Node {
         // Handle data exchange among modules
         heartbeat requestLastHb();
         int requestNumberOfHbs();
-        void requestSetElectionStatus(int);
-        void requestResetElectionTimer();
+        void commenceSetElectionStatus(int);
+        void commenceResetElectionTimer();
 
         // Others
-        void increaseCurrentTerm();
+        void commenceIncreaseCurrentTerm();
         bool isLeader() const;
         bool isFollower() const;
         bool isCandidate() const;

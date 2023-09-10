@@ -171,7 +171,7 @@ void ElectionModule::leaderElection() {
     this->resetVotingWindow();
 }
 
-void ElectionModule::requestVote() {
+void ElectionModule::triggerVotes() {
     // Do not serve request in case another leader has been already chosen
     if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
         return;
@@ -329,7 +329,7 @@ void ElectionModule::candidateActions() {
         this->sendLogInfo("New voting round for term {}", this->gatherCurrentTerm());
 
         this->vote(this->gatherAgentID(), this->gatherAgentMass());
-        this->requestVote();
+        this->triggerVotes();
 
         this->startBallotThread();
 

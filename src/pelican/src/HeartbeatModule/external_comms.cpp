@@ -69,7 +69,7 @@ void HeartbeatModule::signalSetElectionStatus(int64_t id) {
         throw EXTERNAL_OFF;
     }
 
-    this->node_->requestSetElectionStatus(id);
+    this->node_->commenceSetElectionStatus(id);
 }
 
 void HeartbeatModule::signalResetElectionTimer() {
@@ -77,5 +77,5 @@ void HeartbeatModule::signalResetElectionTimer() {
         throw EXTERNAL_OFF;
     }
 
-    this->node_->requestResetElectionTimer();
+    this->node_->commenceResetElectionTimer();
 }

@@ -6,7 +6,7 @@ void Pelican::setRole(possible_roles r) {
     this->role_ = r;
 }
 
-void Pelican::increaseCurrentTerm() {
+void Pelican::commenceIncreaseCurrentTerm() {
     this->current_term_++;
 }
 
