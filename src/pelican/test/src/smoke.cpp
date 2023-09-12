@@ -113,7 +113,7 @@ TEST(SmokeTests, LoggerModuleTest) {
     std::shared_ptr<LoggerModule> l;
     ASSERT_NO_THROW(
         try {
-            l = std::make_shared<LoggerModule>(rclcpp::get_logger("TestLogger"));
+            l = std::make_shared<LoggerModule>(std::make_shared<rclcpp::Logger>(rclcpp::get_logger("TestLogger")));
         } catch (const std::exception& e) {
             EXPECT_STREQ("LoggerModule cannot be created!", e.what());
             throw; // Re-throw the exception for Google Test to catch
@@ -122,21 +122,6 @@ TEST(SmokeTests, LoggerModuleTest) {
 
     // Just to show the successful creation of a working object
     ASSERT_NO_THROW(l->getID());
-}
-
-TEST(SmokeTests, AlternativeLoggerModuleConstructor) {
-    int desiredID = 2;
-    std::shared_ptr<LoggerModule> l;
-    ASSERT_NO_THROW(
-        try {
-            l = std::make_shared<LoggerModule>(rclcpp::get_logger("TestLogger"), desiredID);
-        } catch (const std::exception& e) {
-            EXPECT_STREQ("LoggerModule cannot be created!", e.what());
-            throw; // Re-throw the exception for Google Test to catch
-        }
-    );
-
-    ASSERT_EQ(l->getID(), desiredID);
 }
 
 TEST(SmokeTests, ElectionModuleTest) {

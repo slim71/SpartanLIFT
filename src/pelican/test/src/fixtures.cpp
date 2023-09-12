@@ -10,7 +10,9 @@ void PelicanTest::SetUp() {
     std::string config_file_path = pelican_share_directory + "/config/copter_test.yaml";
 
     char* argv[] = {
-        strdup("--ros-args"), strdup("--params-file"), strdup(config_file_path.c_str()), NULL
+        strdup("--ros-args"), strdup("--params-file"), strdup(config_file_path.c_str()), 
+        // strdup("--log-level"), strdup("debug"), 
+        NULL
     };
     int argc = (int) (sizeof(argv) / sizeof(argv[0])) - 1;
 
@@ -46,7 +48,7 @@ void PelicanTest::TearDown() {
 
 void LoggerTest::SetUp() {
     this->l_ = std::make_shared<rclcpp::Logger>(get_logger("TestLogger"));
-    this->core_ = std::make_shared<LoggerModule>(*this->l_);
+    this->core_ = std::make_shared<LoggerModule>(this->l_);
 }
 
 /********************** Other member functions *********************/
