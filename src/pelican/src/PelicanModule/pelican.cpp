@@ -5,7 +5,7 @@
 std::weak_ptr<Pelican> Pelican::instance_;
 
 /************************** Ctors/Dctors ***************************/
-Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this), el_core_(this) {
+Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -20,6 +20,7 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
     // with itself (thanks to mutexes)
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
+    this->logger_.setupLogger(std::make_shared<rclcpp::Logger>(this->get_logger()));
     this->hb_core_.initSetup(&(this->logger_));
     this->el_core_.initSetup(&(this->logger_));
 
@@ -38,7 +39,8 @@ Pelican::Pelican() : Node("Pelican"), logger_(this->get_logger()), hb_core_(this
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
-
+    this->ready_ = true;
+    
     this->becomeFollower();
 }
 
