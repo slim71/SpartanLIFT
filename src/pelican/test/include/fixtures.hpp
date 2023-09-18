@@ -14,6 +14,11 @@ class PelicanTest : public ::testing::Test {
         void PositionPublisherTester();
         void HeartbeatPublisherTester();
         void DatapadPublisherTester();
+        int RequestNumberOfHbsTester();
+        heartbeat RequestLastHbTester();
+        void CommenceFollowerOperationsTester();
+        void CommenceCandidateOperationsTester();
+        void CommenceLeaderOperationsTester();
 
     protected: // Attributes
         std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> executor_;

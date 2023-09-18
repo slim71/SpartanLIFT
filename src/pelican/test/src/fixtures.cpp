@@ -40,10 +40,16 @@ void PelicanTest::SetUp() {
 }
 
 void PelicanTest::TearDown() {
-    if(this->executor_)
-        this->executor_->cancel();
-    this->spin_thread_.join(); // Wait for thread completion
+    // Needed to be sure that no operations are pending after cancelling
+    // the executor, otherwise the spin() does not return
+    if (this->node_) {
+        this->node_->commenceStopHeartbeat();
+        this->node_->commenceStopBallotThread();
+    }
+    
     rclcpp::shutdown();
+    
+    this->spin_thread_.join(); // Wait for thread completion
 }
 
 void LoggerTest::SetUp() {
@@ -83,4 +89,24 @@ void PelicanTest::DatapadPublisherTester() {
         },
         this->node_->getReentrantOptions()
     );
+}
+
+int PelicanTest::RequestNumberOfHbsTester() {
+    return this->node_->requestNumberOfHbs();
+}
+
+heartbeat PelicanTest::RequestLastHbTester() {
+    return this->node_->requestLastHb();
+}
+
+void PelicanTest::CommenceFollowerOperationsTester() {
+    this->node_->commenceFollowerOperations();
+}
+
+void PelicanTest::CommenceCandidateOperationsTester() {
+    this->node_->commenceCandidateOperations();
+}
+
+void PelicanTest::CommenceLeaderOperationsTester() {
+    this->node_->commenceLeaderOperations();
 }

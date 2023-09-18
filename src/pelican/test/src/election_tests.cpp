@@ -20,9 +20,7 @@ TEST_F(ElectionTest, TestGetLeaderID) {
 }
 
 TEST_F(ElectionTest, TestResetElectiontimer) {
-    std::cout << "before test" << std::endl;
     ASSERT_NO_THROW(this->core_.resetElectionTimer());
-    std::cout << "after test" << std::endl;
 }
 
 TEST_F(ElectionTest, TestResetSubscriptions) {
