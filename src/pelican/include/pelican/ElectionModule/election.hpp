@@ -35,6 +35,7 @@ class ElectionModule {
         // Both from outside and inside the module
         void stopBallotThread();
         void flushVotes();
+        void setIsTerminated();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -83,7 +84,6 @@ class ElectionModule {
         void clearElectionStatus();
 
         bool checkIsTerminated() const;
-        void setIsTerminated();
 
         bool checkForExternalLeader();
         bool checkExternalLeaderElected() const;

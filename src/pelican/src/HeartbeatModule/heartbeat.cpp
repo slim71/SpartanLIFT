@@ -85,6 +85,10 @@ void HeartbeatModule::resetSubscription() {
     resetSharedPointer(this->sub_to_heartbeat_topic_);
 }
 
+void HeartbeatModule::resetPublisher() {
+    resetSharedPointer(this->pub_to_heartbeat_topic_);
+}
+
 /********************* Special functionalities *********************/
 void HeartbeatModule::sendNow() {
     // One-off transmission; allowed for special occasions
@@ -111,7 +115,9 @@ void HeartbeatModule::sendHeartbeat() const {
 }
 
 void HeartbeatModule::stopHeartbeat() {
-    this->sendLogInfo("Stopping heartbeat transmissions");
+    if(this->hb_transmission_timer_) {
+        this->sendLogInfo("Stopping heartbeat transmissions");
+    }
     cancelTimer(this->hb_transmission_timer_);
 }
 

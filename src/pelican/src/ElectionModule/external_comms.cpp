@@ -56,7 +56,6 @@ heartbeat ElectionModule::gatherLastHb() const {
     if (!this->node_) {
         throw EXTERNAL_OFF;
     }
-
     this->sendLogDebug("Gathering last heartbeat");
     return this->node_->requestLastHb();
 }

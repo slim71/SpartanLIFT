@@ -19,6 +19,11 @@ void Pelican::commenceCandidateOperations() {
     this->becomeCandidate();
 }
 
+void Pelican::commenceIsTerminated() {
+    this->sendLogDebug("Received signal for setting the termination flag");
+    this->el_core_.setIsTerminated();
+}
+
 /************************** Public methods ***************************/
 bool Pelican::isLeader() const {
     this->sendLogDebug("Agent is leader? {}", this->getRole() == leader);
@@ -42,10 +47,9 @@ void Pelican::becomeLeader() {
     this->hb_core_.flushHeartbeats();
     this->el_core_.flushVotes();
 
-    // Unsubscribe from topics
+    // Topic preparations outside specific actions
     this->hb_core_.resetSubscription();
     this->el_core_.resetSubscriptions();
-
     this->hb_core_.setupPublisher();
 
     this->hb_core_.sendNow(); // To promptly notify all agents about the new leader
@@ -55,6 +59,9 @@ void Pelican::becomeLeader() {
 void Pelican::becomeFollower() {
     this->setRole(follower);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
+    
+    this->commenceStopHeartbeat();
+    this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();
 
     this->el_core_.followerActions();
@@ -64,7 +71,10 @@ void Pelican::becomeCandidate() {
     this->setRole(candidate);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
 
+    // Topic preparations outside specific actions
     this->el_core_.prepareTopics();
+    this->commenceStopHeartbeat();
+    this->hb_core_.resetPublisher();
     this->hb_core_.setupSubscription();
 
     this->el_core_.prepareForCandidateActions();

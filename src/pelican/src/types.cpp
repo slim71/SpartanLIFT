@@ -1,5 +1,7 @@
 #include "types.hpp"
 
+heartbeat ERROR_HB = {-1, -1, rclcpp::Time(0, 0)};
+
 const char* modules_names[] = {MODULES(AS_STR) nullptr};
 const char* roles_names[] = {ROLES(AS_STR) nullptr};
 
@@ -31,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, const possible_roles& r) {
 
 /************************ possible_modules *************************/
 std::string modules_to_string(possible_modules module) {
-    return ((int) module < (int) NumPossibleRoles) ? modules_names[(int) module] : "";
+    return ((int) module < (int) NumModules) ? modules_names[(int) module] : "";
 }
 
 possible_modules string_to_modules(const std::string& s) {

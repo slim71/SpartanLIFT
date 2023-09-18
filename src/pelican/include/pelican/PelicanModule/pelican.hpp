@@ -39,24 +39,24 @@ class Pelican : public rclcpp::Node {
         void commenceFollowerOperations();
         void commenceLeaderOperations();
         void commenceCandidateOperations();
+        void commenceIsTerminated();
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
         int requestNumberOfHbs();
+
         void commenceSetElectionStatus(int);
         void commenceResetElectionTimer();
-
-        // Others
         void commenceIncreaseCurrentTerm();
+        void commenceStopHeartbeat();
+        void commenceStopBallotThread();
+
         bool isLeader() const;
         bool isFollower() const;
         bool isCandidate() const;
+        bool isReady() const;
 
     private: // Member functions
-        LoggerModule logger_;
-        HeartbeatModule hb_core_;
-        ElectionModule el_core_;
-
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
@@ -74,14 +74,17 @@ class Pelican : public rclcpp::Node {
         void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const;
 
     private: // Attributes
+        LoggerModule logger_;
+        HeartbeatModule hb_core_;
+        ElectionModule el_core_;
+
         int id_;
         std::string model_;
         double mass_ {0.0};
-
         possible_roles role_ {tbd};
-
         int current_term_ {0};
         static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
+        bool ready_ {false};
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is

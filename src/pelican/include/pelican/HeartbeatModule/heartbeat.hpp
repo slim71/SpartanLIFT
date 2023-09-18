@@ -26,6 +26,7 @@ class HeartbeatModule {
 
         // Actions initiated from outside the module
         void resetSubscription();
+        void resetPublisher();
 
         // Both from outside and inside the module
         void flushHeartbeats();
@@ -36,6 +37,7 @@ class HeartbeatModule {
 
         // Special functionalities
         void sendNow();
+        void stopHeartbeat();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -45,7 +47,6 @@ class HeartbeatModule {
 
         // Core functionalities
         void sendHeartbeat() const;
-        void stopHeartbeat();
         void storeHeartbeat(const comms::msg::Heartbeat msg);
 
         // External communications

@@ -16,6 +16,14 @@ int Pelican::requestNumberOfHbs() {
     return this->hb_core_.getNumberOfHbs();
 }
 
+void Pelican::commenceStopHeartbeat() {
+    this->hb_core_.stopHeartbeat();
+}
+
+void Pelican::commenceStopBallotThread() {
+    this->el_core_.stopBallotThread();
+}
+
 /*********************** To Election Module ************************/
 void Pelican::commenceSetElectionStatus(int i) {
     this->sendLogDebug("Requesting setElectionStatus");

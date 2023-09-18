@@ -2,19 +2,31 @@
 #define _PELICAN_TEMPLATES_HPP_
 
 template<typename... Args> void Pelican::sendLogDebug(std::string s, Args... args) const {
-    this->logger_.logDebug(main_module, s, args...);
+    if(this->logger_.isReady())
+        this->logger_.logDebug(main_module, s, args...);
+    else
+        std::cout << "PelicanModule | Missing LoggerModule: cannot build proper logs!" << std::endl;
 }
 
 template<typename... Args> void Pelican::sendLogInfo(std::string s, Args... args) const {
-    this->logger_.logInfo(main_module, s, args...);
+    if(this->logger_.isReady())
+        this->logger_.logInfo(main_module, s, args...);
+    else
+        std::cout << "PelicanModule | Missing LoggerModule: cannot build proper logs!" << std::endl;
 }
 
 template<typename... Args> void Pelican::sendLogWarning(std::string s, Args... args) const {
-    this->logger_.logWarning(main_module, s, args...);
+    if(this->logger_.isReady())
+        this->logger_.logWarning(main_module, s, args...);
+    else
+        std::cout << "PelicanModule | Missing LoggerModule: cannot build proper logs!" << std::endl;
 }
 
 template<typename... Args> void Pelican::sendLogError(std::string s, Args... args) const {
-    this->logger_.logError(main_module, s, args...);
+    if(this->logger_.isReady())
+        this->logger_.logError(main_module, s, args...);
+    else
+        std::cout << "PelicanModule | Missing LoggerModule: cannot build proper logs!" << std::endl;
 }
 
 #endif
