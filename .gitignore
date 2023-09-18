@@ -374,3 +374,6 @@ AMENT_IGNORE
 
 # Temporary folder used for other stuff
 temp
+
+# Folder used to store core dumps or debugging logs
+dumps

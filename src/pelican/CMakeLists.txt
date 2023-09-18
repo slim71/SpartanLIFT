@@ -10,7 +10,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
 endif()
 
-set(CMAKE_BUILD_TYPE Debug)
+if(DEBUG_MODE)
+  message("Compiling with debug symbols!")
+  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+endif()
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
@@ -94,6 +98,7 @@ if(BUILD_TESTING)
                   ${ELECTION_SOURCES}
                   ${HEARTBEAT_SOURCES}
                   ${LOGGER_SOURCES}
+                  TIMEOUT 100
   )
   # Add needed include directories
   target_include_directories(${PROJECT_NAME}_test 
