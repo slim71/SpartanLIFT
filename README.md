@@ -103,3 +103,5 @@ signal -> commence
 request -> get
 confirm -> is
 gather -> request/get
+
+// TODO: consider mutex or interrupt for consecutive changes in role

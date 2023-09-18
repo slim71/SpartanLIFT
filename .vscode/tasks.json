@@ -67,10 +67,21 @@
             ]
         },
         {
-            "label": "sourcews",
+            "label": "sourceall",
             "detail": "Source the local workspace",
             "type": "shell",
             "command": "source install/setup.bash",
+            "problemMatcher": "$gcc",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                    "sourcews"
+            ]
+        },
+        {
+            "label": "sourceros",
+            "detail": "Source the ROS2 global workspace",
+            "type": "shell",
+            "command": "source /opt/ros/humble/setup.bash",
             "problemMatcher": "$gcc"
         },
         {

@@ -10,12 +10,6 @@
         "/opt/ros/humble/local/lib/python3.10/dist-packages"
     ],
     "python.envFile": "${workspaceFolder}/.env",
-    "python.formatting.autopep8Path": "/usr/bin/autopep8",
-    "python.formatting.autopep8Args": ["--max-line-length=100"],
-    "python.formatting.provider": "black",
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": false,
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.insertSpaces": true,
@@ -134,4 +128,8 @@
     "C_Cpp.default.cppStandard": "c++14",
     "C_Cpp.default.cStandard": "c17",
     "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
+    "editor.foldingStrategy": "indentation",
+    "autopep8.args": [
+        "\"--max-line-length=100\""
+    ],
 }
