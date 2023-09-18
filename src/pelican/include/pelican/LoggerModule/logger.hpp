@@ -11,8 +11,8 @@ class Pelican;
 
 class LoggerModule {
     public:
-        explicit LoggerModule(rclcpp::Logger);
-        explicit LoggerModule(rclcpp::Logger, int);
+        explicit LoggerModule();
+        explicit LoggerModule(std::shared_ptr<rclcpp::Logger>);
 
         template<typename... Args> void logInfo(possible_modules, std::string, Args...) const;
         template<typename... Args> void logError(possible_modules, std::string, Args...) const;
@@ -22,9 +22,14 @@ class LoggerModule {
         int getID() const;
         void setID(int);
 
+        void setupLogger(std::shared_ptr<rclcpp::Logger>);
+
+        bool isReady() const;
+
     private:
-        rclcpp::Logger logger_;
+        std::shared_ptr<rclcpp::Logger> logger_;
         int id_ {0};
+        bool ready_to_log_ {false};
 };
 
 // Including templates definitions
