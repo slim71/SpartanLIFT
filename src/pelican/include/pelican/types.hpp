@@ -18,6 +18,8 @@ struct heartbeat {
 
 std::ostream& operator<<(std::ostream&, const heartbeat&);
 
+extern heartbeat ERROR_HB;
+
 /***************** Enum Macros / X-Macros ****************/
 // Macro "constructors" for type and string tables
 #define AS_BARE(a) a,
@@ -29,7 +31,8 @@ std::ostream& operator<<(std::ostream&, const heartbeat&);
     _(nullmodule)  \
     _(main_module) \
     _(log_module)  \
-    _(hb_module)
+    _(hb_module)   \
+    _(el_module)
 
 enum possible_modules { MODULES(AS_BARE) NumModules };
 

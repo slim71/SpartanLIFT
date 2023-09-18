@@ -262,8 +262,7 @@ void ElectionModule::flushVotes() {
 /************************* Ballot-related **************************/
 void ElectionModule::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
-    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
-           !this->checkIsTerminated()) {
+    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->checkIsTerminated()) {
         this->sendLogDebug("Ballot checking...");
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -271,11 +270,15 @@ void ElectionModule::ballotCheckingThread() {
     this->sendLogInfo("Ballot finished");
 
     // Notify the main thread to stop waiting
+    // std::unique_lock<std::mutex> cvlock(this->candidate_mutex_);
+    this->setIsTerminated();
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
+    this->sendLogDebug("Ballot thread notified through the condition variable!");
 }
 
 void ElectionModule::startBallotThread() {
     if (!this->ballot_thread_.joinable()) {
+        this->sendLogDebug("Starting ballot thread...");
         this->ballot_thread_ = std::thread(&ElectionModule::ballotCheckingThread, this);
     }
 }
@@ -317,7 +320,7 @@ void ElectionModule::candidateActions() {
     // (b) another server establishes itself as leader  --> election_completed_ = false +
     // external_leader_elected = true (?) (c) a period of time goes by with no winner      -->
     // nothing signaling this, just restart from a newer term_id
-    while (!this->checkElectionCompleted()) {
+    while (!this->checkElectionCompleted() && !this->checkIsTerminated()) {
         // For the first execution the init phase has been done before the while loop
 
         this->flushVotes();
@@ -335,9 +338,10 @@ void ElectionModule::candidateActions() {
 
         // Wait until voting is completed (aka no more votes are registered in a time frame) or
         // timed-out, which is checked by another thread
-        std::unique_lock<std::mutex> lock(this->candidate_mutex_);
-        this->cv.wait(lock, [this]() {
-            return (this->checkVotingCompleted() || this->checkForExternalLeader());
+        std::unique_lock<std::mutex> cvlock(this->candidate_mutex_);
+        this->sendLogDebug("Going to wait on the condition variable...");
+        this->cv.wait(cvlock, [this]() {
+            return (this->checkVotingCompleted() || this->checkForExternalLeader() || this->checkIsTerminated());
         });
         this->sendLogDebug("Main thread free from ballot lock");
 
@@ -353,8 +357,8 @@ void ElectionModule::candidateActions() {
                 "Voting completed for term {}. Checking if I'm the winner...",
                 this->gatherCurrentTerm()
             );
-            this->leaderElection(
-            ); // if this node is not the leader, election_completed_ is not true
+            // if this node is not the leader, election_completed_ is not true
+            this->leaderElection();
         }
 
         // No other possible reasons to exit the condition_variable wait
@@ -375,8 +379,14 @@ void ElectionModule::prepareForCandidateActions() {
 
 /************* Both from outside and inside the module *************/
 void ElectionModule::stopBallotThread() {
+    // this->candidate_mutex_.lock();
+    this->setIsTerminated();
+    this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
+    // this->candidate_mutex_.unlock();
+    this->sendLogDebug("Notified through the condition variable while stopping the ballot thread!");
+
     if (this->ballot_thread_.joinable()) {
-        this->setIsTerminated();
+        this->sendLogDebug("Waiting on the ballot thread completion...");
         this->ballot_thread_.join();
     }
 }

@@ -39,7 +39,9 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this) 
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
+    
     this->ready_ = true;
+    this->sendLogInfo("Node ready!");
     
     this->becomeFollower();
 }
@@ -82,6 +84,7 @@ void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
     std::shared_ptr<Pelican> node = getInstance();
     if (node) {
+        node->hb_core_.stopHeartbeat();
         node->el_core_.stopBallotThread();
     }
 

@@ -31,3 +31,7 @@ rclcpp::SubscriptionOptions Pelican::getReentrantOptions() const {
 rclcpp::CallbackGroup::SharedPtr Pelican::getReentrantGroup() const {
     return this->reentrant_group_;
 }
+
+bool Pelican::isReady() const {
+    return this->ready_;
+}
