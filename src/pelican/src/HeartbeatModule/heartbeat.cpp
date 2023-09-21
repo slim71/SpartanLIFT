@@ -12,10 +12,6 @@ HeartbeatModule::~HeartbeatModule() {
     // Cancel periodic transmission (no problem arises if they're not initialized)
     cancelTimer(this->hb_transmission_timer_);
 
-    // Delete subscriber and publisher
-    this->resetSubscription();
-    resetSharedPointer(this->pub_to_heartbeat_topic_);
-
     // Clear out all heartbeats received and stored
     this->flushHeartbeats();
 
@@ -58,7 +54,7 @@ void HeartbeatModule::setupSubscription() {
     // Used by all kinds of agents to avoid multiple leaders
     // (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {
-    // If no error has been thrown, node_ is actually set and this can be executed
+        // If no error has been thrown, node_ is actually set and this can be executed
         this->sub_to_heartbeat_topic_ = this->node_->create_subscription<comms::msg::Heartbeat>(
             this->heartbeat_topic_, this->qos_,
             std::bind(&HeartbeatModule::storeHeartbeat, this, std::placeholders::_1),
@@ -71,7 +67,7 @@ void HeartbeatModule::setupTransmissionTimer() {
     if (!this->node_) {
         throw EXTERNAL_OFF;
     }
-    
+
     // Assumed to overwrite the existing one every time, if present.
     // If no error has been thrown, node_ is actually set and this can be executed
     this->hb_transmission_timer_ = this->node_->create_wall_timer(
@@ -115,7 +111,7 @@ void HeartbeatModule::sendHeartbeat() const {
 }
 
 void HeartbeatModule::stopHeartbeat() {
-    if(this->hb_transmission_timer_) {
+    if (this->hb_transmission_timer_) {
         this->sendLogInfo("Stopping heartbeat transmissions");
     }
     cancelTimer(this->hb_transmission_timer_);
@@ -127,8 +123,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (msg.term_id < term) {
         // Ignore heartbeat
         this->sendLogWarning(
-            "Ignoring heartbeat received with previous term ID ({} vs {})", 
-            msg.term_id, term
+            "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id, term
         );
         return;
     }
@@ -160,7 +155,9 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     // Sort such that older hb is first, to be sure
     std::sort(
         this->received_hbs_.begin(), this->received_hbs_.end(),
-        [](const heartbeat& a, const heartbeat& b) { return a.timestamp < b.timestamp; }
+        [](const heartbeat& a, const heartbeat& b) {
+            return a.timestamp < b.timestamp;
+        }
     );
     this->hbs_mutex_.unlock();
 

@@ -9,7 +9,7 @@ ElectionModule::ElectionModule() {
     this->logger_ = nullptr;
 }
 
-ElectionModule::ElectionModule(Pelican* node) : node_(node), logger_{nullptr} {}
+ElectionModule::ElectionModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 ElectionModule::~ElectionModule() {
     this->sendLogDebug("Trying to kill the ballot thread");
@@ -18,10 +18,6 @@ ElectionModule::~ElectionModule() {
     // Cancel active timers
     cancelTimer(this->election_timer_);
     cancelTimer(this->voting_timer_);
-
-    // Unsubscribe from topics
-    resetSharedPointer(this->sub_to_leader_election_topic_);//.reset();
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);//.reset();
 
     // Release mutexes
     std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
@@ -34,7 +30,7 @@ ElectionModule::~ElectionModule() {
 
     // Clear shared resources
     this->received_votes_.clear();
-    
+
     this->node_ = nullptr;
     this->logger_ = nullptr;
 }
@@ -262,7 +258,8 @@ void ElectionModule::flushVotes() {
 /************************* Ballot-related **************************/
 void ElectionModule::ballotCheckingThread() {
     // Continuously check for timeout or interrupt signal
-    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() && !this->checkIsTerminated()) {
+    while (!this->checkVotingCompleted() && !this->checkForExternalLeader() &&
+           !this->checkIsTerminated()) {
         this->sendLogDebug("Ballot checking...");
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -341,7 +338,10 @@ void ElectionModule::candidateActions() {
         std::unique_lock<std::mutex> cvlock(this->candidate_mutex_);
         this->sendLogDebug("Going to wait on the condition variable...");
         this->cv.wait(cvlock, [this]() {
-            return (this->checkVotingCompleted() || this->checkForExternalLeader() || this->checkIsTerminated());
+            return (
+                this->checkVotingCompleted() || this->checkForExternalLeader() ||
+                this->checkIsTerminated()
+            );
         });
         this->sendLogDebug("Main thread free from ballot lock");
 
