@@ -10,9 +10,11 @@ void PelicanTest::SetUp() {
     std::string config_file_path = pelican_share_directory + "/config/copter_test.yaml";
 
     char* argv[] = {
-        strdup("--ros-args"), strdup("--params-file"), strdup(config_file_path.c_str()), 
-        // strdup("--log-level"), strdup("debug"), 
-        NULL
+        strdup("--ros-args"),
+        strdup("--params-file"),
+        strdup(config_file_path.c_str()),
+        // strdup("--log-level"), strdup("debug"),
+        NULL,
     };
     int argc = (int) (sizeof(argv) / sizeof(argv[0])) - 1;
 
@@ -36,7 +38,9 @@ void PelicanTest::SetUp() {
     this->executor_ = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
     this->executor_->add_node(this->node_);
 
-    this->spin_thread_ = std::thread([this]() { this->executor_->spin(); });
+    this->spin_thread_ = std::thread([this]() {
+        this->executor_->spin();
+    });
 }
 
 void PelicanTest::TearDown() {
@@ -46,9 +50,9 @@ void PelicanTest::TearDown() {
         this->node_->commenceStopHeartbeat();
         this->node_->commenceStopBallotThread();
     }
-    
+
     rclcpp::shutdown();
-    
+
     this->spin_thread_.join(); // Wait for thread completion
 }
 
