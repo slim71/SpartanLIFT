@@ -393,6 +393,6 @@
         </collision>
       </link>
     </model>
-    
+
   </world>
 </sdf>

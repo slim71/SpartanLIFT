@@ -4,7 +4,6 @@
 // is to be done. Everything passes though the main module and is redirected
 // to the appropriate one
 
-
 /*********************** To Heartbeat Module ***********************/
 heartbeat Pelican::requestLastHb() {
     this->sendLogDebug("Received request for last heartbeat queued");

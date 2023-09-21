@@ -6,11 +6,11 @@ LoggerModule::LoggerModule() {
 }
 
 LoggerModule::LoggerModule(std::shared_ptr<rclcpp::Logger> l) {
-    if(l)
+    if (l)
         this->logger_ = l;
     else
         this->logger_ = nullptr; // CHECK: useless?
-        
+
     this->ready_to_log_ = true;
 }
 

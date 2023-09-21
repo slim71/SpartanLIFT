@@ -260,7 +260,7 @@
                 </lidar>
             </sensor>
         </link>
-        
+
         <link name="rotor_0">
             <pose frame="">0.247 0.1506 0.028 0.087267 0 0.523599</pose>
             <inertial>
@@ -345,7 +345,7 @@
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
         </plugin>
-        
+
         <link name="rotor_1">
             <pose frame="">-0.00067 0.28929 0.028 0 -0.087267 0</pose>
             <inertial>
@@ -430,7 +430,7 @@
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
         </plugin>
-        
+
         <link name="rotor_2">
             <pose frame="">-0.2501 0.1454 0.028 0.087267 -0 2.61799</pose>
             <inertial>
@@ -515,7 +515,7 @@
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
         </plugin>
-        
+
         <link name="rotor_3">
             <pose frame="">-0.2501 -0.1454 0.028 -0.087267 -0 -2.61799</pose>
             <inertial>
@@ -600,7 +600,7 @@
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
         </plugin>
-        
+
         <link name="rotor_4">
             <pose frame="">-0.00067 -0.28929 0.028 -0 0.087267 -3.14159</pose>
             <inertial>
@@ -685,7 +685,7 @@
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
         </plugin>
-        
+
         <link name="rotor_5">
             <pose frame="">0.247 -0.1506 0.028 -0.087267 0 -0.523599</pose>
             <inertial>

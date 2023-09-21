@@ -3,7 +3,7 @@
 
 /********************* Simple methods testing **********************/
 
-// Can't use this because in ament_cmake_gmock at 
+// Can't use this because in ament_cmake_gmock at
 // the 'humble' tag ThrowsMessage (as other functions) is not defined
 // EXPECT_THAT(
 //       [this]() { this->core_.setupPublisher(); },
@@ -46,7 +46,7 @@ TEST_F(HeartbeatTest, TestGetNumberOfHbs) {
 }
 
 TEST_F(HeartbeatTest, TestGetLastHb) {
-    auto ret = this->core_.getLastHb();  
+    auto ret = this->core_.getLastHb();
     std::cout << "Last Hbs --> " << ret << std::endl;
     ASSERT_EQ(typeid(ret), typeid(heartbeat));
 }
@@ -56,4 +56,3 @@ TEST_F(HeartbeatTest, CannotSendHeartbeat) {
 }
 
 /************************ Complex behaviors ************************/
-

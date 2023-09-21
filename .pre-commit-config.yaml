@@ -1,0 +1,19 @@
+repos:
+-   repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v16.0.6
+    hooks:
+    -   id: clang-format
+        name: clang-format
+        description: 'Apply Clang-format to files'
+        args: ["-style=file:.vscode/.clang-format"]
+        types_or: [c++, c]
+
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+    -   id: requirements-txt-fixer
+    -   id: end-of-file-fixer
+        exclude_types: [json]
+    -   id: pretty-format-json
