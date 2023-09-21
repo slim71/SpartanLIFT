@@ -17,7 +17,7 @@ Codename:	jammy
 
 ### ROS
 ```bash
-slim71@slim71-Ubuntu:~$ echo $ROS_DISTRO 
+slim71@slim71-Ubuntu:~$ echo $ROS_DISTRO
 humble
 ```
 ### Gazebo Garden
@@ -31,7 +31,7 @@ Released under the Apache 2.0 License.
 ---
 
 ## Controller library
-I initially started with [Ardupilot](https://ardupilot.org/), but I soon had to switch over to [PX4](https://px4.io/) 
+I initially started with [Ardupilot](https://ardupilot.org/), but I soon had to switch over to [PX4](https://px4.io/)
 because the former was not yet ready to be used in ROS2 projects when I started out.
 Among many things, this meant migrating from Gazebo 6 (Ignition) to Gazebo (Garden).
 
@@ -61,7 +61,7 @@ document setuptools warning/problem for python packages
 
 // Found this about timeouts:
 // The broadcast time should be an order of magnitude less than the election timeout so that leaders can
-// reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach 
+// reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach
 // used for election timeouts, this inequality also makes split votes unlikely. The election timeout should be
 // a few orders of magnitude less than MTBF so that the system makes steady progress
 
@@ -105,3 +105,6 @@ confirm -> is
 gather -> request/get
 
 // TODO: consider mutex or interrupt for consecutive changes in role
+
+# Requirements
+pre-commit https://pre-commit.com/

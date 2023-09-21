@@ -1,7 +1,7 @@
-#include "PelicanModule/pelican.hpp"
+#include "ElectionModule/election.hpp"
 #include "HeartbeatModule/heartbeat.hpp"
 #include "LoggerModule/logger.hpp"
-#include "ElectionModule/election.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "gtest/gtest.h"
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
@@ -49,7 +49,9 @@ TEST(SmokeTests, NodeStartingCorrectly) {
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
 
-    std::thread t([&]() { ASSERT_NO_THROW(executor.spin();); });
+    std::thread t([&]() {
+        ASSERT_NO_THROW(executor.spin(););
+    });
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     executor.cancel();
@@ -85,7 +87,9 @@ TEST(SmokeTests, SignalHandling) {
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
 
-    auto spin_thread = std::thread([&]() { ASSERT_NO_THROW(executor.spin();); });
+    auto spin_thread = std::thread([&]() {
+        ASSERT_NO_THROW(executor.spin(););
+    });
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     int res = std::raise(SIGINT);
@@ -113,7 +117,9 @@ TEST(SmokeTests, LoggerModuleTest) {
     std::shared_ptr<LoggerModule> l;
     ASSERT_NO_THROW(
         try {
-            l = std::make_shared<LoggerModule>(std::make_shared<rclcpp::Logger>(rclcpp::get_logger("TestLogger")));
+            l = std::make_shared<LoggerModule>(
+                std::make_shared<rclcpp::Logger>(rclcpp::get_logger("TestLogger"))
+            );
         } catch (const std::exception& e) {
             EXPECT_STREQ("LoggerModule cannot be created!", e.what());
             throw; // Re-throw the exception for Google Test to catch
@@ -127,9 +133,7 @@ TEST(SmokeTests, LoggerModuleTest) {
 TEST(SmokeTests, ElectionModuleTest) {
     std::shared_ptr<ElectionModule> e;
     ASSERT_NO_THROW(
-        try {
-            e = std::make_shared<ElectionModule>();
-        } catch (const std::exception& e) {
+        try { e = std::make_shared<ElectionModule>(); } catch (const std::exception& e) {
             EXPECT_STREQ("ElectionModule cannot be created!", e.what());
             throw; // Re-throw the exception for Google Test to catch
         }
@@ -137,5 +141,4 @@ TEST(SmokeTests, ElectionModuleTest) {
 
     // Just to show the successful creation of a working object
     ASSERT_NO_THROW(e->getLeaderID());
-
 }

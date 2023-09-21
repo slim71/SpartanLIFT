@@ -14,7 +14,7 @@ from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 
 def generate_launch_description():
     launch_description = LaunchDescription()
-    # LaunchConfigurations are used to store values of launch arguments in the above 
+    # LaunchConfigurations are used to store values of launch arguments in the above
     # variables and to pass them to required actions
     use_sim_time = LaunchConfiguration("use_sim_time")
 

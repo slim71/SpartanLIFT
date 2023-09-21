@@ -3,7 +3,7 @@
 
 /********************* Simple methods testing **********************/
 
-// Can't use this because in ament_cmake_gmock at 
+// Can't use this because in ament_cmake_gmock at
 // the 'humble' tag ThrowsMessage (as other functions) is not defined
 // EXPECT_THAT(
 //       [this]() { this->core_.prepareTopics(); },
@@ -16,7 +16,6 @@ TEST_F(ElectionTest, CantPrepareTopics) {
 
 TEST_F(ElectionTest, TestGetLeaderID) {
     ASSERT_EQ(this->core_.getLeaderID(), 0);
-    
 }
 
 TEST_F(ElectionTest, TestResetElectiontimer) {
@@ -25,14 +24,12 @@ TEST_F(ElectionTest, TestResetElectiontimer) {
 
 TEST_F(ElectionTest, TestResetSubscriptions) {
     ASSERT_NO_THROW(this->core_.resetSubscriptions());
-    
 }
 
 TEST_F(ElectionTest, TestSetElectionStatus) {
     int desired_leader = 3;
     ASSERT_NO_THROW(this->core_.setElectionStatus(desired_leader));
     ASSERT_EQ(this->core_.getLeaderID(), desired_leader);
-    
 }
 
 TEST_F(ElectionTest, TestEmptyStopBallotThread) {
@@ -46,13 +43,13 @@ TEST_F(ElectionTest, TestFlushVotes) {
 /************************ Complex behaviors ************************/
 
 // TEST_F(ElectionTest, TestPrepareForCandidateActions) {
-    
+
 // }
 
 // TEST_F(ElectionTest, TestFollowerActions) {
-    
+
 // }
 
 // TEST_F(ElectionTest, TestCandidateActions) {
-    
+
 // }

@@ -1,5 +1,5 @@
-#include "PelicanModule/pelican.hpp"
 #include "LoggerModule/logger.hpp"
+#include "PelicanModule/pelican.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
 
@@ -59,7 +59,7 @@ void Pelican::becomeLeader() {
 void Pelican::becomeFollower() {
     this->setRole(follower);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
-    
+
     this->commenceStopHeartbeat();
     this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();

@@ -24,7 +24,8 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this) 
     this->hb_core_.initSetup(&(this->logger_));
     this->el_core_.initSetup(&(this->logger_));
 
-    this->local_pos_topic_ = "/fmu/out/agent"s + std::to_string(this->getID()) + "/vehicle_local_position"s;
+    this->local_pos_topic_ =
+        "/fmu/out/agent"s + std::to_string(this->getID()) + "/vehicle_local_position"s;
     // Subscriber, listening for VehicleLocalPosition messages
     // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module
     // was started. Needed by every type of agent and never canceled
@@ -39,10 +40,10 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this) 
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
-    
+
     this->ready_ = true;
     this->sendLogInfo("Node ready!");
-    
+
     this->becomeFollower();
 }
 

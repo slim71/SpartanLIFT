@@ -31,7 +31,7 @@ ament_target_dependencies(Pelican_class rclcpp px4_msgs comms)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt)
 
-set(MAIN 
+set(MAIN
     src/main.cpp)
 
 set(SOURCES
@@ -91,7 +91,7 @@ if(BUILD_TESTING)
   # Find GTests
   find_package(ament_cmake_gtest REQUIRED)
   # Add all source files related to tests
-  ament_add_gtest(${PROJECT_NAME}_test 
+  ament_add_gtest(${PROJECT_NAME}_test
                   ${TEST_SOURCES}
                   ${SOURCES}
                   ${PELICAN_SOURCES}
@@ -101,7 +101,7 @@ if(BUILD_TESTING)
                   TIMEOUT 100
   )
   # Add needed include directories
-  target_include_directories(${PROJECT_NAME}_test 
+  target_include_directories(${PROJECT_NAME}_test
                             PUBLIC
                             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>;${CMAKE_CURRENT_SOURCE_DIR}/test/include/"
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
