@@ -1,0 +1,543 @@
+ *  Executing task: .vscode/discover_dependencies.sh build/pelican/pelican
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
+ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
+ros-humble-rcl: /opt/ros/humble/lib/librcl.so
+ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
+ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
+dpkg-query: no path found matching pattern *libcomms__rosidl_typesupport_cpp.so*
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_cpp.so
+ros-humble-rcl-yaml-param-parser: /opt/ros/humble/lib/librcl_yaml_param_parser.so
+ros-humble-rosgraph-msgs: /opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_cpp.so
+ros-humble-rmw-implementation: /opt/ros/humble/lib/librmw_implementation.so
+ros-humble-ament-index-cpp: /opt/ros/humble/lib/libament_index_cpp.so
+ros-humble-rcl-logging-interface: /opt/ros/humble/lib/librcl_logging_interface.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ros-humble-rcl-logging-spdlog: /opt/ros/humble/lib/librcl_logging_spdlog.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_c.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_generator_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+libyaml-dev:amd64: /usr/lib/x86_64-linux-gnu/libyaml.so
+ros-humble-libyaml-vendor: /opt/ros/humble/lib/libyaml.so
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1.9.2
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-builtin-interfaces: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8.1.1
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/pelican/pelican_test
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
+ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
+ros-humble-rcl: /opt/ros/humble/lib/librcl.so
+ros-humble-ament-index-cpp: /opt/ros/humble/lib/libament_index_cpp.so
+ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
+ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
+dpkg-query: no path found matching pattern *libcomms__rosidl_typesupport_cpp.so*
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_cpp.so
+ros-humble-rcl-yaml-param-parser: /opt/ros/humble/lib/librcl_yaml_param_parser.so
+ros-humble-rosgraph-msgs: /opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_cpp.so
+ros-humble-rmw-implementation: /opt/ros/humble/lib/librmw_implementation.so
+ros-humble-rcl-logging-interface: /opt/ros/humble/lib/librcl_logging_interface.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ros-humble-rcl-logging-spdlog: /opt/ros/humble/lib/librcl_logging_spdlog.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_c.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_generator_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+libyaml-dev:amd64: /usr/lib/x86_64-linux-gnu/libyaml.so
+ros-humble-libyaml-vendor: /opt/ros/humble/lib/libyaml.so
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1.9.2
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-builtin-interfaces: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8.1.1
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8
+ *  Terminal will be reused by tasks, press any key to close it.
+
+------------------------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_generator_c.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+
+------------------------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_c.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_cpp.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_fastrtps_c.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-fastcdr: /opt/ros/humble/lib/libfastcdr.so.1
+ros-humble-fastcdr: /opt/ros/humble/lib/libfastcdr.so.1.0.24
+ros-humble-rosidl-typesupport-fastrtps-c: /opt/ros/humble/lib/librosidl_typesupport_fastrtps_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_fastrtps_cpp.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rosidl-typesupport-fastrtps-cpp: /opt/ros/humble/lib/librosidl_typesupport_fastrtps_cpp.so
+ros-humble-fastcdr: /opt/ros/humble/lib/libfastcdr.so.1
+ros-humble-fastcdr: /opt/ros/humble/lib/libfastcdr.so.1.0.24
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_introspection_c.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_generator_c.so*
+ros-humble-rosidl-typesupport-introspection-c: /opt/ros/humble/lib/librosidl_typesupport_introspection_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_msgs/libpx4_msgs__rosidl_typesupport_introspection_cpp.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rosidl-typesupport-introspection-cpp: /opt/ros/humble/lib/librosidl_typesupport_introspection_cpp.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_ros_com/libframe_transforms.so
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_ros_com/offboard_control
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
+ros-humble-rcl: /opt/ros/humble/lib/librcl.so
+ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_cpp.so
+ros-humble-rcl-yaml-param-parser: /opt/ros/humble/lib/librcl_yaml_param_parser.so
+ros-humble-rosgraph-msgs: /opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_cpp.so
+ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
+ros-humble-rmw-implementation: /opt/ros/humble/lib/librmw_implementation.so
+ros-humble-ament-index-cpp: /opt/ros/humble/lib/libament_index_cpp.so
+ros-humble-rcl-logging-interface: /opt/ros/humble/lib/librcl_logging_interface.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+ros-humble-rcl-logging-spdlog: /opt/ros/humble/lib/librcl_logging_spdlog.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_c.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_generator_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libyaml-dev:amd64: /usr/lib/x86_64-linux-gnu/libyaml.so
+ros-humble-libyaml-vendor: /opt/ros/humble/lib/libyaml.so
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1.9.2
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-builtin-interfaces: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8.1.1
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_ros_com/sensor_combined_listener
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
+ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
+ros-humble-rcl: /opt/ros/humble/lib/librcl.so
+ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
+ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_cpp.so
+ros-humble-rcl-yaml-param-parser: /opt/ros/humble/lib/librcl_yaml_param_parser.so
+ros-humble-rosgraph-msgs: /opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_cpp.so
+ros-humble-rmw-implementation: /opt/ros/humble/lib/librmw_implementation.so
+ros-humble-ament-index-cpp: /opt/ros/humble/lib/libament_index_cpp.so
+ros-humble-rcl-logging-interface: /opt/ros/humble/lib/librcl_logging_interface.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+ros-humble-rcl-logging-spdlog: /opt/ros/humble/lib/librcl_logging_spdlog.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_c.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_generator_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libyaml-dev:amd64: /usr/lib/x86_64-linux-gnu/libyaml.so
+ros-humble-libyaml-vendor: /opt/ros/humble/lib/libyaml.so
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1.9.2
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-builtin-interfaces: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8.1.1
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
+ *  Executing task: .vscode/discover_dependencies.sh build/px4_ros_com/vehicle_gps_position_listener
+
+source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
+dpkg-query: no path found matching pattern *linux-vdso.so.1*
+ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
+dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
+ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
+ros-humble-rcl: /opt/ros/humble/lib/librcl.so
+ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
+ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
+ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
+libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
+lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6.0.30
+libx32stdc++6: /usr/libx32/libstdc++.so.6
+libstdc++6:amd64: /usr/share/gdb/auto-load/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30-gdb.py
+libstdc++6:i386: /usr/lib/i386-linux-gnu/libstdc++.so.6
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+lib32stdc++6: /usr/lib32/libstdc++.so.6
+libx32stdc++6: /usr/share/gdb/auto-load/usr/libx32/libstdc++.so.6.0.30-gdb.py
+libx32stdc++6: /usr/libx32/libstdc++.so.6.0.30
+lib32stdc++6: /usr/lib32/libstdc++.so.6.0.30
+libstdc++6:amd64: /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30
+libx32gcc-s1: /usr/libx32/libgcc_s.so.1
+libgcc-s1:amd64: /lib/x86_64-linux-gnu/libgcc_s.so.1
+libgcc-s1:i386: /lib/i386-linux-gnu/libgcc_s.so.1
+lib32gcc-s1: /usr/lib32/libgcc_s.so.1
+libc6-x32: /libx32/libc.so.6
+libc6:i386: /lib/i386-linux-gnu/libc.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libc.so.6
+libc6-i386: /lib32/libc.so.6
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_cpp.so
+ros-humble-rcl-yaml-param-parser: /opt/ros/humble/lib/librcl_yaml_param_parser.so
+ros-humble-rosgraph-msgs: /opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_cpp.so
+ros-humble-rmw-implementation: /opt/ros/humble/lib/librmw_implementation.so
+ros-humble-ament-index-cpp: /opt/ros/humble/lib/libament_index_cpp.so
+ros-humble-rcl-logging-interface: /opt/ros/humble/lib/librcl_logging_interface.so
+ros-humble-rcpputils: /opt/ros/humble/lib/librcpputils.so
+libc6-i386: /lib32/libm.so.6
+libc6:amd64: /lib/x86_64-linux-gnu/libm.so.6
+libc6:i386: /lib/i386-linux-gnu/libm.so.6
+libc6-x32: /libx32/libm.so.6
+libc6:amd64: /lib64/ld-linux-x86-64.so.2
+ros-humble-rosidl-typesupport-cpp: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
+ros-humble-rcl-logging-spdlog: /opt/ros/humble/lib/librcl_logging_spdlog.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_typesupport_c.so
+ros-humble-rcl-interfaces: /opt/ros/humble/lib/librcl_interfaces__rosidl_generator_c.so
+ros-humble-rosidl-runtime-c: /opt/ros/humble/lib/librosidl_runtime_c.so
+libyaml-dev:amd64: /usr/lib/x86_64-linux-gnu/libyaml.so
+ros-humble-libyaml-vendor: /opt/ros/humble/lib/libyaml.so
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1.9.2
+libspdlog1:amd64: /usr/lib/x86_64-linux-gnu/libspdlog.so.1
+ros-humble-rosidl-typesupport-c: /opt/ros/humble/lib/librosidl_typesupport_c.so
+ros-humble-builtin-interfaces: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8.1.1
+libfmt8:amd64: /usr/lib/x86_64-linux-gnu/libfmt.so.8
+ *  Terminal will be reused by tasks, press any key to close it.
+
+-------------------------------------------------------------------------------------
