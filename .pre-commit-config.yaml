@@ -16,6 +16,11 @@ repos:
     -   id: requirements-txt-fixer
     -   id: end-of-file-fixer
         exclude_types: [json]
-    -   id: pretty-format-json
-        args: [--autofix ]
-    -   id: check-json
+- repo: https://github.com/whtsky/pre-commit-pretty-format-json5
+  rev: "1.0.0"
+  hooks:
+    - id: pretty-format-json5
+- repo: https://gitlab.com/bmares/check-json5
+  rev: v1.0.0
+  hooks:
+  - id: check-json5
