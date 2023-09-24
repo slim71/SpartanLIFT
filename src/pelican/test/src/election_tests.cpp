@@ -39,17 +39,3 @@ TEST_F(ElectionTest, TestEmptyStopBallotThread) {
 TEST_F(ElectionTest, TestFlushVotes) {
     ASSERT_NO_THROW(this->core_.flushVotes());
 }
-
-/************************ Complex behaviors ************************/
-
-// TEST_F(ElectionTest, TestPrepareForCandidateActions) {
-
-// }
-
-// TEST_F(ElectionTest, TestFollowerActions) {
-
-// }
-
-// TEST_F(ElectionTest, TestCandidateActions) {
-
-// }
