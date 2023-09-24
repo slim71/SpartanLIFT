@@ -343,7 +343,10 @@ void ElectionModule::candidateActions() {
                 this->checkIsTerminated()
             );
         });
-        this->sendLogDebug("Main thread free from ballot lock");
+        this->sendLogDebug(
+            "Main thread free from ballot lock! voting {} external {} isterminated {}",
+            this->checkVotingCompleted(), this->checkForExternalLeader(), this->checkIsTerminated()
+        );
 
         if (this->checkForExternalLeader()) {
             this->sendLogInfo("External leader elected");
