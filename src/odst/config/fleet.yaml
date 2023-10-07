@@ -1,0 +1,22 @@
+launchfile:
+  fleet_size: 3
+  names:
+    -
+    -
+    -
+  codes:
+    - 4001
+    - 6012
+    - 4004
+  models:
+    - 'X3'
+    - 'typhoon_h480'
+    - 'rc_cessna'
+  xs:
+    - 0
+    - 0
+    - 0
+  ys:
+    - 0
+    - 1
+    - 2
