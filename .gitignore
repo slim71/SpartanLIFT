@@ -364,6 +364,7 @@ AMENT_IGNORE
 
 # Temporary folder used for other stuff
 temp
+!src/odst/temp
 
 # Folder used to store core dumps or debugging logs
 dumps
