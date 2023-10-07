@@ -1,7 +1,4 @@
-import os
-import sys
 from launch import LaunchDescription
-from ament_index_python.packages import get_package_share_directory
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare

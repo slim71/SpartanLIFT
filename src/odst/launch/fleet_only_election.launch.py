@@ -1,5 +1,5 @@
 import sys
-from odst.logs import print_argument  # Gives error in VSCode but it's valid
+from odst.logs import print_arguments  # Gives error in VSCode but it's valid
 from pathlib import Path  # Debug
 from launch import LaunchDescription, LaunchContext
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo
@@ -40,7 +40,7 @@ def generate_launch_description():
         sub = PathJoinSubstitution([config_pkg_share, config_middleware, files[0]])
         print(f'[DEBUG] Path to config files: {Path(sub.perform(LaunchContext()))}')
 
-        print_launch_argument = OpaqueFunction(function=print_argument)
+        print_launch_argument = OpaqueFunction(function=print_arguments)
         launch_description.add_action(print_launch_argument)
 
 
