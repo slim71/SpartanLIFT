@@ -34,6 +34,15 @@ def generate_launch_description():
     # Spawn RVIZ
     rviz = Node(package='rviz2', namespace='', executable='rviz2', name='rviz2')
 
+    # Script used when starting Gazebo
+    source_file = os.path.join(
+        get_package_share_directory('odst'),
+        'resource',
+        'include_px4_models.sh'
+    )
+    # World to use in Gazebo
+    world_name = config_params['world']
+
     # Get the filepath to your config file
     script_file = os.path.join(
         get_package_share_directory('odst'),
@@ -45,8 +54,16 @@ def generate_launch_description():
         tmp.write('#!/bin/bash')  # Bash shebang
         tmp.write('\n')
 
+        # Source a custom script to include the PX4 model folder, then manually start Gazebo;
+        # without this, Gazebo would not find all needed models.
+        # '-r' is needed to start the simulation right away, since PX4 checks for the Gazebo clock values
+        gazebo_cmd = f'gnome-terminal --tab -t \'Gazebo\' -- bash -c \'source {source_file} && gz sim -r {world_name}.sdf\''
+        logger.print(gazebo_cmd)
+        tmp.write(gazebo_cmd)
+        tmp.write('\n')
+
         # Add the MicroXRCE agent command
-        agent_cmd = 'gnome-terminal --tab -t MicroXRCE agent -- bash -c \'source install/setup.bash; MicroXRCEAgent udp4 -p 8888\''
+        agent_cmd = 'gnome-terminal --tab -t \'MicroXRCE agent\' -- bash -c \'source install/setup.bash; MicroXRCEAgent udp4 -p 8888\''
         logger.print(agent_cmd)
         tmp.write(agent_cmd)
         tmp.write('\n')
@@ -72,7 +89,7 @@ def generate_launch_description():
     os.chmod(script_file, 0o777)
 
     # Actually initiate spawn of everything
-    px4 = ExecuteProcess(
+    bash_script = ExecuteProcess(
         cmd=[
             'gnome-terminal',
             '--window',
@@ -83,7 +100,7 @@ def generate_launch_description():
     )
 
     # Build the launch description
-    launch_description.add_action(px4)
     # launch_description.add_action(rviz)
+    launch_description.add_action(bash_script)
 
     return launch_description

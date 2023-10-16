@@ -6,7 +6,7 @@ package_name = 'odst'
 
 setup(
     name=package_name,
-    version='0.0.1',
+    version='0.1.0',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
@@ -15,8 +15,10 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
         # Include all config files
         (os.path.join('share', package_name, 'config'), glob(os.path.join('config', '*.yaml'))),
-        # Include all config files
-        (os.path.join('share', package_name, 'temp'), glob(os.path.join('temp', '*.sh')))
+        # Include all scripts from the temp folder
+        (os.path.join('share', package_name, 'temp'), glob(os.path.join('temp', '*.sh'))),
+        # Include all scripts from the resource folder
+        (os.path.join('share', package_name, 'resource'), glob(os.path.join('resource', '*.sh')))
     ],
     install_requires=['setuptools'],
     zip_safe=True,

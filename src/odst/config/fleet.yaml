@@ -1,18 +1,24 @@
 launchfile:
-  fleet_size: 3
+  fleet_size: 5
   names:
     -
     -
     -
   codes:
     - 4001
+    - 4242
+    - 4242
+    - 4007
     - 6012
-    - 4004
   models:
+    - 'x500'
     - 'X3'
+    - 'X3'
+    - 'emesent_hovermap'
     - 'typhoon_h480'
-    - 'rc_cessna'
   xs:
+    - 0
+    - 0
     - 0
     - 0
     - 0
@@ -20,3 +26,6 @@ launchfile:
     - 0
     - 1
     - 2
+    - 3
+    - 4
+  world: 'tugbot_depot'
