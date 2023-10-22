@@ -61,6 +61,11 @@ set(HEARTBEAT_SOURCES
     src/HeartbeatModule/external_comms.cpp
 )
 
+set(TACMAP_SOURCES
+    src/TacMapModule/tacmap.cpp
+    src/TacMapModule/external_comms.cpp
+)
+
 set(LOGGER_SOURCES
     src/LoggerModule/logger.cpp
 )
@@ -97,6 +102,7 @@ if(BUILD_TESTING)
                   ${PELICAN_SOURCES}
                   ${ELECTION_SOURCES}
                   ${HEARTBEAT_SOURCES}
+                  ${TACMAP_SOURCES}
                   ${LOGGER_SOURCES}
                   TIMEOUT 100
   )
@@ -125,6 +131,7 @@ add_executable(pelican
               ${PELICAN_SOURCES}
               ${ELECTION_SOURCES}
               ${HEARTBEAT_SOURCES}
+              ${TACMAP_SOURCES}
               ${LOGGER_SOURCES}
 )
 target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
