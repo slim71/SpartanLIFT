@@ -84,7 +84,7 @@ bool ElectionModule::confirmAgentIsCandidate() const {
         throw EXTERNAL_OFF;
     }
 
-    this->sendLogDebug("Triggering increase of term ID");
+    this->sendLogDebug("Confirming agent is candidate");
     return this->node_->isCandidate();
 }
 
