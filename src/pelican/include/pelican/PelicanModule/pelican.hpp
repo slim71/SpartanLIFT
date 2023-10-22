@@ -1,19 +1,18 @@
 #ifndef _PELICAN_HPP_
 #define _PELICAN_HPP_
 
+#include "ElectionModule/election.hpp"
+#include "HeartbeatModule/heartbeat.hpp"
+#include "LoggerModule/logger.hpp"
+#include "TacMapModule/tacmap.hpp"
 #include "px4_msgs/msg/vehicle_local_position.hpp"
+#include "types.hpp"
 #include <chrono>
 #include <iostream>
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 #include <signal.h>
 #include <string>
-#include "types.hpp"
-#include "LoggerModule/logger.hpp"
-#include "HeartbeatModule/heartbeat.hpp"
-#include "ElectionModule/election.hpp"
-
-using std::literals::string_literals::operator""s;
 
 class Pelican : public rclcpp::Node {
     public:
@@ -71,12 +70,11 @@ class Pelican : public rclcpp::Node {
 
         void parseModel();
 
-        void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const;
-
     private: // Attributes
         LoggerModule logger_;
         HeartbeatModule hb_core_;
         ElectionModule el_core_;
+        TacMapModule tac_core_;
 
         int id_;
         std::string model_;
@@ -86,25 +84,8 @@ class Pelican : public rclcpp::Node {
         static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
         bool ready_ {false};
 
-        // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
-        // This is needed because the default ROS 2 QoS profile for subscribers is
-        // incompatible with the PX4 profile for publishers.
-        rclcpp::QoS px4_qos_ {rclcpp::QoS(
-            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
-            rmw_qos_profile_sensor_data
-        )};
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
-        rclcpp::QoS standard_qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
-        };
-
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
-
-        std::string local_pos_topic_; // i.e. "/fmu/out/vehicle_local_position";
-        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
-            sub_to_local_pos_topic_;
-
 };
 
 // Including templates definitions
