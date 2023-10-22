@@ -170,6 +170,9 @@ void ElectionModule::leaderElection() {
 void ElectionModule::triggerVotes() {
     // Do not serve request in case another leader has been already chosen
     if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
+        this->sendLogDebug(
+            "It appears another leader has been already chosen, so I won't serve the voting request"
+        );
         return;
     }
 
@@ -205,18 +208,19 @@ void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
         return;
     }
 
-    this->sendLogInfo("Voting: {}", id_to_vote);
-
     auto msg = comms::msg::Datapad();
     msg.term_id = this->gatherCurrentTerm();
     msg.voter_id = this->gatherAgentID();
     msg.proposed_leader = id_to_vote;
     msg.candidate_mass = candidate_mass;
 
+    this->sendLogInfo("Voting: {}", id_to_vote);
     this->pub_to_leader_election_topic_->publish(msg);
 }
 
 void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
+    this->sendLogDebug("Storing candidacy");
+
     std::cout << "\n\n";
     std::cout << "AGENT " << this->gatherAgentID() << " RECEIVED DATAPAD DATA" << std::endl;
     std::cout << "=============================" << std::endl;
@@ -224,7 +228,7 @@ void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     std::cout << "voter_id: " << msg->voter_id << std::endl;
     std::cout << "proposed_leader: " << msg->proposed_leader << std::endl;
     std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
-    std::cout << "\n\n";
+    std::cout << "\n\n" << std::flush;
 
     this->sendLogDebug(
         "Received vote| agent {} voted for {} (mass {}) during term {} ", msg->voter_id,
@@ -240,6 +244,9 @@ void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     if (this->gatherAgentRole() == candidate) {
         if (this->voting_timer_ != nullptr) { // Make the timer restart
             this->voting_timer_->reset();
+            this->sendLogDebug(
+                "Timer reset! Current count: {}", this->voting_timer_->time_until_trigger().count()
+            );
         } else {
             // If no error has been thrown, node_ is actually set and this can be executed
             this->voting_timer_ = this->node_->create_wall_timer(
@@ -267,7 +274,6 @@ void ElectionModule::ballotCheckingThread() {
     this->sendLogInfo("Ballot finished");
 
     // Notify the main thread to stop waiting
-    // std::unique_lock<std::mutex> cvlock(this->candidate_mutex_);
     this->setIsTerminated();
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same
     this->sendLogDebug("Ballot thread notified through the condition variable!");

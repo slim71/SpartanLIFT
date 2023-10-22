@@ -14,6 +14,10 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this),
     get_parameter("model", this->model_);
     get_parameter("id", this->id_);
 
+    // Setting up the Reentrant group
+    this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    this->reentrant_opt_.callback_group = this->reentrant_group_;
+
     // TODO: change setupLogger in initSetup
     this->logger_.setupLogger(std::make_shared<rclcpp::Logger>(this->get_logger()));
     this->hb_core_.initSetup(&(this->logger_));
