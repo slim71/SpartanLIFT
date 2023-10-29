@@ -31,9 +31,6 @@ def generate_launch_description():
     # Extract the number of agents
     agent_num = config_params['fleet_size']
 
-    # Spawn RVIZ
-    rviz = Node(package='rviz2', namespace='', executable='rviz2', name='rviz2')
-
     # Script used when starting Gazebo
     source_file = os.path.join(
         get_package_share_directory('odst'),
@@ -42,6 +39,7 @@ def generate_launch_description():
     )
     # World to use in Gazebo
     world_name = config_params['world']
+    logger.print(f'Using world {world_name}')
 
     # Get the filepath to your config file
     script_file = os.path.join(
@@ -54,36 +52,42 @@ def generate_launch_description():
         tmp.write('#!/bin/bash')  # Bash shebang
         tmp.write('\n')
 
-        # Source a custom script to include the PX4 model folder, then manually start Gazebo;
-        # without this, Gazebo would not find all needed models.
-        # '-r' is needed to start the simulation right away, since PX4 checks for the Gazebo clock values
-        gazebo_cmd = f'gnome-terminal --tab -t \'Gazebo\' -- bash -c \'source {source_file} && gz sim -r {world_name}.sdf\''
-        logger.print(gazebo_cmd)
-        tmp.write(gazebo_cmd)
-        tmp.write('\n')
-
         # Add the MicroXRCE agent command
         agent_cmd = 'gnome-terminal --tab -t \'MicroXRCE agent\' -- bash -c \'source install/setup.bash; MicroXRCEAgent udp4 -p 8888\''
         logger.print(agent_cmd)
         tmp.write(agent_cmd)
         tmp.write('\n')
 
+        # Source a custom script to include the PX4 model folder, then manually start Gazebo;
+        # without this, Gazebo would not find all needed models.
+        # '-r' is needed to start the simulation right away, since PX4 checks for the Gazebo's clock values
+        gazebo_server_cmd = f'gnome-terminal --tab -t \'Gazebo\' -- bash -c \'source {source_file}; gz sim -r {world_name}.sdf\''
+        logger.print(gazebo_server_cmd)
+        tmp.write(gazebo_server_cmd)
+        tmp.write('\n')
+
         # Prepare each PX4 instance
-        for count in range(agent_num):
+        for count in range(agent_num):  # CHECK: change with enumerate?
             code = config_params['codes'][count]
             x = config_params['xs'][count]
             y = config_params['ys'][count]
             model = config_params['models'][count]
 
             # Add the command to start the PX4 simulation for the model
-            px4_cmd = f'PX4_SYS_AUTOSTART={code} PX4_GZ_MODEL_POSE=\'{x},{y}\' PX4_GZ_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count}'
+            px4_cmd = f'PX4_SYS_AUTOSTART={code} PX4_GZ_MODEL_POSE=\'{x},{y}\' PX4_GZ_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}'
             # Add some wait time for subsequent spawns
             if count > 0:
-                px4_cmd = f'sleep {5+count}; {px4_cmd}'
+                px4_cmd = f'sleep {10+count}; {px4_cmd}'
             px4_cmd = f'gnome-terminal --tab -t \'PX4 - {model}\' -- bash -c \'cd PX4-Autopilot; {px4_cmd}\''
             logger.print(px4_cmd)
             tmp.write(px4_cmd)
             tmp.write('\n')
+
+        # Interactive shell
+        shell_cmd = 'gnome-terminal --tab -t \'Interactive shell\' -- bash'
+        logger.print(shell_cmd)
+        tmp.write(shell_cmd)
+        tmp.write('\n')
 
     # Ensure the right permissions are set, to be able to execute the script
     os.chmod(script_file, 0o777)
@@ -100,7 +104,6 @@ def generate_launch_description():
     )
 
     # Build the launch description
-    # launch_description.add_action(rviz)
     launch_description.add_action(bash_script)
 
     return launch_description

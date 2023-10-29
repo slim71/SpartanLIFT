@@ -55,91 +55,96 @@ void TacMapModule::initTopics() {
 void TacMapModule::initSubscribers() {
     // TODO: change handle functions
 
-    this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
-        this->flags_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::FailsafeFlags::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
+    //     this->flags_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::FailsafeFlags::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_attitude_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleAttitude>(
-        this->attitude_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleAttitude::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_attitude_topic_ =
+    // this->node_->create_subscription<px4_msgs::msg::VehicleAttitude>(
+    //     this->attitude_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleAttitude::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_control_mode_topic_ = this->node_->create_subscription<
-        px4_msgs::msg::VehicleControlMode>(
-        this->control_mode_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleControlMode::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_control_mode_topic_ = this->node_->create_subscription<
+    //     px4_msgs::msg::VehicleControlMode>(
+    //     this->control_mode_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const
+    //         px4_msgs::msg::VehicleControlMode::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_global_pos_topic_ = this->node_->create_subscription<
-        px4_msgs::msg::VehicleGlobalPosition>(
-        this->global_pos_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr
-            ) const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_global_pos_topic_ = this->node_->create_subscription<
+    //     px4_msgs::msg::VehicleGlobalPosition>(
+    //     this->global_pos_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const
+    //         px4_msgs::msg::VehicleGlobalPosition::SharedPtr ) const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_gps_pos_topic_ = this->node_->create_subscription<px4_msgs::msg::SensorGps>(
-        this->gps_pos_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::SensorGps::SharedPtr) const>(
-                &TacMapModule::printData
-            ),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_gps_pos_topic_ = this->node_->create_subscription<px4_msgs::msg::SensorGps>(
+    //     this->gps_pos_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::SensorGps::SharedPtr) const>(
+    //             &TacMapModule::printData
+    //         ),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    // In NED. The coordinate system origin is the vehicle position at the time when the EKF2-module
-    // was started. Needed by every type of agent and never canceled
-    this->sub_to_local_pos_topic_ = this->node_->create_subscription<
-        px4_msgs::msg::VehicleLocalPosition>(
-        this->local_pos_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleLocalPosition::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // // In NED. The coordinate system origin is the vehicle position at the time when the
+    // EKF2-module
+    // // was started. Needed by every type of agent and never canceled
+    // this->sub_to_local_pos_topic_ = this->node_->create_subscription<
+    //     px4_msgs::msg::VehicleLocalPosition>(
+    //     this->local_pos_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const
+    //         px4_msgs::msg::VehicleLocalPosition::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_odometry_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
-        this->odometry_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleOdometry::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_odometry_topic_ =
+    // this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
+    //     this->odometry_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleOdometry::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 
-    this->sub_to_status_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleStatus>(
-        this->status_topic_, this->px4_qos_,
-        std::bind(
-            static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleStatus::SharedPtr)
-                            const>(&TacMapModule::printData),
-            this, std::placeholders::_1
-        ),
-        this->gatherReentrantOptions()
-    );
+    // this->sub_to_status_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleStatus>(
+    //     this->status_topic_, this->px4_qos_,
+    //     std::bind(
+    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleStatus::SharedPtr)
+    //                         const>(&TacMapModule::printData),
+    //         this, std::placeholders::_1
+    //     ),
+    //     this->gatherReentrantOptions()
+    // );
 }
 
 void TacMapModule::initPublishers() {
@@ -156,9 +161,6 @@ void TacMapModule::initPublishers() {
         this->node_->create_publisher<px4_msgs::msg::TrajectorySetpoint>(
             this->trajectory_setpoint_topic_, 10
         ); // TODO: put 10 in a standard_qos variable
-
-    // TODO: test and delete from here
-    this->publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
 }
 
 void TacMapModule::initSetup(LoggerModule* logger) {
@@ -166,7 +168,6 @@ void TacMapModule::initSetup(LoggerModule* logger) {
 
     this->logger_ = logger;
 
-    // TODO: setup all topics, subscribers and publishers here
     this->initTopics();
     this->initSubscribers();
     this->initPublishers();
@@ -175,6 +176,9 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->offboard_timer_ = this->node_->create_wall_timer(
         std::chrono::milliseconds(100), std::bind(&TacMapModule::offboardTimerCallback, this)
     );
+    // this->offboard_timer_ = this->node_->create_wall_timer(
+    //     std::chrono::milliseconds(10000), std::bind(&TacMapModule::takeoffAttempt, this)
+    // );
 }
 
 /****************************** Other ******************************/
@@ -434,10 +438,10 @@ void TacMapModule::publishVehicleCommand(uint16_t command, float param1, float p
     // communication) or coincides with MAV_SYS_ID. In all other situations, the messages are
     // ignored. For example, if you want to send a command to your third vehicle, which has
     // px4_instance=2, you need to set target_system=3 in all your VehicleCommand messages.
-    msg.target_system = this->gatherAgentID(); // System which should execute the command
-    msg.target_component = 1; // Component which should execute the command, 0 for all components
-    msg.source_system = 1;    // System sending the command
-    msg.source_component = 1; // Component sending the command
+    msg.target_system = this->gatherAgentID() + 1; // System which should execute the command
+    msg.target_component = 0; // Component which should execute the command, 0 for all components
+    // msg.source_system = this->gatherAgentID();    // System sending the command
+    // msg.source_component = 1; // Component sending the command
 
     // msg.confirmation = 0; // 0: First transmission of this command. 1-255: Confirmation
     // transmissions (e.g. for kill command)
@@ -450,21 +454,21 @@ void TacMapModule::publishVehicleCommand(uint16_t command, float param1, float p
 }
 
 void TacMapModule::arm() {
-    // TODO: use defines
     this->publishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
+        px4_msgs::msg::VehicleCommand::ARMING_ACTION_ARM
     );
 
-    this->sendLogInfo("Arm command send");
+    this->sendLogInfo("Arm command sent");
 }
 
 void TacMapModule::disarm() {
-    // TODO: use defines
     this->publishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
+        px4_msgs::msg::VehicleCommand::ARMING_ACTION_DISARM
     );
 
-    this->sendLogInfo("Disarm command send");
+    this->sendLogInfo("Disarm command sent");
 }
 
 void TacMapModule::publishOffboardControlMode() {
@@ -492,6 +496,7 @@ void TacMapModule::publishOffboardControlMode() {
 void TacMapModule::offboardTimerCallback() {
     if (this->offboard_setpoint_counter_ == 10) {
         // Change to Offboard mode after 10 setpoints
+        this->sendLogDebug("Changing to Offboard mode!");
         this->publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
 
         // Arm the vehicle
@@ -517,4 +522,9 @@ void TacMapModule::publishTrajectorySetpoint() {
     msg.timestamp = this->gatherTime().nanoseconds() / 1000;
 
     this->pub_to_trajectory_setpoint_topic->publish(msg);
+}
+
+void TacMapModule::takeoffAttempt() {
+    this->publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
+    this->offboard_timer_.reset();
 }
