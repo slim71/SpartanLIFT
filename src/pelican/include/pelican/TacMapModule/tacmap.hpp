@@ -68,6 +68,7 @@ class TacMapModule {
         void publishVehicleCommand(uint16_t, float = 0.0, float = 0.0);
         void publishOffboardControlMode();
         void publishTrajectorySetpoint();
+        void takeoffAttempt();
 
     private: // Attributes
         Pelican* node_;
