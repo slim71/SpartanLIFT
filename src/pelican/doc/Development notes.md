@@ -52,7 +52,19 @@ All messages are already defined in PX4.
 ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
 gdbtui build/pelican/pelican
+ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
+ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 
 ---
 TODO: use offboard mode
 https://docs.px4.io/main/en/flight_modes/offboard.html
+
+---
+PX4 accepts VehicleCommand messages only if their target_system field is zero (broadcast
+communication) or coincides with MAV_SYS_ID. In all other situations, the messages are
+ignored. For example, if you want to send a command to your third vehicle, which has
+px4_instance=2, you need to set target_system=3 in all your VehicleCommand messages.
+
+---
+Note about the VehicleCommandAck:
+https://github.com/PX4/PX4-Autopilot/issues/21430#issuecomment-1497484098

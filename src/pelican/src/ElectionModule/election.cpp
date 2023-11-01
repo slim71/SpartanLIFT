@@ -219,17 +219,6 @@ void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
 }
 
 void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
-    this->sendLogDebug("Storing candidacy");
-
-    std::cout << "\n\n";
-    std::cout << "AGENT " << this->gatherAgentID() << " RECEIVED DATAPAD DATA" << std::endl;
-    std::cout << "=============================" << std::endl;
-    std::cout << "term_id: " << msg->term_id << std::endl;
-    std::cout << "voter_id: " << msg->voter_id << std::endl;
-    std::cout << "proposed_leader: " << msg->proposed_leader << std::endl;
-    std::cout << "candidate_mass: " << msg->candidate_mass << std::endl;
-    std::cout << "\n\n" << std::flush;
-
     this->sendLogDebug(
         "Received vote| agent {} voted for {} (mass {}) during term {} ", msg->voter_id,
         msg->proposed_leader, msg->candidate_mass, msg->term_id

@@ -6,6 +6,7 @@ HeartbeatModule::HeartbeatModule() {
     this->node_ = nullptr;
 }
 
+// TODO_ add logger to init values (as in ElectionModule)
 HeartbeatModule::HeartbeatModule(Pelican* node) : node_(node) {}
 
 HeartbeatModule::~HeartbeatModule() {
@@ -51,6 +52,7 @@ void HeartbeatModule::setupSubscription() {
         throw EXTERNAL_OFF;
     }
 
+    // CHECK: move sub to HB module?
     // Used by all kinds of agents to avoid multiple leaders
     // (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {
@@ -96,7 +98,7 @@ void HeartbeatModule::sendNow() {
 void HeartbeatModule::sendHeartbeat() const {
     // In case of missing MainModule, we could consider sending the ERROR_HB,
     // but to no use. Let the module just throw an exception
-    this->sendLogInfo("Sending heartbeat");
+    this->sendLogDebug("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->gatherCurrentTerm();
@@ -146,7 +148,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
 
-    this->sendLogInfo(
+    this->sendLogDebug(
         "Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id
     );
 
