@@ -22,12 +22,13 @@ find_package(rclcpp REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(pugixml REQUIRED)
 find_package(comms REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(fmt)
 find_library(PUGIXML_DIR pugixml)
 
 # Create a library to allow separation of headers and sources
 add_library(Pelican_class src/PelicanModule/pelican.cpp)
-ament_target_dependencies(Pelican_class rclcpp px4_msgs comms)
+ament_target_dependencies(Pelican_class rclcpp px4_msgs comms tf2)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt)
 
@@ -64,6 +65,8 @@ set(HEARTBEAT_SOURCES
 set(TACMAP_SOURCES
     src/TacMapModule/tacmap.cpp
     src/TacMapModule/external_comms.cpp
+    src/TacMapModule/control.cpp
+    src/TacMapModule/data.cpp
 )
 
 set(LOGGER_SOURCES
