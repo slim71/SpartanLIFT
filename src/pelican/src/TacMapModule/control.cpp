@@ -20,7 +20,10 @@ void TacMapModule::publishVehicleCommand(
 
     msg.command = command; // Command ID
 
-    while (true) {
+    int attempts = 0;
+
+    // Continue checking for a bit, if program is not stopped
+    while (this->checkIsRunning() && attempts < MAX_DATA_ATTEMPTS) {
         this->status_mutex_.lock();
         int s_length = this->status_buffer_.size();
         this->status_mutex_.unlock();
@@ -29,9 +32,20 @@ void TacMapModule::publishVehicleCommand(
             break;
         }
 
-        this->sendLogWarning("Data needed not yet ready! Retrying in a bit...");
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // CHECK: less time?
+        this->sendLogWarning("Status data needed not yet ready! Retrying in a bit...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        attempts++;
     };
+
+    // Do nothing more, if stopped by CTRL-C
+    if (!this->checkIsRunning())
+        return;
+
+    // If no data has been repeatedly received, stop everything
+    if (attempts >= MAX_DATA_ATTEMPTS) {
+        this->sendLogError("No data received from simulations! Is there one running?");
+        throw std::runtime_error("No simulation detected");
+    }
 
     this->status_mutex_.lock();
     auto last_status = this->status_buffer_.back();
@@ -128,8 +142,10 @@ void TacMapModule::publishTrajectorySetpoint() {
 void TacMapModule::takeoff() {
     this->offboard_timer_.reset();
 
-    // TODO: stop after tot attempts and/or at CTL-C
-    while (true) {
+    int attempts = 0;
+
+    // Continue checking for a bit, if program is not stopped
+    while (this->checkIsRunning() && attempts < MAX_DATA_ATTEMPTS) {
         this->globalpos_mutex_.lock();
         int g_length = this->globalpos_buffer_.size();
         this->globalpos_mutex_.unlock();
@@ -141,9 +157,23 @@ void TacMapModule::takeoff() {
             break;
         }
 
-        this->sendLogWarning("Data needed not yet ready! Retrying in a bit...");
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // CHECK: less time?
+        this->sendLogWarning(
+            "Data needed not yet ready (globalpos:{} odometry:{})! Retrying in a bit...",
+            g_length > 0, o_lenght > 0
+        );
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        attempts++;
     };
+
+    // Do nothing more, if stopped by CTRL-C
+    if (!this->checkIsRunning())
+        return;
+
+    // If no data has been repeatedly received, stop everything
+    if (attempts >= MAX_DATA_ATTEMPTS) {
+        this->sendLogError("No data received from simulations! Is there one running?");
+        throw std::runtime_error("No simulation detected");
+    }
 
     this->globalpos_mutex_.lock();
     auto lat = this->globalpos_buffer_.back().lat;
@@ -173,14 +203,14 @@ void TacMapModule::takeoff() {
 
 bool TacMapModule::waitForAck(uint16_t cmd) {
     auto start_time = this->gatherTime().nanoseconds() / 1000000; // [ms]
-    this->sendLogInfo("ACK wait started at timestamp {}", start_time);
+    this->sendLogDebug("ACK wait started at timestamp {}", start_time);
 
     // Check for a bit, in case the ACK has not been received yet
     while (this->gatherTime().nanoseconds() / 1000000 - start_time < 100) {
         this->ack_mutex_.lock();
 
         if (this->last_ack_) { // at least one ACK received
-            this->sendLogInfo(
+            this->sendLogDebug(
                 "ACK stored found! cmd:{} timestamp:{}", this->last_ack_->command,
                 this->last_ack_->timestamp
             );
@@ -197,7 +227,7 @@ bool TacMapModule::waitForAck(uint16_t cmd) {
         // Wait for a bit before retrying
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
-    this->sendLogInfo("ACK wait finished");
+    this->sendLogDebug("ACK wait finished");
 
     return false;
 }

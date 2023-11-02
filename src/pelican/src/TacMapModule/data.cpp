@@ -93,7 +93,7 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr 
 
 void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
     this->sendLogDebug(
-        "Received GlobalPosition data! timestamp:{} lat:{} long:{} alt:{} terrain_alt:{}, "
+        "Received GlobalPosition data! timestamp:{} lat:{} long:{} alt:{} terrain_alt:{} "
         "terr_valid:{}",
         msg->timestamp, msg->lat, msg->lon, msg->alt, msg->terrain_alt, msg->terrain_alt_valid
     );

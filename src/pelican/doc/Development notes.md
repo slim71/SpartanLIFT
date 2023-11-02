@@ -56,7 +56,6 @@ ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-fi
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 
 ---
-TODO: use offboard mode
 https://docs.px4.io/main/en/flight_modes/offboard.html
 
 ---

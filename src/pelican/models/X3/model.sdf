@@ -256,7 +256,6 @@
                 <material>
                     <diffuse>1 0 0 1</diffuse>
                     <script>
-                    <!-- TODO: colors -->
                         <name>Gazebo/Red</name>
                         <uri>file://media/materials/scripts/gazebo.material</uri>
                     </script>

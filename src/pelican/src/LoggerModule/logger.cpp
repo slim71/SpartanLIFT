@@ -5,11 +5,11 @@ LoggerModule::LoggerModule() {
     this->logger_ = nullptr;
 }
 
-LoggerModule::LoggerModule(std::shared_ptr<rclcpp::Logger> l) {
-    if (l)
-        this->logger_ = l;
+LoggerModule::LoggerModule(std::shared_ptr<rclcpp::Logger> logger) {
+    if (logger)
+        this->logger_ = logger;
     else
-        this->logger_ = nullptr; // CHECK: useless?
+        this->logger_ = nullptr;
 
     this->ready_to_log_ = true;
 }
@@ -22,9 +22,11 @@ int LoggerModule::getID() const {
     return this->id_;
 }
 
-void LoggerModule::setupLogger(std::shared_ptr<rclcpp::Logger> l) {
-    this->logger_ = l;
+void LoggerModule::initSetup(std::shared_ptr<rclcpp::Logger> logger, int id) {
+    this->logger_ = logger;
     this->ready_to_log_ = true;
+
+    this->setID(id);
 }
 
 bool LoggerModule::isReady() const {

@@ -18,15 +18,12 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this),
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
-    // TODO: change setupLogger in initSetup
-    this->logger_.setupLogger(std::make_shared<rclcpp::Logger>(this->get_logger()));
+    this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
     this->hb_core_.initSetup(&(this->logger_));
     this->el_core_.initSetup(&(this->logger_));
     this->tac_core_.initSetup(&(this->logger_));
 
     this->parseModel();
-
-    this->logger_.setID(this->getID()); // CHECK: set ID in setupLogger?
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
@@ -74,6 +71,7 @@ void Pelican::signalHandler(int signum) {
     if (node) {
         node->hb_core_.stopHeartbeat();
         node->el_core_.stopBallotThread();
+        node->tac_core_.stopData();
     }
 
     rclcpp::shutdown();
