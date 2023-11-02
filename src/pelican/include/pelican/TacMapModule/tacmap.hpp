@@ -2,8 +2,10 @@
 #define __TACMAP_HPP__
 
 #include "LoggerModule/logger.hpp"
-#include "px4_msgs/msg/failsafe_flags.hpp"
+#include "px4_msgs/msg/failsafe_flags.hpp" // CHECK: move all types to types.hpp?
+#include "px4_msgs/msg/offboard_control_mode.hpp"
 #include "px4_msgs/msg/sensor_gps.hpp"
+#include "px4_msgs/msg/trajectory_setpoint.hpp"
 #include "px4_msgs/msg/vehicle_attitude.hpp"
 #include "px4_msgs/msg/vehicle_command.hpp"
 #include "px4_msgs/msg/vehicle_command_ack.hpp"
@@ -17,8 +19,7 @@
 #include <boost/circular_buffer.hpp>
 #include <iostream>
 #include <math.h>
-#include <px4_msgs/msg/offboard_control_mode.hpp>
-#include <px4_msgs/msg/trajectory_setpoint.hpp>
+#include <optional>
 #include <rclcpp/rclcpp.hpp>
 #include <vector>
 
@@ -33,10 +34,21 @@ class TacMapModule {
         explicit TacMapModule(Pelican*);
         ~TacMapModule();
 
-        // Setup methods
+        // Setup and behavior methods
         void initSetup(LoggerModule*);
-
         void stopData();
+
+        // Transmitting data
+        void publishOffboardControlMode();
+        void publishTrajectorySetpoint();
+        void publishVehicleCommand(
+            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
+            float = NAN
+        );
+
+        std::optional<px4_msgs::msg::VehicleGlobalPosition> getGlobalPosition();
+        std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
+        std::optional<px4_msgs::msg::VehicleCommandAck> getAck();
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -52,12 +64,12 @@ class TacMapModule {
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
 
-        // Topics-related
+        // Topics-related setups
         void initTopics();
         void initSubscribers();
         void initPublishers();
 
-        // TODO: change names
+        // Receiving data
         void printData(const px4_msgs::msg::FailsafeFlags::SharedPtr) const;
         void printData(const px4_msgs::msg::VehicleAttitude::SharedPtr) const;
         void printData(const px4_msgs::msg::VehicleControlMode::SharedPtr) const;
@@ -68,19 +80,6 @@ class TacMapModule {
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
 
-        void offboardTimerCallback();
-
-        void arm();
-        void disarm();
-        void publishVehicleCommand(
-            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
-            float = NAN
-        );
-        void publishOffboardControlMode();
-        void publishTrajectorySetpoint();
-        void takeoff();
-        bool waitForAck(uint16_t);
-
         bool checkIsRunning();
 
     private: // Attributes
@@ -88,6 +87,7 @@ class TacMapModule {
         LoggerModule* logger_;
 
         bool running_ {true};
+        int standard_qos_value_ = 10;
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is
@@ -99,8 +99,6 @@ class TacMapModule {
         rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
         rclcpp::QoS standard_qos_ {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
-
-        int standard_qos_value_ = 10;
 
         rclcpp::TimerBase::SharedPtr offboard_timer_;
         std::chrono::milliseconds offboard_period_ {100};
@@ -153,7 +151,7 @@ class TacMapModule {
             pub_to_trajectory_setpoint_topic;
 
         // Only one ack memorized because messages from that topic should be sparse
-        px4_msgs::msg::VehicleCommandAck::SharedPtr last_ack_;
+        std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
         boost::circular_buffer<px4_msgs::msg::SensorGps> gps_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {10};

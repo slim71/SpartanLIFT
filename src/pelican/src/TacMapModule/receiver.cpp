@@ -233,7 +233,7 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
 
     if (this->last_ack_)
         this->last_ack_.reset();
-    this->last_ack_ = std::make_shared<px4_msgs::msg::VehicleCommandAck>();
+    this->last_ack_ = px4_msgs::msg::VehicleCommandAck();
 
     this->last_ack_->timestamp = msg->timestamp;
     this->last_ack_->command = msg->command;

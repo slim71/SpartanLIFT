@@ -65,8 +65,14 @@ set(HEARTBEAT_SOURCES
 set(TACMAP_SOURCES
     src/TacMapModule/tacmap.cpp
     src/TacMapModule/external_comms.cpp
-    src/TacMapModule/control.cpp
-    src/TacMapModule/data.cpp
+    src/TacMapModule/receiver.cpp
+    src/TacMapModule/transmitter.cpp
+)
+
+set(UNSC_SOURCES
+    src/UNSCModule/unsc.cpp
+    src/UNSCModule/external_comms.cpp
+    src/UNSCModule/control.cpp
 )
 
 set(LOGGER_SOURCES
@@ -106,6 +112,7 @@ if(BUILD_TESTING)
                   ${ELECTION_SOURCES}
                   ${HEARTBEAT_SOURCES}
                   ${TACMAP_SOURCES}
+                  ${UNSC_SOURCES}
                   ${LOGGER_SOURCES}
                   TIMEOUT 100
   )
@@ -135,6 +142,7 @@ add_executable(pelican
               ${ELECTION_SOURCES}
               ${HEARTBEAT_SOURCES}
               ${TACMAP_SOURCES}
+              ${UNSC_SOURCES}
               ${LOGGER_SOURCES}
 )
 target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")

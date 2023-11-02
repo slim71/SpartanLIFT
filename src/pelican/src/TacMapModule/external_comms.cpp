@@ -54,3 +54,33 @@ rclcpp::SubscriptionOptions TacMapModule::gatherReentrantOptions() const {
 
     return this->node_->getReentrantOptions();
 }
+
+std::optional<px4_msgs::msg::VehicleGlobalPosition> TacMapModule::getGlobalPosition() {
+    this->globalpos_mutex_.lock();
+    int g_length = this->globalpos_buffer_.size();
+    this->globalpos_mutex_.unlock();
+
+    this->sendLogDebug("g_length={}", g_length);
+    if (g_length <= 0)
+        return std::nullopt;
+
+    std::lock_guard<std::mutex> lock(this->globalpos_mutex_);
+    return globalpos_buffer_.back();
+}
+
+std::optional<px4_msgs::msg::VehicleOdometry> TacMapModule::getOdometry() {
+    this->odometry_mutex_.lock();
+    int g_length = this->odometry_buffer_.size();
+    this->odometry_mutex_.unlock();
+
+    if (g_length <= 0)
+        return std::nullopt;
+
+    std::lock_guard<std::mutex> lock(this->odometry_mutex_);
+    return odometry_buffer_.back();
+}
+
+std::optional<px4_msgs::msg::VehicleCommandAck> TacMapModule::getAck() {
+    std::lock_guard<std::mutex> lock(this->ack_mutex_);
+    return this->last_ack_;
+}

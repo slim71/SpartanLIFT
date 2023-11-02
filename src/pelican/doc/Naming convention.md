@@ -4,7 +4,7 @@
 
 `gather[...]`
 A secondary module asks data owned by another module.
-This will go through a pass-through method of the main module if the target data is owned by another seconday module.
+This will go through a pass-through method of the main module if the target data is owned by another secondary module.
 
 `confirm[...]`
 A secondary module checks a flag owned by the main module.

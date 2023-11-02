@@ -37,3 +37,31 @@ void Pelican::commenceResetElectionTimer() {
     // the code will just throw an error and terminate
     this->el_core_.resetElectionTimer();
 }
+
+/************************* To UNSC Module **************************/
+void Pelican::commencePublishVehicleCommand(
+    uint16_t command, float param1, float param2, float param3, float param4, float param5,
+    float param6, float param7
+) {
+    this->sendLogDebug("Requesting publishVehicleCommand");
+    // If there's some problem with the Election Module,
+    // the code will just throw an error and terminate
+    this->tac_core_.publishVehicleCommand(
+        command, param1, param2, param3, param4, param5, param6, param7
+    );
+}
+
+std::optional<px4_msgs::msg::VehicleGlobalPosition> Pelican::requestGlobalPosition() {
+    this->sendLogDebug("Requesting global position");
+    return this->tac_core_.getGlobalPosition();
+}
+
+std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestOdometry() {
+    this->sendLogDebug("Requesting odometry");
+    return this->tac_core_.getOdometry();
+}
+
+std::optional<px4_msgs::msg::VehicleCommandAck> Pelican::requestAck() {
+    this->sendLogDebug("Requesting ack");
+    return this->tac_core_.getAck();
+}

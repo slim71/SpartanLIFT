@@ -35,7 +35,8 @@ extern heartbeat ERROR_HB;
     _(log_module)  \
     _(hb_module)   \
     _(el_module)   \
-    _(tac_module)
+    _(tac_module)  \
+    _(unsc_module)
 
 enum possible_modules { MODULES(AS_BARE) NumModules };
 

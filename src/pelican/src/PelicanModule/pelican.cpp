@@ -5,7 +5,13 @@
 std::weak_ptr<Pelican> Pelican::instance_;
 
 /************************** Ctors/Dctors ***************************/
-Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this), tac_core_(this) {
+Pelican::Pelican()
+    : Node("Pelican"),
+      logger_(),
+      hb_core_(this),
+      el_core_(this),
+      tac_core_(this),
+      unsc_core_(this) {
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
@@ -22,6 +28,7 @@ Pelican::Pelican() : Node("Pelican"), logger_(), hb_core_(this), el_core_(this),
     this->hb_core_.initSetup(&(this->logger_));
     this->el_core_.initSetup(&(this->logger_));
     this->tac_core_.initSetup(&(this->logger_));
+    this->unsc_core_.initSetup(&(this->logger_));
 
     this->parseModel();
 
@@ -69,9 +76,11 @@ void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
     std::shared_ptr<Pelican> node = getInstance();
     if (node) {
+        // CHECK: uniform naming?
         node->hb_core_.stopHeartbeat();
         node->el_core_.stopBallotThread();
         node->tac_core_.stopData();
+        node->unsc_core_.stopService();
     }
 
     rclcpp::shutdown();
