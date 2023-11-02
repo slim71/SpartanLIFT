@@ -157,13 +157,6 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->initTopics();
     this->initSubscribers();
     this->initPublishers();
-
-    // this->offboard_timer_ = this->node_->create_wall_timer(
-    //     this->offboard_period_, std::bind(&TacMapModule::offboardTimerCallback, this)
-    // );
-    this->offboard_timer_ = this->node_->create_wall_timer(
-        std::chrono::milliseconds(10000), std::bind(&TacMapModule::takeoff, this)
-    );
 }
 
 void TacMapModule::stopData() {

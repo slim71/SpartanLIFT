@@ -5,10 +5,13 @@
 #include "HeartbeatModule/heartbeat.hpp"
 #include "LoggerModule/logger.hpp"
 #include "TacMapModule/tacmap.hpp"
+#include "UNSCModule/unsc.hpp"
+#include "px4_msgs/msg/vehicle_command_ack.hpp"
 #include "px4_msgs/msg/vehicle_local_position.hpp"
 #include "types.hpp"
 #include <chrono>
 #include <iostream>
+#include <optional> // CHECK: move to types.hpp?
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 #include <signal.h>
@@ -39,10 +42,17 @@ class Pelican : public rclcpp::Node {
         void commenceLeaderOperations();
         void commenceCandidateOperations();
         void commenceIsTerminated();
+        void commencePublishVehicleCommand(
+            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
+            float = NAN
+        );
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
         int requestNumberOfHbs();
+        std::optional<px4_msgs::msg::VehicleGlobalPosition> requestGlobalPosition();
+        std::optional<px4_msgs::msg::VehicleOdometry> requestOdometry();
+        std::optional<px4_msgs::msg::VehicleCommandAck> requestAck();
 
         void commenceSetElectionStatus(int);
         void commenceResetElectionTimer();
@@ -75,6 +85,7 @@ class Pelican : public rclcpp::Node {
         HeartbeatModule hb_core_;
         ElectionModule el_core_;
         TacMapModule tac_core_;
+        UNSCModule unsc_core_;
 
         int id_;
         std::string model_;
