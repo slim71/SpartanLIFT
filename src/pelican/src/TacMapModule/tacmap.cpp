@@ -54,8 +54,6 @@ void TacMapModule::initTopics() {
 }
 
 void TacMapModule::initSubscribers() {
-    // TODO: change handle functions
-
     // this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
     //     this->flags_topic_, this->px4_qos_,
     //     std::bind(
@@ -96,7 +94,6 @@ void TacMapModule::initSubscribers() {
             this->gatherReentrantOptions()
         );
 
-    // TODO not needed
     // this->sub_to_gps_pos_topic_ = this->node_->create_subscription<px4_msgs::msg::SensorGps>(
     //     this->gps_pos_topic_, this->px4_qos_,
     //     std::bind(&TacMapModule::storeGps, this, std::placeholders::_1),
@@ -167,4 +164,14 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->offboard_timer_ = this->node_->create_wall_timer(
         std::chrono::milliseconds(10000), std::bind(&TacMapModule::takeoff, this)
     );
+}
+
+void TacMapModule::stopData() {
+    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    this->running_ = false;
+}
+
+bool TacMapModule::checkIsRunning() {
+    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    return this->running_;
 }

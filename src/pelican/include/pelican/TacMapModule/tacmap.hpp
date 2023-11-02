@@ -36,6 +36,8 @@ class TacMapModule {
         // Setup methods
         void initSetup(LoggerModule*);
 
+        void stopData();
+
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
@@ -79,9 +81,13 @@ class TacMapModule {
         void takeoff();
         bool waitForAck(uint16_t);
 
+        bool checkIsRunning();
+
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
+
+        bool running_ {true};
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is
@@ -116,6 +122,7 @@ class TacMapModule {
         rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr
             sub_to_global_pos_topic_;
 
+        // CHECK: not needed?
         std::string gps_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_gps_position";
         rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr sub_to_gps_pos_topic_;
 
@@ -152,6 +159,7 @@ class TacMapModule {
         boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {10};
 
+        mutable std::mutex running_mutex_;   // to be used with running_
         mutable std::mutex ack_mutex_;       // to be used with last_ack_
         mutable std::mutex gps_mutex_;       // to be used with gps_buffer_
         mutable std::mutex globalpos_mutex_; // to be used with gps_buffer_

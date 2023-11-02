@@ -22,7 +22,7 @@ class LoggerModule {
         int getID() const;
         void setID(int);
 
-        void setupLogger(std::shared_ptr<rclcpp::Logger>);
+        void initSetup(std::shared_ptr<rclcpp::Logger>, int = -1);
 
         bool isReady() const;
 

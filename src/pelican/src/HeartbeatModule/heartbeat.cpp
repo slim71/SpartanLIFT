@@ -4,10 +4,10 @@
 /************************** Ctors/Dctors ***************************/
 HeartbeatModule::HeartbeatModule() {
     this->node_ = nullptr;
+    this->logger_ = nullptr;
 }
 
-// TODO_ add logger to init values (as in ElectionModule)
-HeartbeatModule::HeartbeatModule(Pelican* node) : node_(node) {}
+HeartbeatModule::HeartbeatModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 HeartbeatModule::~HeartbeatModule() {
     // Cancel periodic transmission (no problem arises if they're not initialized)
@@ -52,7 +52,6 @@ void HeartbeatModule::setupSubscription() {
         throw EXTERNAL_OFF;
     }
 
-    // CHECK: move sub to HB module?
     // Used by all kinds of agents to avoid multiple leaders
     // (this should not happen, since Raft guarantees safety)
     if (!this->sub_to_heartbeat_topic_) {

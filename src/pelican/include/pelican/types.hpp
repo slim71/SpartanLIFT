@@ -3,6 +3,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+// Used to wait max 30s of missing data from the simulation before stopping
+#define MAX_DATA_ATTEMPTS 30
 #define EXTERNAL_OFF "No main module present: external functionalities deactivated!"
 
 struct vote_count {
