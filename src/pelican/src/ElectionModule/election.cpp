@@ -231,7 +231,7 @@ void ElectionModule::storeCandidacy(const comms::msg::Datapad::SharedPtr msg) {
     // the elections is finished
     if (this->gatherAgentRole() == candidate) {
         if (this->voting_timer_ != nullptr) { // Make the timer restart
-            this->voting_timer_->reset();
+            resetTimer(this->voting_timer_);
             this->sendLogDebug(
                 "Timer reset! Current count: {}", this->voting_timer_->time_until_trigger().count()
             );
