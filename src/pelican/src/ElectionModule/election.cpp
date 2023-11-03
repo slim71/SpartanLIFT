@@ -1,5 +1,4 @@
 #include "ElectionModule/election.hpp"
-#include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
 #include "types.hpp"
 
@@ -13,7 +12,7 @@ ElectionModule::ElectionModule(Pelican* node) : node_(node), logger_ {nullptr} {
 
 ElectionModule::~ElectionModule() {
     this->sendLogDebug("Trying to kill the ballot thread");
-    this->stopBallotThread();
+    this->stopService();
 
     // Cancel active timers
     cancelTimer(this->election_timer_);
@@ -376,7 +375,7 @@ void ElectionModule::prepareForCandidateActions() {
 }
 
 /************* Both from outside and inside the module *************/
-void ElectionModule::stopBallotThread() {
+void ElectionModule::stopService() {
     // this->candidate_mutex_.lock();
     this->setIsTerminated();
     this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the same

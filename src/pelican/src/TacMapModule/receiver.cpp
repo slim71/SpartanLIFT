@@ -118,23 +118,6 @@ void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPositio
     this->globalpos_buffer_.push_back(globalpos_data);
 }
 
-void TacMapModule::storeGps(const px4_msgs::msg::SensorGps::SharedPtr msg) {
-    this->sendLogDebug(
-        "Received GPS data! timestamp:{} lat:{} long:{} alt:{}", msg->timestamp, msg->lat, msg->lon,
-        msg->alt
-    );
-
-    px4_msgs::msg::SensorGps gps_data;
-    gps_data.timestamp = msg->timestamp;
-    gps_data.lat = msg->lat;
-    gps_data.lon = msg->lon;
-    gps_data.alt = msg->alt;
-    // Other fields not needed
-
-    std::lock_guard<std::mutex> lock(this->gps_mutex_);
-    this->gps_buffer_.push_back(gps_data);
-}
-
 void TacMapModule::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
     std::cout << "\n\n";
     std::cout << "RECEIVED VehicleLocalPosition DATA" << std::endl;

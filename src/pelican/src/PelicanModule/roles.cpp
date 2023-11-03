@@ -1,7 +1,5 @@
 #include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
-#include "types.hpp"
-#include "utilities.hpp"
 
 /************** Actions initiated from outside the module *************/
 void Pelican::commenceFollowerOperations() {

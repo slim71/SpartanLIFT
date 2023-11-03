@@ -1,13 +1,9 @@
 #ifndef _ELECTION_HPP_
 #define _ELECTION_HPP_
 
-#include "comms/msg/datapad.hpp"
-#include "comms/msg/request_vote_rpc.hpp"
 #include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
-#include <iostream>
-#include <random>
 
 class Pelican;
 
@@ -33,7 +29,7 @@ class ElectionModule {
         void candidateActions();
 
         // Both from outside and inside the module
-        void stopBallotThread();
+        void stopService();
         void flushVotes();
         void setIsTerminated();
 
@@ -104,8 +100,7 @@ class ElectionModule {
 
         rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
         rclcpp::QoS standard_qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
-        };
+            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
         std::string leader_election_topic_ {"/fleet/leader_election"};
         rclcpp::Subscription<comms::msg::Datapad>::SharedPtr sub_to_leader_election_topic_;

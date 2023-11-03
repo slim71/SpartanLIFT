@@ -1,13 +1,9 @@
 #ifndef _HEARTBEAT_HPP_
 #define _HEARTBEAT_HPP_
 
-#include "comms/msg/heartbeat.hpp"
 #include "LoggerModule/logger.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
-#include <iostream>
-#include <rclcpp/rclcpp.hpp>
-#include <vector>
 
 class Pelican;
 
@@ -37,7 +33,7 @@ class HeartbeatModule {
 
         // Special functionalities
         void sendNow();
-        void stopHeartbeat();
+        void stopService();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -73,8 +69,7 @@ class HeartbeatModule {
 
         rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
         rclcpp::QoS qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)
-        };
+            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
         // Not random, it has to be lower than the election_timeout_
         std::chrono::milliseconds heartbeat_period_ {100};

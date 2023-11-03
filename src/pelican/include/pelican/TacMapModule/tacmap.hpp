@@ -2,26 +2,8 @@
 #define __TACMAP_HPP__
 
 #include "LoggerModule/logger.hpp"
-#include "px4_msgs/msg/failsafe_flags.hpp" // CHECK: move all types to types.hpp?
-#include "px4_msgs/msg/offboard_control_mode.hpp"
-#include "px4_msgs/msg/sensor_gps.hpp"
-#include "px4_msgs/msg/trajectory_setpoint.hpp"
-#include "px4_msgs/msg/vehicle_attitude.hpp"
-#include "px4_msgs/msg/vehicle_command.hpp"
-#include "px4_msgs/msg/vehicle_command_ack.hpp"
-#include "px4_msgs/msg/vehicle_control_mode.hpp"
-#include "px4_msgs/msg/vehicle_global_position.hpp"
-#include "px4_msgs/msg/vehicle_local_position.hpp"
-#include "px4_msgs/msg/vehicle_odometry.hpp"
-#include "px4_msgs/msg/vehicle_status.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
-#include <boost/circular_buffer.hpp>
-#include <iostream>
-#include <math.h>
-#include <optional>
-#include <rclcpp/rclcpp.hpp>
-#include <vector>
 
 using std::literals::string_literals::operator""s;
 
@@ -36,7 +18,7 @@ class TacMapModule {
 
         // Setup and behavior methods
         void initSetup(LoggerModule*);
-        void stopData();
+        void stopService();
 
         // Transmitting data
         void publishOffboardControlMode();
@@ -49,6 +31,7 @@ class TacMapModule {
         std::optional<px4_msgs::msg::VehicleGlobalPosition> getGlobalPosition();
         std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
         std::optional<px4_msgs::msg::VehicleCommandAck> getAck();
+        std::optional<px4_msgs::msg::VehicleStatus> getStatus();
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -74,7 +57,6 @@ class TacMapModule {
         void printData(const px4_msgs::msg::VehicleAttitude::SharedPtr) const;
         void printData(const px4_msgs::msg::VehicleControlMode::SharedPtr) const;
         void storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr);
-        void storeGps(const px4_msgs::msg::SensorGps::SharedPtr);
         void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr) const;
         void storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
@@ -100,15 +82,14 @@ class TacMapModule {
         rclcpp::QoS standard_qos_ {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
+        // CHECK: needed?
         rclcpp::TimerBase::SharedPtr offboard_timer_;
         std::chrono::milliseconds offboard_period_ {100};
         uint64_t offboard_setpoint_counter_; // counter for the number of setpoints sent
 
-        // CHECK: maybe
-        std::string flags_topic_; // i.e. "/px4_{id}/fmu/out/failsafe_flags";
+        std::string flags_topic_;            // i.e. "/px4_{id}/fmu/out/failsafe_flags";
         rclcpp::Subscription<px4_msgs::msg::FailsafeFlags>::SharedPtr sub_to_flags_topic_;
 
-        // CHECK: maybe
         std::string attitude_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_attitude";
         rclcpp::Subscription<px4_msgs::msg::VehicleAttitude>::SharedPtr sub_to_attitude_topic_;
 
@@ -119,10 +100,6 @@ class TacMapModule {
         std::string global_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_global_position";
         rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr
             sub_to_global_pos_topic_;
-
-        // CHECK: not needed?
-        std::string gps_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_gps_position";
-        rclcpp::Subscription<px4_msgs::msg::SensorGps>::SharedPtr sub_to_gps_pos_topic_;
 
         std::string local_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_local_position";
         rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
@@ -137,8 +114,6 @@ class TacMapModule {
         std::string command_ack_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_command_ack";
         rclcpp::Subscription<px4_msgs::msg::VehicleCommandAck>::SharedPtr sub_to_command_ack_topic_;
 
-        // TODO: needs publishers for waypoints/trajectory too?
-
         std::string command_topic_; // i.e. "/px4_{id}/fmu/in/vehicle_command";
         rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr pub_to_command_topic_;
 
@@ -152,14 +127,12 @@ class TacMapModule {
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
-        boost::circular_buffer<px4_msgs::msg::SensorGps> gps_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {10};
 
         mutable std::mutex running_mutex_;   // to be used with running_
         mutable std::mutex ack_mutex_;       // to be used with last_ack_
-        mutable std::mutex gps_mutex_;       // to be used with gps_buffer_
         mutable std::mutex globalpos_mutex_; // to be used with gps_buffer_
         mutable std::mutex odometry_mutex_;  // to be used with odometry_buffer_
         mutable std::mutex status_mutex_;    // to be used with status_buffer_

@@ -33,7 +33,7 @@ TEST_F(ElectionTest, TestSetElectionStatus) {
 }
 
 TEST_F(ElectionTest, TestEmptyStopBallotThread) {
-    ASSERT_NO_THROW(this->core_.stopBallotThread());
+    ASSERT_NO_THROW(this->core_.stopService());
 }
 
 TEST_F(ElectionTest, TestFlushVotes) {

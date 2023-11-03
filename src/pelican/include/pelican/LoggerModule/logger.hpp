@@ -2,13 +2,10 @@
 #define _LOGGER_HPP_
 
 #include "types.hpp"
-#include <fmt/core.h>
-#include <rclcpp/logger.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <string>
 
 class Pelican;
 
+// TODO: add colors?
 class LoggerModule {
     public:
         explicit LoggerModule();
