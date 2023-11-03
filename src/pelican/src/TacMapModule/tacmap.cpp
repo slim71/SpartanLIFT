@@ -10,16 +10,14 @@ TacMapModule::TacMapModule() {
 TacMapModule::TacMapModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 TacMapModule::~TacMapModule() {
-    /* ... */
-
     // Unsubscribe from topics
-    this->sub_to_flags_topic_.reset();
-    this->sub_to_attitude_topic_.reset();
-    this->sub_to_control_mode_topic_.reset();
-    this->sub_to_global_pos_topic_.reset();
-    this->sub_to_local_pos_topic_.reset();
-    this->sub_to_odometry_topic_.reset();
-    this->sub_to_status_topic_.reset();
+    resetSharedPointer(this->sub_to_flags_topic_);
+    resetSharedPointer(this->sub_to_attitude_topic_);
+    resetSharedPointer(this->sub_to_control_mode_topic_);
+    resetSharedPointer(this->sub_to_global_pos_topic_);
+    resetSharedPointer(this->sub_to_local_pos_topic_);
+    resetSharedPointer(this->sub_to_odometry_topic_);
+    resetSharedPointer(this->sub_to_status_topic_);
 
     this->node_ = nullptr;
     this->logger_ = nullptr;

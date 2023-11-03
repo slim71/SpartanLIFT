@@ -31,7 +31,7 @@ void ElectionModule::resetVotingWindow() {
 }
 
 void ElectionModule::setElectionCompleted() {
-    this->voting_timer_->cancel();
+    cancelTimer(this->voting_timer_);
     std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
     this->election_completed_ = true;
 }
