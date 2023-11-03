@@ -1,7 +1,4 @@
 #include "UNSCModule/unsc.hpp"
-#include <math.h>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/transform_datatypes.h>
 
 void UNSCModule::arm() {
     this->signalPublishVehicleCommand(
@@ -106,7 +103,7 @@ bool UNSCModule::waitForAck(uint16_t cmd) {
 
         if (ack) { // at least one ACK received
             this->sendLogDebug(
-                "ACK stored found! cmd:{} timestamp:{}", ack->command, ack->timestamp
+                "Stored ACK found! cmd:{} timestamp:{}", ack->command, ack->timestamp
             );
             if ((ack->command == cmd)) {
                 auto result =
@@ -121,4 +118,51 @@ bool UNSCModule::waitForAck(uint16_t cmd) {
     this->sendLogDebug("ACK wait finished");
 
     return false;
+}
+
+void UNSCModule::runPreChecks() {
+    // Delete wall timer to have it set off only once
+    cancelTimer(this->starting_timer_);
+
+    this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_RUN_PREARM_CHECKS);
+
+    auto start_time = this->gatherTime().nanoseconds() / 1000000; // [ms]
+    this->sendLogDebug("Status data wait started at timestamp {}", start_time);
+
+    // Check for a bit, in case the ACK has not been received yet
+    while (this->gatherTime().nanoseconds() / 1000000 - start_time < 100) {
+        std::optional<px4_msgs::msg::VehicleStatus> status = this->gatherStatus();
+
+        if (status) { // at least one status received
+            this->sendLogDebug(
+                "Stored status message found! timestamp:{} arming_state:{} nav_state:{} "
+                "pre_flight_checks_pass:{} failsafe:{}",
+                status->timestamp, status->arming_state, status->nav_state,
+                status->pre_flight_checks_pass, status->failsafe
+            );
+
+            // Check whether the agent in the simulation is good to go
+            this->sitl_ready_ =
+                status->pre_flight_checks_pass && !status->failsafe &&
+                ((1u << status->nav_state) != 0) && // taken from the PX4 commander
+                status->arming_state < px4_msgs::msg::VehicleStatus::ARMING_STATE_STANDBY_ERROR;
+
+            if (this->sitl_ready_)
+                this->sendLogInfo("Simulation ready!");
+            else
+                this->sendLogWarning("Errors in the simulation detected!"
+                ); // CHECK: terminate with error?
+
+            return;
+        }
+
+        // Wait for a bit before retrying
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+    }
+
+    this->sendLogDebug("Status data wait finished");
+
+    // Default to the hypothesis that the simulation has some problem
+    this->sitl_ready_ = false;
+    this->sendLogWarning("Errors in the simulation detected!"); // CHECK: terminate with error?
 }

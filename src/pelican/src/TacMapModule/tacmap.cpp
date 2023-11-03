@@ -17,7 +17,6 @@ TacMapModule::~TacMapModule() {
     this->sub_to_attitude_topic_.reset();
     this->sub_to_control_mode_topic_.reset();
     this->sub_to_global_pos_topic_.reset();
-    this->sub_to_gps_pos_topic_.reset();
     this->sub_to_local_pos_topic_.reset();
     this->sub_to_odometry_topic_.reset();
     this->sub_to_status_topic_.reset();
@@ -42,7 +41,6 @@ void TacMapModule::initTopics() {
     this->attitude_topic_ = px4_header + "/fmu/out/vehicle_attitude"s;
     this->control_mode_topic_ = px4_header + "/fmu/out/vehicle_control_mode"s;
     this->global_pos_topic_ = px4_header + "/fmu/out/vehicle_global_position"s;
-    this->gps_pos_topic_ = px4_header + "/fmu/out/vehicle_gps_position"s;
     this->local_pos_topic_ = px4_header + "/fmu/out/vehicle_local_position"s;
     this->odometry_topic_ = px4_header + "/fmu/out/vehicle_odometry"s;
     this->command_ack_topic_ = px4_header + "/fmu/out/vehicle_command_ack"s;
@@ -93,12 +91,6 @@ void TacMapModule::initSubscribers() {
             std::bind(&TacMapModule::storeGlobalPosition, this, std::placeholders::_1),
             this->gatherReentrantOptions()
         );
-
-    // this->sub_to_gps_pos_topic_ = this->node_->create_subscription<px4_msgs::msg::SensorGps>(
-    //     this->gps_pos_topic_, this->px4_qos_,
-    //     std::bind(&TacMapModule::storeGps, this, std::placeholders::_1),
-    //     this->gatherReentrantOptions()
-    // );
 
     // // In NED. The coordinate system origin is the vehicle position at the time when the
     // EKF2-module
@@ -159,7 +151,7 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->initPublishers();
 }
 
-void TacMapModule::stopData() {
+void TacMapModule::stopService() {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     this->running_ = false;
 }

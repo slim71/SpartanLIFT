@@ -111,7 +111,7 @@ void HeartbeatModule::sendHeartbeat() const {
     }
 }
 
-void HeartbeatModule::stopHeartbeat() {
+void HeartbeatModule::stopService() {
     if (this->hb_transmission_timer_) {
         this->sendLogInfo("Stopping heartbeat transmissions");
     }

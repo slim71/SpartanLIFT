@@ -1,6 +1,5 @@
 #include "HeartbeatModule/heartbeat.hpp"
 #include "PelicanModule/pelican.hpp"
-#include "types.hpp"
 
 // Considering that external functionalities are not active
 // if the main module is not present, everything can throw an error if
@@ -12,6 +11,7 @@ int HeartbeatModule::gatherAgentID() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering agent ID");
     return this->node_->getID();
 }
 
@@ -20,6 +20,7 @@ possible_roles HeartbeatModule::gatherAgentRole() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering agent role");
     return this->node_->getRole();
 }
 
@@ -28,6 +29,7 @@ int HeartbeatModule::gatherCurrentTerm() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering current term");
     return this->node_->getCurrentTerm();
 }
 
@@ -36,7 +38,8 @@ rclcpp::Time HeartbeatModule::gatherTime() const {
         throw EXTERNAL_OFF;
     }
 
-    return this->node_->now();
+    this->sendLogDebug("Gathering time");
+    return this->node_->getTime();
 }
 
 rclcpp::CallbackGroup::SharedPtr HeartbeatModule::gatherReentrantGroup() const {
@@ -44,6 +47,7 @@ rclcpp::CallbackGroup::SharedPtr HeartbeatModule::gatherReentrantGroup() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering reentrant group");
     return this->node_->getReentrantGroup();
 }
 
@@ -52,6 +56,7 @@ rclcpp::SubscriptionOptions HeartbeatModule::gatherReentrantOptions() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getReentrantOptions();
 }
 
@@ -61,6 +66,7 @@ void HeartbeatModule::signalTransitionToFollower() const {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Signaling transition to follower");
     this->node_->commenceFollowerOperations();
 }
 
@@ -69,6 +75,7 @@ void HeartbeatModule::signalSetElectionStatus(int64_t id) {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Signaling election status set");
     this->node_->commenceSetElectionStatus(id);
 }
 
@@ -77,5 +84,6 @@ void HeartbeatModule::signalResetElectionTimer() {
         throw EXTERNAL_OFF;
     }
 
+    this->sendLogDebug("Signaling election timer reset");
     this->node_->commenceResetElectionTimer();
 }

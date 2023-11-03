@@ -1,5 +1,4 @@
 #include "HeartbeatModule/heartbeat.hpp"
-#include "types.hpp"
 
 int HeartbeatModule::getNumberOfHbs() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
@@ -8,7 +7,7 @@ int HeartbeatModule::getNumberOfHbs() const {
 
 heartbeat HeartbeatModule::getLastHb() const {
     std::lock_guard<std::mutex> lock(this->hbs_mutex_);
-    if(!this->received_hbs_.empty())
+    if (!this->received_hbs_.empty())
         return this->received_hbs_.back();
     else
         return ERROR_HB;

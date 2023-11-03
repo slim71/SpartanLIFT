@@ -1,5 +1,4 @@
 #include "PelicanModule/pelican.hpp"
-#include "pugixml.hpp"
 
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
@@ -76,10 +75,9 @@ void Pelican::signalHandler(int signum) {
     // Stop the thread gracefully
     std::shared_ptr<Pelican> node = getInstance();
     if (node) {
-        // CHECK: uniform naming?
-        node->hb_core_.stopHeartbeat();
-        node->el_core_.stopBallotThread();
-        node->tac_core_.stopData();
+        node->hb_core_.stopService();
+        node->el_core_.stopService();
+        node->tac_core_.stopService();
         node->unsc_core_.stopService();
     }
 

@@ -1,6 +1,5 @@
 #include "ElectionModule/election.hpp"
 #include "PelicanModule/pelican.hpp"
-#include "types.hpp"
 
 // Considering that external functionalities are not active
 // if the main module is not present, everything can throw an error if
