@@ -54,6 +54,8 @@ colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
 gdbtui build/pelican/pelican
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
+MicroXRCEAgent udp4 -p 8888
+PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 
 ---
 https://docs.px4.io/main/en/flight_modes/offboard.html
@@ -67,3 +69,10 @@ px4_instance=2, you need to set target_system=3 in all your VehicleCommand messa
 ---
 Note about the VehicleCommandAck:
 https://github.com/PX4/PX4-Autopilot/issues/21430#issuecomment-1497484098
+
+---
+CHECK: change HeartbeatModule/Election name?
+
+---
+The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was taken directly from the PX4 commander.
+It checks whether the current nav_state of the agent is set or not.

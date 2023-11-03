@@ -259,7 +259,7 @@ void ElectionModule::ballotCheckingThread() {
         // Simulate some delay between checks
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    this->sendLogInfo("Ballot finished");
+    this->sendLogDebug("Ballot finished");
 
     // Notify the main thread to stop waiting
     this->setIsTerminated();

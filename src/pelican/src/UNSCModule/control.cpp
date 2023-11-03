@@ -150,8 +150,7 @@ void UNSCModule::runPreChecks() {
             if (this->sitl_ready_)
                 this->sendLogInfo("Simulation ready!");
             else
-                this->sendLogWarning("Errors in the simulation detected!"
-                ); // CHECK: terminate with error?
+                this->sendLogError("Errors in the simulation detected!");
 
             return;
         }
@@ -164,5 +163,5 @@ void UNSCModule::runPreChecks() {
 
     // Default to the hypothesis that the simulation has some problem
     this->sitl_ready_ = false;
-    this->sendLogWarning("Errors in the simulation detected!"); // CHECK: terminate with error?
+    this->sendLogError("Errors in the simulation detected!");
 }
