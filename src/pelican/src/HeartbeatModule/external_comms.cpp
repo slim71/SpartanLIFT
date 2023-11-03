@@ -8,7 +8,7 @@
 /*************************** Get methods ***************************/
 int HeartbeatModule::gatherAgentID() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering agent ID");
@@ -17,7 +17,7 @@ int HeartbeatModule::gatherAgentID() const {
 
 possible_roles HeartbeatModule::gatherAgentRole() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering agent role");
@@ -26,7 +26,7 @@ possible_roles HeartbeatModule::gatherAgentRole() const {
 
 int HeartbeatModule::gatherCurrentTerm() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering current term");
@@ -35,7 +35,7 @@ int HeartbeatModule::gatherCurrentTerm() const {
 
 rclcpp::Time HeartbeatModule::gatherTime() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering time");
@@ -44,7 +44,7 @@ rclcpp::Time HeartbeatModule::gatherTime() const {
 
 rclcpp::CallbackGroup::SharedPtr HeartbeatModule::gatherReentrantGroup() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant group");
@@ -53,7 +53,7 @@ rclcpp::CallbackGroup::SharedPtr HeartbeatModule::gatherReentrantGroup() const {
 
 rclcpp::SubscriptionOptions HeartbeatModule::gatherReentrantOptions() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -63,7 +63,7 @@ rclcpp::SubscriptionOptions HeartbeatModule::gatherReentrantOptions() const {
 /************* To make other modules carry on an action ************/
 void HeartbeatModule::signalTransitionToFollower() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Signaling transition to follower");
@@ -72,7 +72,7 @@ void HeartbeatModule::signalTransitionToFollower() const {
 
 void HeartbeatModule::signalSetElectionStatus(int64_t id) {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Signaling election status set");
@@ -81,7 +81,7 @@ void HeartbeatModule::signalSetElectionStatus(int64_t id) {
 
 void HeartbeatModule::signalResetElectionTimer() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Signaling election timer reset");

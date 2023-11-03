@@ -8,7 +8,7 @@
 /*************************** Get methods ***************************/
 int TacMapModule::gatherAgentID() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -17,7 +17,7 @@ int TacMapModule::gatherAgentID() const {
 
 possible_roles TacMapModule::gatherAgentRole() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -26,7 +26,7 @@ possible_roles TacMapModule::gatherAgentRole() const {
 
 int TacMapModule::gatherCurrentTerm() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -35,7 +35,7 @@ int TacMapModule::gatherCurrentTerm() const {
 
 rclcpp::Time TacMapModule::gatherTime() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -44,7 +44,7 @@ rclcpp::Time TacMapModule::gatherTime() const {
 
 rclcpp::CallbackGroup::SharedPtr TacMapModule::gatherReentrantGroup() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");
@@ -53,7 +53,7 @@ rclcpp::CallbackGroup::SharedPtr TacMapModule::gatherReentrantGroup() const {
 
 rclcpp::SubscriptionOptions TacMapModule::gatherReentrantOptions() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant options");

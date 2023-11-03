@@ -8,7 +8,7 @@
 /*************************** Get methods ***************************/
 rclcpp::Time UNSCModule::gatherTime() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering time");
@@ -17,7 +17,7 @@ rclcpp::Time UNSCModule::gatherTime() const {
 
 rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherReentrantGroup() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant group");
@@ -26,7 +26,7 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherReentrantGroup() const {
 
 std::optional<px4_msgs::msg::VehicleGlobalPosition> UNSCModule::gatherGlobalPosition() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering global position");
@@ -35,7 +35,7 @@ std::optional<px4_msgs::msg::VehicleGlobalPosition> UNSCModule::gatherGlobalPosi
 
 std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering odometry");
@@ -44,7 +44,7 @@ std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const
 
 std::optional<px4_msgs::msg::VehicleCommandAck> UNSCModule::gatherAck() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering ack");
@@ -53,7 +53,7 @@ std::optional<px4_msgs::msg::VehicleCommandAck> UNSCModule::gatherAck() const {
 
 std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering status");
@@ -66,7 +66,7 @@ void UNSCModule::signalPublishVehicleCommand(
     float param6, float param7
 ) const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Signaling vehicle command publication");

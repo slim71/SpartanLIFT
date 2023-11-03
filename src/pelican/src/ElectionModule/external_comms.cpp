@@ -8,7 +8,7 @@
 /*************************** Get methods ***************************/
 int ElectionModule::gatherAgentID() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering Agent ID");
@@ -17,7 +17,7 @@ int ElectionModule::gatherAgentID() const {
 
 double ElectionModule::gatherAgentMass() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering Agent mass");
@@ -26,7 +26,7 @@ double ElectionModule::gatherAgentMass() const {
 
 possible_roles ElectionModule::gatherAgentRole() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering Agent role");
@@ -35,7 +35,7 @@ possible_roles ElectionModule::gatherAgentRole() const {
 
 int ElectionModule::gatherCurrentTerm() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering current term ID");
@@ -44,7 +44,7 @@ int ElectionModule::gatherCurrentTerm() const {
 
 int ElectionModule::gatherNumberOfHbs() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering number of heartbeats");
@@ -53,7 +53,7 @@ int ElectionModule::gatherNumberOfHbs() const {
 
 heartbeat ElectionModule::gatherLastHb() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
     this->sendLogDebug("Gathering last heartbeat");
     return this->node_->requestLastHb();
@@ -61,7 +61,7 @@ heartbeat ElectionModule::gatherLastHb() const {
 
 rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentrant group");
@@ -70,7 +70,7 @@ rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {
 
 rclcpp::SubscriptionOptions ElectionModule::gatherReentrantOptions() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Gathering reentreant options");
@@ -80,7 +80,7 @@ rclcpp::SubscriptionOptions ElectionModule::gatherReentrantOptions() const {
 /************************** Check methods **************************/
 bool ElectionModule::confirmAgentIsCandidate() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Confirming agent is candidate");
@@ -90,7 +90,7 @@ bool ElectionModule::confirmAgentIsCandidate() const {
 /************* To make other modules carry on an action ************/
 void ElectionModule::signalNewTerm() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Triggering increase of term ID");
@@ -99,7 +99,7 @@ void ElectionModule::signalNewTerm() const {
 
 void ElectionModule::signalTransitionToLeader() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Triggering transitioning to Leader");
@@ -108,7 +108,7 @@ void ElectionModule::signalTransitionToLeader() const {
 
 void ElectionModule::signalTransitionToCandidate() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Triggering transitioning to Candidate");
@@ -117,7 +117,7 @@ void ElectionModule::signalTransitionToCandidate() const {
 
 void ElectionModule::signalTransitionToFollower() const {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->sendLogDebug("Triggering transitioning to Follower");

@@ -36,7 +36,7 @@ void HeartbeatModule::initSetup(LoggerModule* logger) {
 
 void HeartbeatModule::setupPublisher() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     // If no error has been thrown, node_ is actually set and this can be executed
@@ -49,7 +49,7 @@ void HeartbeatModule::setupPublisher() {
 
 void HeartbeatModule::setupSubscription() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     // Used by all kinds of agents to avoid multiple leaders
@@ -66,7 +66,7 @@ void HeartbeatModule::setupSubscription() {
 
 void HeartbeatModule::setupTransmissionTimer() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     // Assumed to overwrite the existing one every time, if present.
