@@ -43,7 +43,7 @@ void ElectionModule::initSetup(LoggerModule* l) { // for followers and candidate
 
 void ElectionModule::prepareTopics() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     /********************** Subscribrers **********************/
@@ -277,7 +277,7 @@ void ElectionModule::startBallotThread() {
 /************ Actions initiated from outside the module ************/
 void ElectionModule::followerActions() {
     if (!this->node_) {
-        throw EXTERNAL_OFF;
+        throw MissingExternModule();
     }
 
     this->setRandomElectionTimeout();

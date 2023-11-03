@@ -34,8 +34,14 @@
 #include <vector>
 
 // Used to wait max 30s of missing data from the simulation before stopping
-#define MAX_DATA_ATTEMPTS 30
-#define EXTERNAL_OFF "No main module present: external functionalities deactivated!"
+constexpr int MAX_DATA_ATTEMPTS = 30;
+
+class MissingExternModule : public std::exception {
+    public:
+        const char* what() {
+            return "No main module present: external functionalities deactivated!";
+        }
+};
 
 struct vote_count {
         int candidate_id;
