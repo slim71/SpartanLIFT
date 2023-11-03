@@ -2,16 +2,8 @@
 #define __UNSC_HPP__
 
 #include "LoggerModule/logger.hpp"
-#include "px4_msgs/msg/vehicle_command.hpp"
-#include "px4_msgs/msg/vehicle_command_ack.hpp"
-#include "px4_msgs/msg/vehicle_global_position.hpp"
-#include "px4_msgs/msg/vehicle_odometry.hpp"
 #include "types.hpp"
 #include "utilities.hpp"
-#include <iostream>
-#include <math.h>
-#include <optional>
-#include <rclcpp/rclcpp.hpp>
 
 class Pelican;
 
@@ -28,9 +20,11 @@ class UNSCModule {
 
         // External communications
         rclcpp::Time gatherTime() const;
+        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         std::optional<px4_msgs::msg::VehicleGlobalPosition> gatherGlobalPosition() const;
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleCommandAck> gatherAck() const;
+        std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -43,6 +37,8 @@ class UNSCModule {
         void arm();
         void disarm();
         void takeoff();
+        void runPreChecks();
+
         bool waitForAck(uint16_t);
 
         void signalPublishVehicleCommand(
@@ -57,9 +53,11 @@ class UNSCModule {
         LoggerModule* logger_;
 
         bool running_ {true};
+        bool sitl_ready_ {false};
         mutable std::mutex running_mutex_; // to be used with running_
 
-        rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::TimerBase::SharedPtr starting_timer_;
+        std::chrono::seconds briefing_time_ {10};
 };
 
 #include "unsc_template.tpp"

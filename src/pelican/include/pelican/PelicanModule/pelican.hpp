@@ -6,16 +6,7 @@
 #include "LoggerModule/logger.hpp"
 #include "TacMapModule/tacmap.hpp"
 #include "UNSCModule/unsc.hpp"
-#include "px4_msgs/msg/vehicle_command_ack.hpp"
-#include "px4_msgs/msg/vehicle_local_position.hpp"
 #include "types.hpp"
-#include <chrono>
-#include <iostream>
-#include <optional> // CHECK: move to types.hpp?
-#include <queue>
-#include <rclcpp/rclcpp.hpp>
-#include <signal.h>
-#include <string>
 
 class Pelican : public rclcpp::Node {
     public:
@@ -31,6 +22,7 @@ class Pelican : public rclcpp::Node {
         int getCurrentTerm() const;
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
+        rclcpp::Time getTime() const;
 
         // Core functionalities
         static void signalHandler(int signum);
@@ -53,6 +45,7 @@ class Pelican : public rclcpp::Node {
         std::optional<px4_msgs::msg::VehicleGlobalPosition> requestGlobalPosition();
         std::optional<px4_msgs::msg::VehicleOdometry> requestOdometry();
         std::optional<px4_msgs::msg::VehicleCommandAck> requestAck();
+        std::optional<px4_msgs::msg::VehicleStatus> requestStatus();
 
         void commenceSetElectionStatus(int);
         void commenceResetElectionTimer();

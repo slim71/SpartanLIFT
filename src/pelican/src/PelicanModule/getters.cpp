@@ -32,6 +32,10 @@ rclcpp::CallbackGroup::SharedPtr Pelican::getReentrantGroup() const {
     return this->reentrant_group_;
 }
 
+rclcpp::Time Pelican::getTime() const {
+    return this->now();
+}
+
 bool Pelican::isReady() const {
     return this->ready_;
 }

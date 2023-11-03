@@ -67,6 +67,7 @@ set(TACMAP_SOURCES
     src/TacMapModule/external_comms.cpp
     src/TacMapModule/receiver.cpp
     src/TacMapModule/transmitter.cpp
+    src/TacMapModule/getters.cpp
 )
 
 set(UNSC_SOURCES

@@ -16,11 +16,11 @@ int Pelican::requestNumberOfHbs() {
 }
 
 void Pelican::commenceStopHeartbeat() {
-    this->hb_core_.stopHeartbeat();
+    this->hb_core_.stopService();
 }
 
 void Pelican::commenceStopBallotThread() {
-    this->el_core_.stopBallotThread();
+    this->el_core_.stopService();
 }
 
 /*********************** To Election Module ************************/
@@ -64,4 +64,9 @@ std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestOdometry() {
 std::optional<px4_msgs::msg::VehicleCommandAck> Pelican::requestAck() {
     this->sendLogDebug("Requesting ack");
     return this->tac_core_.getAck();
+}
+
+std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() {
+    this->sendLogDebug("Requesting status");
+    return this->tac_core_.getStatus();
 }
