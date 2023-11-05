@@ -2,14 +2,6 @@
 #include "types.hpp"
 
 /********************* Simple methods testing **********************/
-
-// Can't use this because in ament_cmake_gmock at
-// the 'humble' tag ThrowsMessage (as other functions) is not defined
-// EXPECT_THAT(
-//       [this]() { this->core_.setupPublisher(); },
-//       ThrowsMessage<std::runtime_error>(HasSubstr(EXTERNAL_OFF))
-// );
-
 TEST_F(HeartbeatTest, CannotSetupPublisher) {
     ASSERT_ANY_THROW(this->core_.setupPublisher());
 }
@@ -24,6 +16,10 @@ TEST_F(HeartbeatTest, CannotSetupTransmissionTimer) {
 
 TEST_F(HeartbeatTest, TestResetSubscription) {
     ASSERT_NO_THROW(this->core_.resetSubscription());
+}
+
+TEST_F(HeartbeatTest, TestResetPublisher) {
+    ASSERT_NO_THROW(this->core_.resetPublisher());
 }
 
 TEST_F(HeartbeatTest, TestFlushHeartbeats) {
@@ -55,4 +51,6 @@ TEST_F(HeartbeatTest, CannotSendHeartbeat) {
     ASSERT_ANY_THROW(this->core_.sendNow());
 }
 
-/************************ Complex behaviors ************************/
+TEST_F(HeartbeatTest, TestStopService) {
+    ASSERT_NO_THROW(this->core_.stopService());
+}

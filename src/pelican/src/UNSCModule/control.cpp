@@ -45,7 +45,7 @@ void UNSCModule::takeoff() {
     std::optional<px4_msgs::msg::VehicleGlobalPosition> pos;
     std::optional<px4_msgs::msg::VehicleOdometry> odo;
     // Continue checking for a bit, if program is not stopped
-    while (this->checkIsRunning() && attempts < MAX_DATA_ATTEMPTS) {
+    while (this->getRunningStatus() && attempts < MAX_DATA_ATTEMPTS) {
         pos = this->gatherGlobalPosition();
         odo = this->gatherOdometry();
 
@@ -62,7 +62,7 @@ void UNSCModule::takeoff() {
     };
 
     // Do nothing more, if stopped by CTRL-C
-    if (!this->checkIsRunning())
+    if (!this->getRunningStatus())
         return;
 
     // If no data has been repeatedly received, stop everything

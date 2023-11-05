@@ -15,12 +15,20 @@ int Pelican::requestNumberOfHbs() {
     return this->hb_core_.getNumberOfHbs();
 }
 
-void Pelican::commenceStopHeartbeat() {
+void Pelican::commenceStopHeartbeatService() {
     this->hb_core_.stopService();
 }
 
-void Pelican::commenceStopBallotThread() {
+void Pelican::commenceStopElectionService() {
     this->el_core_.stopService();
+}
+
+void Pelican::commenceStopTacMapService() {
+    this->tac_core_.stopService();
+}
+
+void Pelican::commenceStopUNSCService() {
+    this->unsc_core_.stopService();
 }
 
 /*********************** To Election Module ************************/

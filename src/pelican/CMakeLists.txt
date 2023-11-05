@@ -4,7 +4,7 @@ project(pelican
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14) # Minimum
+set(CMAKE_CXX_STANDARD 17) # Minimum
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
@@ -83,10 +83,12 @@ set(LOGGER_SOURCES
 set(TEST_SOURCES
     test/src/smoke.cpp
     test/src/fixtures.cpp
-    test/src/getters_tests.cpp
+    test/src/pelican_tests.cpp
     test/src/behavior_tests.cpp
     test/src/heartbeat_tests.cpp
     test/src/election_tests.cpp
+    test/src/tacmap_tests.cpp
+    test/src/unsc_tests.cpp
     test/src/logger_tests.cpp
 )
 

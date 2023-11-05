@@ -1,5 +1,6 @@
 #include "fixtures.hpp"
 
+/********************* Simple methods testing **********************/
 TEST_F(LoggerTest, TestGetID) {
     int ret;
     ASSERT_NO_THROW(ret = this->core_->getID());

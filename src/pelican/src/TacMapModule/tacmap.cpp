@@ -30,9 +30,8 @@ void TacMapModule::initTopics() {
     try {
         px4_header = "/px4_"s + std::to_string(this->gatherAgentID());
     } catch (const std::exception& exc) {
-        this->sendLogError("TacMapModule initTopics failed!");
-        // Abort everything
-        throw std::runtime_error("TacMapModule initTopics failed!");
+        this->sendLogWarning("No main module found!");
+        px4_header = "px4_1"s;
     }
 
     this->flags_topic_ = px4_header + "/fmu/out/failsafe_flags"s;
@@ -152,9 +151,4 @@ void TacMapModule::initSetup(LoggerModule* logger) {
 void TacMapModule::stopService() {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     this->running_ = false;
-}
-
-bool TacMapModule::checkIsRunning() {
-    std::lock_guard<std::mutex> lock(this->running_mutex_);
-    return this->running_;
 }

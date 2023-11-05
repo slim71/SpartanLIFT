@@ -18,6 +18,14 @@ class UNSCModule {
         void initSetup(LoggerModule*);
         void stopService();
 
+        bool getRunningStatus();
+
+    private:
+        template<typename... Args> void sendLogInfo(std::string, Args...) const;
+        template<typename... Args> void sendLogDebug(std::string, Args...) const;
+        template<typename... Args> void sendLogWarning(std::string, Args...) const;
+        template<typename... Args> void sendLogError(std::string, Args...) const;
+
         // External communications
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
@@ -25,12 +33,6 @@ class UNSCModule {
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleCommandAck> gatherAck() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
-
-    private:
-        template<typename... Args> void sendLogInfo(std::string, Args...) const;
-        template<typename... Args> void sendLogDebug(std::string, Args...) const;
-        template<typename... Args> void sendLogWarning(std::string, Args...) const;
-        template<typename... Args> void sendLogError(std::string, Args...) const;
 
         // void offboardTimerCallback();
 
@@ -46,13 +48,11 @@ class UNSCModule {
             float = NAN
         ) const;
 
-        bool checkIsRunning();
-
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
-        bool running_ {true};
+        std::atomic<bool> running_ {true};
         bool sitl_ready_ {false};
         mutable std::mutex running_mutex_; // to be used with running_
 

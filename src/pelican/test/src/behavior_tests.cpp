@@ -13,23 +13,6 @@ TEST_F(PelicanTest, TestRoleCoherence) {
     );
 }
 
-// FIXME: not working for some reason; data not sent if no simulation is running?
-// TEST_F(PelicanTest, TestPositionPublisher) {
-//     this->PositionPublisherTester();
-//
-//     for(int i=0; i < 10; i++) {
-//         this->data_ok_mutex.lock();
-//         bool a = this->data_ok;
-//         this->data_ok_mutex.unlock();
-//
-//         EXPECT_TRUE(a);
-//         if(a) break;
-//
-//         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//     }
-//
-// }
-
 TEST_F(PelicanTest, TestHeartbeatPublisher) {
     this->HeartbeatPublisherTester();
 
@@ -128,4 +111,12 @@ TEST_F(PelicanTest, TestCommenceLeaderOperations) {
     ASSERT_NO_THROW(this->CommenceLeaderOperationsTester());
     bool ret = this->node_->isLeader();
     ASSERT_TRUE(ret);
+}
+
+TEST_F(PelicanTest, TestCommencePublishVehicleCommand) {
+    ASSERT_ANY_THROW(this->CommencePublishVehicleCommandTester());
+}
+
+TEST_F(TacMapTest, TestPublishVehicleCommand) {
+    ASSERT_ANY_THROW(this->VehicleCommandPublisherTester());
 }

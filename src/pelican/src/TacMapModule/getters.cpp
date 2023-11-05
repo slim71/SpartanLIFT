@@ -51,3 +51,8 @@ std::optional<px4_msgs::msg::VehicleCommandAck> TacMapModule::getAck() {
     std::lock_guard<std::mutex> lock(this->ack_mutex_);
     return this->last_ack_;
 }
+
+bool TacMapModule::getRunningStatus() {
+    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    return this->running_;
+}

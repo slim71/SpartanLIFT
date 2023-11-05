@@ -26,7 +26,7 @@ void UNSCModule::initSetup(LoggerModule* logger) {
     );
 }
 
-bool UNSCModule::checkIsRunning() {
+bool UNSCModule::getRunningStatus() {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     return this->running_;
 }

@@ -52,7 +52,7 @@ void TacMapModule::publishVehicleCommand(
     int attempts = 0;
 
     // Continue checking for a bit, if program is not stopped
-    while (this->checkIsRunning() && attempts < MAX_DATA_ATTEMPTS) {
+    while (this->getRunningStatus() && attempts < MAX_DATA_ATTEMPTS) {
         this->status_mutex_.lock();
         int s_length = this->status_buffer_.size();
         this->status_mutex_.unlock();
@@ -67,7 +67,7 @@ void TacMapModule::publishVehicleCommand(
     };
 
     // Do nothing more, if stopped by CTRL-C
-    if (!this->checkIsRunning())
+    if (!this->getRunningStatus())
         return;
 
     // If no data has been repeatedly received, stop everything

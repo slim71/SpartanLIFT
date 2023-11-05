@@ -103,8 +103,8 @@ TEST(SmokeTests, SignalHandling) {
 TEST(SmokeTests, HeartbeatModuleTest) {
     std::shared_ptr<HeartbeatModule> hb;
     ASSERT_NO_THROW(
-        try { hb = std::make_shared<HeartbeatModule>(); } catch (const std::exception& e) {
-            EXPECT_STREQ("HeartbeatModule cannot be created!", e.what());
+        try { hb = std::make_shared<HeartbeatModule>(); } catch (const std::exception& exc) {
+            EXPECT_STREQ("HeartbeatModule cannot be created!", exc.what());
             throw; // Re-throw the exception for Google Test to catch
         }
     );
@@ -120,25 +120,51 @@ TEST(SmokeTests, LoggerModuleTest) {
             l = std::make_shared<LoggerModule>(
                 std::make_shared<rclcpp::Logger>(rclcpp::get_logger("TestLogger"))
             );
-        } catch (const std::exception& e) {
-            EXPECT_STREQ("LoggerModule cannot be created!", e.what());
+        } catch (const std::exception& exc) {
+            EXPECT_STREQ("LoggerModule cannot be created!", exc.what());
             throw; // Re-throw the exception for Google Test to catch
         }
     );
 
     // Just to show the successful creation of a working object
-    ASSERT_NO_THROW(l->getID());
+    ASSERT_TRUE(l->isReady());
 }
 
 TEST(SmokeTests, ElectionModuleTest) {
     std::shared_ptr<ElectionModule> e;
     ASSERT_NO_THROW(
-        try { e = std::make_shared<ElectionModule>(); } catch (const std::exception& e) {
-            EXPECT_STREQ("ElectionModule cannot be created!", e.what());
+        try { e = std::make_shared<ElectionModule>(); } catch (const std::exception& exc) {
+            EXPECT_STREQ("ElectionModule cannot be created!", exc.what());
             throw; // Re-throw the exception for Google Test to catch
         }
     );
 
     // Just to show the successful creation of a working object
     ASSERT_NO_THROW(e->getLeaderID());
+}
+
+TEST(SmokeTests, TacMapModuleTest) {
+    std::shared_ptr<TacMapModule> tc;
+    ASSERT_NO_THROW(
+        try { tc = std::make_shared<TacMapModule>(); } catch (const std::exception& e) {
+            EXPECT_STREQ("ElectionModule cannot be created!", e.what());
+            throw; // Re-throw the exception for Google Test to catch
+        }
+    );
+
+    // Just to show the successful creation of a working object
+    ASSERT_TRUE(tc->getRunningStatus());
+}
+
+TEST(SmokeTests, UNSCModuleTest) {
+    std::shared_ptr<UNSCModule> unsc;
+    ASSERT_NO_THROW(
+        try { unsc = std::make_shared<UNSCModule>(); } catch (const std::exception& exc) {
+            EXPECT_STREQ("ElectionModule cannot be created!", exc.what());
+            throw; // Re-throw the exception for Google Test to catch
+        }
+    );
+
+    // Just to show the successful creation of a working object
+    ASSERT_TRUE(unsc->getRunningStatus());
 }

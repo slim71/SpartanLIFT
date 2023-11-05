@@ -1,6 +1,4 @@
 #include "fixtures.hpp"
-#include <rclcpp/logger.hpp>
-#include <rclcpp/rclcpp.hpp>
 
 using rclcpp::get_logger;
 
@@ -47,8 +45,10 @@ void PelicanTest::TearDown() {
     // Needed to be sure that no operations are pending after cancelling
     // the executor, otherwise the spin() does not return
     if (this->node_) {
-        this->node_->commenceStopHeartbeat();
-        this->node_->commenceStopBallotThread();
+        this->node_->commenceStopHeartbeatService();
+        this->node_->commenceStopElectionService();
+        this->node_->commenceStopTacMapService();
+        this->node_->commenceStopUNSCService();
     }
 
     rclcpp::shutdown();
@@ -61,18 +61,21 @@ void LoggerTest::SetUp() {
     this->core_ = std::make_shared<LoggerModule>(this->l_);
 }
 
-/********************** Other member functions *********************/
-void PelicanTest::PositionPublisherTester() {
-    this->pos_sub_ = this->node_->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-        "/fmu/out/vehicle_local_position", this->px4_qos_,
-        [this](const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
-            this->data_ok_ = true;
-        },
-        this->node_->getReentrantOptions()
-    );
+void TacMapTest::SetUp() {
+    // Initialization
+    rclcpp::init(0, nullptr);
+    this->node_ = std::make_shared<rclcpp::Node>("Tester");
+    // Setting up the Reentrant group
+    this->reentrant_group_ =
+        this->node_->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    this->reentrant_opt_.callback_group = this->reentrant_group_;
 }
 
+void TacMapTest::TearDown() {
+    rclcpp::shutdown();
+}
+
+/********************** Pelican member functions *********************/
 void PelicanTest::HeartbeatPublisherTester() {
     this->hb_sub_ = this->node_->create_subscription<comms::msg::Heartbeat>(
         "/fleet/heartbeat", this->standard_qos_,
@@ -103,6 +106,22 @@ heartbeat PelicanTest::RequestLastHbTester() {
     return this->node_->requestLastHb();
 }
 
+std::optional<px4_msgs::msg::VehicleGlobalPosition> PelicanTest::RequestGlobalPositionTester() {
+    return this->node_->requestGlobalPosition();
+}
+
+std::optional<px4_msgs::msg::VehicleOdometry> PelicanTest::RequestOdometryTester() {
+    return this->node_->requestOdometry();
+}
+
+std::optional<px4_msgs::msg::VehicleCommandAck> PelicanTest::RequestAckTester() {
+    return this->node_->requestAck();
+}
+
+std::optional<px4_msgs::msg::VehicleStatus> PelicanTest::RequestStatusTester() {
+    return this->node_->requestStatus();
+}
+
 void PelicanTest::CommenceFollowerOperationsTester() {
     this->node_->commenceFollowerOperations();
 }
@@ -113,4 +132,25 @@ void PelicanTest::CommenceCandidateOperationsTester() {
 
 void PelicanTest::CommenceLeaderOperationsTester() {
     this->node_->commenceLeaderOperations();
+}
+
+void PelicanTest::CommencePublishVehicleCommandTester() {
+    this->node_->commencePublishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_RUN_PREARM_CHECKS
+    );
+}
+
+/********************** TacMap member functions *********************/
+void TacMapTest::VehicleCommandPublisherTester() {
+    this->command_sub_ = this->node_->create_subscription<px4_msgs::msg::VehicleCommand>(
+        "/px4_1/fmu/in/vehicle_command", this->px4_qos_,
+        [this](const px4_msgs::msg::VehicleCommand::SharedPtr msg) {
+            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            this->data_ok_ = true;
+        },
+        this->reentrant_opt_
+    );
+
+    // Sending the "pre-arm checks" command for the test
+    this->core_.publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_RUN_PREARM_CHECKS);
 }
