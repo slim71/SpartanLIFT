@@ -16,7 +16,7 @@ possible_roles Pelican::getRole() const {
     return this->role_;
 }
 
-int Pelican::getCurrentTerm() const {
+unsigned int Pelican::getCurrentTerm() const {
     return this->current_term_;
 }
 

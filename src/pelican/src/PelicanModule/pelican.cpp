@@ -72,14 +72,17 @@ void Pelican::parseModel() {
 }
 
 void Pelican::signalHandler(int signum) {
-    // Stop the thread gracefully
-    std::shared_ptr<Pelican> node = getInstance();
-    if (node) {
-        node->hb_core_.stopService();
-        node->el_core_.stopService();
-        node->tac_core_.stopService();
-        node->unsc_core_.stopService();
-    }
+    // Only handle SIGINT
+    if (signum == SIGINT) {
+        // Stop the thread gracefully
+        std::shared_ptr<Pelican> node = getInstance();
+        if (node) {
+            node->hb_core_.stopService();
+            node->el_core_.stopService();
+            node->tac_core_.stopService();
+            node->unsc_core_.stopService();
+        }
 
-    rclcpp::shutdown();
+        rclcpp::shutdown();
+    }
 }

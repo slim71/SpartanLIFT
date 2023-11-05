@@ -43,7 +43,7 @@ TEST_F(PelicanTest, TestGetCurrentTerm) {
     auto ret = this->node_.get()->getCurrentTerm();
     std::cout << "Term: " << ret << std::endl;
     ASSERT_EQ(typeid(ret), typeid(int));
-    ASSERT_GE(ret, 0);
+    ASSERT_GE(ret, (unsigned int) 0);
 }
 
 TEST_F(PelicanTest, TestGetReentrantOptions) {

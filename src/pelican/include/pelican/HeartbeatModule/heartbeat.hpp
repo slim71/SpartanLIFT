@@ -48,7 +48,7 @@ class HeartbeatModule {
         // External communications
         int gatherAgentID() const;
         possible_roles gatherAgentRole() const;
-        int gatherCurrentTerm() const;
+        unsigned int gatherCurrentTerm() const;
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
