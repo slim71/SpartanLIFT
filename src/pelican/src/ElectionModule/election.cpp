@@ -191,7 +191,7 @@ void ElectionModule::triggerVotes() {
     this->pub_to_request_vote_rpc_topic_->publish(req);
 }
 
-void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
+void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC) const {
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
         [](comms::msg::Datapad::SharedPtr first, comms::msg::Datapad::SharedPtr second) {

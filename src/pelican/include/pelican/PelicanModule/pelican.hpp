@@ -19,7 +19,7 @@ class Pelican : public rclcpp::Node {
         std::string getModel() const;
         double getMass() const;
         possible_roles getRole() const;
-        int getCurrentTerm() const;
+        unsigned int getCurrentTerm() const;
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
@@ -86,7 +86,7 @@ class Pelican : public rclcpp::Node {
         std::string model_;
         double mass_ {0.0};
         possible_roles role_ {tbd};
-        int current_term_ {0};
+        unsigned int current_term_ {0};
         static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
         bool ready_ {false};
 

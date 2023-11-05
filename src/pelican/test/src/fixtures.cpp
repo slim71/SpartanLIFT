@@ -79,7 +79,7 @@ void TacMapTest::TearDown() {
 void PelicanTest::HeartbeatPublisherTester() {
     this->hb_sub_ = this->node_->create_subscription<comms::msg::Heartbeat>(
         "/fleet/heartbeat", this->standard_qos_,
-        [this](const comms::msg::Heartbeat::SharedPtr msg) {
+        [this](const comms::msg::Heartbeat::SharedPtr) {
             std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
@@ -90,7 +90,7 @@ void PelicanTest::HeartbeatPublisherTester() {
 void PelicanTest::DatapadPublisherTester() {
     this->data_sub_ = this->node_->create_subscription<comms::msg::Datapad>(
         "/fleet/leader_election", this->standard_qos_,
-        [this](const comms::msg::Datapad::SharedPtr msg) {
+        [this](const comms::msg::Datapad::SharedPtr) {
             std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
@@ -144,7 +144,7 @@ void PelicanTest::CommencePublishVehicleCommandTester() {
 void TacMapTest::VehicleCommandPublisherTester() {
     this->command_sub_ = this->node_->create_subscription<px4_msgs::msg::VehicleCommand>(
         "/px4_1/fmu/in/vehicle_command", this->px4_qos_,
-        [this](const px4_msgs::msg::VehicleCommand::SharedPtr msg) {
+        [this](const px4_msgs::msg::VehicleCommand::SharedPtr) {
             std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },

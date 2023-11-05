@@ -24,7 +24,7 @@ possible_roles HeartbeatModule::gatherAgentRole() const {
     return this->node_->getRole();
 }
 
-int HeartbeatModule::gatherCurrentTerm() const {
+unsigned int HeartbeatModule::gatherCurrentTerm() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
