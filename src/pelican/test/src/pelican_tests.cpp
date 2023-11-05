@@ -1,5 +1,6 @@
 #include "fixtures.hpp"
 
+/********************* Simple methods testing **********************/
 TEST_F(PelicanTest, TestGetID) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -48,17 +49,27 @@ TEST_F(PelicanTest, TestGetCurrentTerm) {
 TEST_F(PelicanTest, TestGetReentrantOptions) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    ASSERT_EQ(typeid(this->node_.get()->getReentrantOptions()), typeid(rclcpp::SubscriptionOptions));
+    ASSERT_EQ(
+        typeid(this->node_.get()->getReentrantOptions()), typeid(rclcpp::SubscriptionOptions)
+    );
 }
 
 TEST_F(PelicanTest, TestGetReentrantGroup) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    ASSERT_EQ(typeid(this->node_.get()->getReentrantGroup()), typeid(rclcpp::CallbackGroup::SharedPtr));
+    ASSERT_EQ(
+        typeid(this->node_.get()->getReentrantGroup()), typeid(rclcpp::CallbackGroup::SharedPtr)
+    );
 }
 
 TEST_F(PelicanTest, TestGetInstance) {
     // Wait just to be sure the node is up and running completely
     std::this_thread::sleep_for(std::chrono::seconds(1));
     ASSERT_EQ(typeid(this->node_.get()->getInstance()), typeid(std::shared_ptr<Pelican>));
+}
+
+TEST_F(PelicanTest, TestGetTime) {
+    // Wait just to be sure the node is up and running completely
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    ASSERT_EQ(typeid(this->node_.get()->getTime()), typeid(rclcpp::Time));
 }

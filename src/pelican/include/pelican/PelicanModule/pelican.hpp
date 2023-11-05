@@ -33,7 +33,7 @@ class Pelican : public rclcpp::Node {
         void commenceFollowerOperations();
         void commenceLeaderOperations();
         void commenceCandidateOperations();
-        void commenceIsTerminated();
+        void commenceSetIsTerminated();
         void commencePublishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
@@ -50,8 +50,10 @@ class Pelican : public rclcpp::Node {
         void commenceSetElectionStatus(int);
         void commenceResetElectionTimer();
         void commenceIncreaseCurrentTerm();
-        void commenceStopHeartbeat();
-        void commenceStopBallotThread();
+        void commenceStopHeartbeatService();
+        void commenceStopElectionService();
+        void commenceStopTacMapService();
+        void commenceStopUNSCService();
 
         bool isLeader() const;
         bool isFollower() const;

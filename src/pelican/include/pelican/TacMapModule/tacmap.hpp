@@ -32,6 +32,7 @@ class TacMapModule {
         std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
         std::optional<px4_msgs::msg::VehicleCommandAck> getAck();
         std::optional<px4_msgs::msg::VehicleStatus> getStatus();
+        bool getRunningStatus();
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -62,13 +63,11 @@ class TacMapModule {
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
 
-        bool checkIsRunning();
-
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
-        bool running_ {true};
+        std::atomic<bool> running_ {true};
         int standard_qos_value_ = 10;
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.

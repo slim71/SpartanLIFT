@@ -2,14 +2,6 @@
 #include "types.hpp"
 
 /********************* Simple methods testing **********************/
-
-// Can't use this because in ament_cmake_gmock at
-// the 'humble' tag ThrowsMessage (as other functions) is not defined
-// EXPECT_THAT(
-//       [this]() { this->core_.prepareTopics(); },
-//       ThrowsMessage<std::runtime_error>(HasSubstr(EXTERNAL_OFF))
-// );
-
 TEST_F(ElectionTest, CantPrepareTopics) {
     ASSERT_ANY_THROW(this->core_.prepareTopics());
 }
@@ -27,12 +19,15 @@ TEST_F(ElectionTest, TestResetSubscriptions) {
 }
 
 TEST_F(ElectionTest, TestSetElectionStatus) {
-    int desired_leader = 3;
+    // mersenne_twister_engine seeded with random_device()
+    std::mt19937 random_engine_ {std::random_device {}()};
+    std::uniform_int_distribution<> random_distribution_ {1, 10};
+    int desired_leader = random_distribution_(random_engine_);
     ASSERT_NO_THROW(this->core_.setElectionStatus(desired_leader));
     ASSERT_EQ(this->core_.getLeaderID(), desired_leader);
 }
 
-TEST_F(ElectionTest, TestEmptyStopBallotThread) {
+TEST_F(ElectionTest, TestStopService) {
     ASSERT_NO_THROW(this->core_.stopService());
 }
 

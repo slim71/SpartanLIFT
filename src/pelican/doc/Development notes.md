@@ -49,13 +49,17 @@ All messages are already defined in PX4.
 
 ---
 ### Commands
-ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
+colcon build --packages-select pelican --cmake-args -DBUILD_TESTING=1
 gdbtui build/pelican/pelican
+gdbtui install/pelican/lib/pelican/pelican_test
+ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
+colcon test --packages-select pelican --event-handlers=console_cohesion+
+colcon test-result --all
 
 ---
 https://docs.px4.io/main/en/flight_modes/offboard.html
@@ -76,3 +80,13 @@ CHECK: change HeartbeatModule/Election name?
 ---
 The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was taken directly from the PX4 commander.
 It checks whether the current nav_state of the agent is set or not.
+
+---
+Can't use this in the tests
+```cpp
+EXPECT_THAT(
+      [this]() { this->core_.setupPublisher(); },
+      ThrowsMessage<std::runtime_error>(HasSubstr(EXTERNAL_OFF))
+);
+```
+because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other functions) is not defined

@@ -17,7 +17,7 @@ void Pelican::commenceCandidateOperations() {
     this->becomeCandidate();
 }
 
-void Pelican::commenceIsTerminated() {
+void Pelican::commenceSetIsTerminated() {
     this->sendLogDebug("Received signal for setting the termination flag");
     this->el_core_.setIsTerminated();
 }
@@ -58,7 +58,7 @@ void Pelican::becomeFollower() {
     this->setRole(follower);
     this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
 
-    this->commenceStopHeartbeat();
+    this->commenceStopHeartbeatService();
     this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();
 
@@ -71,7 +71,7 @@ void Pelican::becomeCandidate() {
 
     // Topic preparations outside specific actions
     this->el_core_.prepareTopics();
-    this->commenceStopHeartbeat();
+    this->commenceStopHeartbeatService();
     this->hb_core_.resetPublisher();
     this->hb_core_.setupSubscription();
 
