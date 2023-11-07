@@ -128,5 +128,6 @@
     "**/log": true,
     "**/node_modules": true
   },
-  "uncrustify.configPath.linux": "/opt/ros/humble/lib/python3.10/site-packages/ament_uncrustify/configuration/ament_code_style.cfg"
+  "uncrustify.configPath.linux": "/opt/ros/humble/lib/python3.10/site-packages/ament_uncrustify/configuration/ament_code_style.cfg",
+  "editor.foldingImportsByDefault": true
 }
