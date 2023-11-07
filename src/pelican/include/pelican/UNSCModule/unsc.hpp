@@ -38,11 +38,13 @@ class UNSCModule {
 
         void arm();
         void disarm();
-        void takeoff();
+        void takeoff(unsigned int = 0);
+        void land();
         void runPreChecks();
 
         bool waitForAck(uint16_t);
 
+        // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN

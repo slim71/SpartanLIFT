@@ -1,3 +1,4 @@
+#include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
 void UNSCModule::arm() {
@@ -39,58 +40,70 @@ void UNSCModule::disarm() {
 // }
 // }
 
-void UNSCModule::takeoff() {
-    int attempts = 0;
+// Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+void UNSCModule::takeoff(unsigned int height) {
+    /*
+        in case I'll nee to extend the functionality
+        int attempts = 0;
 
-    std::optional<px4_msgs::msg::VehicleGlobalPosition> pos;
-    std::optional<px4_msgs::msg::VehicleOdometry> odo;
-    // Continue checking for a bit, if program is not stopped
-    while (this->getRunningStatus() && attempts < MAX_DATA_ATTEMPTS) {
-        pos = this->gatherGlobalPosition();
-        odo = this->gatherOdometry();
+        std::optional<px4_msgs::msg::VehicleGlobalPosition> pos;
+        std::optional<px4_msgs::msg::VehicleOdometry> odo;
+        // Continue checking for a bit, if program is not stopped
+        while (this->getRunningStatus() && attempts < MAX_DATA_ATTEMPTS) {
+            pos = this->gatherGlobalPosition();
+            odo = this->gatherOdometry();
 
-        if (pos && odo) {
-            break;
+            if (pos && odo) {
+                break;
+            }
+
+            this->sendLogWarning(
+                "Data needed not yet ready (globalpos:{} odometry:{})! Retrying in a bit...",
+                pos ? 1 : 0, odo ? 1 : 0
+            );
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            attempts++;
+        };
+
+        // Do nothing more, if stopped by CTRL-C
+        if (!this->getRunningStatus())
+            return;
+
+        // If no data has been repeatedly received, stop everything
+        if (attempts >= MAX_DATA_ATTEMPTS) {
+            this->sendLogError("No data received from simulations! Is there one running?");
+            throw std::runtime_error("No simulation detected");
         }
 
-        this->sendLogWarning(
-            "Data needed not yet ready (globalpos:{} odometry:{})! Retrying in a bit...",
-            pos ? 1 : 0, odo ? 1 : 0
+        auto lat = pos->lat;
+        auto lon = pos->lon;
+        auto alt = pos->alt;
+
+        // Quaternion components, w, x, y, z (1 0 0 0 is the null-rotation)
+        auto quat = odo->q;
+        tf2::Quaternion tf2quat(quat[1], quat[2], quat[3], quat[0]);
+        tf2::Matrix3x3 mat(tf2quat);
+        double roll, pitch, yaw;
+        mat.getRPY(roll, pitch, yaw);
+        auto yaw_deg = yaw * 180.0 / M_PI;
+    */
+    if (height > 0) {
+        this->signalPublishVehicleCommand(
+            px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
+            height
         );
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        attempts++;
-    };
-
-    // Do nothing more, if stopped by CTRL-C
-    if (!this->getRunningStatus())
-        return;
-
-    // If no data has been repeatedly received, stop everything
-    if (attempts >= MAX_DATA_ATTEMPTS) {
-        this->sendLogError("No data received from simulations! Is there one running?");
-        throw std::runtime_error("No simulation detected");
+    } else {
+        this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
     }
-
-    auto lat = pos->lat;
-    auto lon = pos->lon;
-    auto alt = pos->alt;
-
-    // Quaternion components, w, x, y, z (1 0 0 0 is the null-rotation)
-    auto quat = odo->q;
-    tf2::Quaternion tf2quat(quat[1], quat[2], quat[3], quat[0]);
-    tf2::Matrix3x3 mat(tf2quat);
-    double roll, pitch, yaw;
-    mat.getRPY(roll, pitch, yaw);
-    auto yaw_deg = yaw * 180.0 / M_PI;
-
-    this->signalPublishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, 0.0, 0.0, 0.0, yaw_deg, lat, lon,
-        alt + 1
-    );
 
     if (waitForAck(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF)) {
         this->arm();
     }
+}
+
+// Empty| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+void UNSCModule::land() {
+    this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
 }
 
 bool UNSCModule::waitForAck(uint16_t cmd) {
