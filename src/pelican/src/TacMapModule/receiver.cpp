@@ -201,6 +201,11 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
     status_data.calibration_enabled = msg->calibration_enabled;
     status_data.pre_flight_checks_pass = msg->pre_flight_checks_pass;
 
+    // While we're at it, let's store the IDs identifying this agent
+    // TODO: mutex?
+    this->system_id_ = msg->system_id;
+    this->component_id_ = msg->component_id;
+
     std::lock_guard<std::mutex> lock(this->status_mutex_);
     this->status_buffer_.push_back(status_data);
 }

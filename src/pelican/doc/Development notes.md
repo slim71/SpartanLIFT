@@ -62,7 +62,11 @@ colcon test --packages-select pelican --event-handlers=console_cohesion+
 colcon test-result --all
 
 ---
+### Offboard control
 https://docs.px4.io/main/en/flight_modes/offboard.html
+https://docs.px4.io/main/en/flight_modes/offboard.html
+PX4 requires that the external controller provides a continuous 2Hz "proof of life" signal, by streaming any of the supported MAVLink setpoint messages **or** the ROS 2 OffboardControlMode message.
+All values are interpreted in NED (Nord, East, Down); unit is [m].
 
 ---
 PX4 accepts VehicleCommand messages only if their target_system field is zero (broadcast
@@ -90,3 +94,23 @@ EXPECT_THAT(
 );
 ```
 because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other functions) is not defined
+
+---
+## Mission useful stuff
+If set, a multi-rotor vehicle will yaw to face the Heading value specified in the target waypoint (corresponding to MAV_CMD_NAV_WAYPOINT.param4).
+If Heading has not been explicitly set for the target waypoint (param4=NaN) then the vehicle will yaw towards a location specified in the parameter MPC_YAW_MODE. By default this is the next waypoint.
+
+PX4 runs some basic sanity checks to determine if a mission is feasible when it is uploaded, and when the vehicle is first armed. If any of the checks fail, the user is notified and it is not possible to start the mission.
+
+PX4 expects to follow a straight line from the previous waypoint to the current target (it does not plan any other kind of path between waypoints - if you need one you can simulate this by adding additional waypoints).
+
+Vehicles switch to the next waypoint as soon as they enter the acceptance radius.
+For a multi-rotor drones, the acceptance radius is tuned using the parameter NAV_ACC_RAD.
+
+During mission execution this will cause the vehicle to ascend vertically to the minimum takeoff altitude defined in the MIS_TAKEOFF_ALT parameter, then head towards the 3D position defined in the mission item.
+
+---
+CHECK: ROI as fleet radius?
+
+---
+CHECK [this](https://github.com/PX4/PX4-Autopilot/issues/18983) in case you use sethome and there0ì's instability

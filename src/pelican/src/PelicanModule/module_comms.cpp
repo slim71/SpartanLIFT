@@ -52,11 +52,19 @@ void Pelican::commencePublishVehicleCommand(
     float param6, float param7
 ) {
     this->sendLogDebug("Requesting publishVehicleCommand");
-    // If there's some problem with the Election Module,
-    // the code will just throw an error and terminate
     this->tac_core_.publishVehicleCommand(
         command, param1, param2, param3, param4, param5, param6, param7
     );
+}
+
+void Pelican::commencePublishOffboardControlMode() {
+    this->sendLogDebug("Requesting publishOffboardControlMode");
+    this->tac_core_.publishOffboardControlMode();
+}
+
+void Pelican::commencePublishTrajectorySetpoint(float x, float y, float z, float yaw) {
+    this->sendLogDebug("Requesting publishTrajectorySetpoint");
+    this->tac_core_.publishTrajectorySetpoint(x, y, z, yaw);
 }
 
 std::optional<px4_msgs::msg::VehicleGlobalPosition> Pelican::requestGlobalPosition() {

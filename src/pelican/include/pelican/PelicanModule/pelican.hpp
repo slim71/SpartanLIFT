@@ -38,6 +38,8 @@ class Pelican : public rclcpp::Node {
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         );
+        void commencePublishOffboardControlMode();
+        void commencePublishTrajectorySetpoint(float, float, float, float);
 
         // Handle data exchange among modules
         heartbeat requestLastHb();

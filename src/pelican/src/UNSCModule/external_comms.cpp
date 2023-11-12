@@ -74,3 +74,21 @@ void UNSCModule::signalPublishVehicleCommand(
         command, param1, param2, param3, param4, param5, param6, param7
     );
 }
+
+void UNSCModule::signalPublishOffboardControlMode() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->sendLogDebug("Signaling offboard control mode publication");
+    this->node_->commencePublishOffboardControlMode();
+}
+
+void UNSCModule::signalPublishTrajectorySetpoint(float x, float y, float z, float yaw) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->sendLogDebug("Signaling trajectory setpoint publication");
+    this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw);
+}

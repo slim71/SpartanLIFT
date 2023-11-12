@@ -21,8 +21,8 @@ class TacMapModule {
         void stopService();
 
         // Transmitting data
+        void publishTrajectorySetpoint(float, float, float, float);
         void publishOffboardControlMode();
-        void publishTrajectorySetpoint();
         void publishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
@@ -70,6 +70,9 @@ class TacMapModule {
         std::atomic<bool> running_ {true};
         int standard_qos_value_ = 10;
 
+        int system_id_ {0};
+        int component_id_ {0};
+
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is
         // incompatible with the PX4 profile for publishers.
@@ -81,12 +84,7 @@ class TacMapModule {
         rclcpp::QoS standard_qos_ {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
-        // CHECK: needed?
-        rclcpp::TimerBase::SharedPtr offboard_timer_;
-        std::chrono::milliseconds offboard_period_ {100};
-        uint64_t offboard_setpoint_counter_; // counter for the number of setpoints sent
-
-        std::string flags_topic_;            // i.e. "/px4_{id}/fmu/out/failsafe_flags";
+        std::string flags_topic_; // i.e. "/px4_{id}/fmu/out/failsafe_flags";
         rclcpp::Subscription<px4_msgs::msg::FailsafeFlags>::SharedPtr sub_to_flags_topic_;
 
         std::string attitude_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_attitude";
@@ -116,13 +114,13 @@ class TacMapModule {
         std::string command_topic_; // i.e. "/px4_{id}/fmu/in/vehicle_command";
         rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr pub_to_command_topic_;
 
-        std::string offboard_control_topic_; // i.e. "/px4_{id}/fmu/in/offboard_control_mode";
-        rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
-            pub_to_offboard_control_topic_;
-
         std::string trajectory_setpoint_topic_; // i.e. "/px4_{id}/fmu/in/trajectory_setpoint";
         rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr
             pub_to_trajectory_setpoint_topic;
+
+        std::string offboard_control_topic_; // i.e. "/px4_{id}/fmu/in/offboard_control_mode";
+        rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
+            pub_to_offboard_control_topic_;
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
