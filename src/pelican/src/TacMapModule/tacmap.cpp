@@ -44,8 +44,8 @@ void TacMapModule::initTopics() {
     this->status_topic_ = px4_header + "/fmu/out/vehicle_status"s;
 
     this->command_topic_ = px4_header + "/fmu/in/vehicle_command"s;
-    this->offboard_control_topic_ = px4_header + "/fmu/in/offboard_control_mode"s;
     this->trajectory_setpoint_topic_ = px4_header + "/fmu/in/trajectory_setpoint"s;
+    this->offboard_control_topic_ = px4_header + "/fmu/in/offboard_control_mode"s;
 }
 
 void TacMapModule::initSubscribers() {

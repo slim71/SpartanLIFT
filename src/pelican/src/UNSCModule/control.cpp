@@ -1,6 +1,8 @@
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
+// #include "px4_custom_mode.h" // TODO: whole header needed?
+
 void UNSCModule::arm() {
     this->signalPublishVehicleCommand(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
@@ -18,27 +20,6 @@ void UNSCModule::disarm() {
 
     this->sendLogInfo("Disarm command sent");
 }
-
-// void UNSCModule::offboardTimerCallback() {
-//     if (this->offboard_setpoint_counter_ == 10) {
-//         // Change to Offboard mode after 10 setpoints
-//         this->sendLogDebug("Changing to Offboard mode!");
-//         this->publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1,
-//         6);
-
-// // Arm the vehicle
-// this->arm();
-// }
-
-// // offboard_control_mode needs to be paired with trajectory_setpoint
-// this->publishOffboardControlMode();
-// this->publishTrajectorySetpoint();
-
-// // stop the counter after reaching 11
-// if (this->offboard_setpoint_counter_ < 11) {
-//     this->offboard_setpoint_counter_++;
-// }
-// }
 
 // Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
 void UNSCModule::takeoff(unsigned int height) {
@@ -106,6 +87,16 @@ void UNSCModule::land() {
     this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
 }
 
+// Use current?| Empty| Empty| Empty| Latitude| Longitude| Altitude|
+void UNSCModule::setHome() {
+    this->signalPublishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME,
+        1.0 // TODO: find or define constant
+    );
+
+    this->sendLogInfo("Set home sent");
+}
+
 bool UNSCModule::waitForAck(uint16_t cmd) {
     auto start_time = this->gatherTime().nanoseconds() / 1000000; // [ms]
     this->sendLogDebug("ACK wait started at timestamp {}", start_time);
@@ -147,7 +138,7 @@ void UNSCModule::runPreChecks() {
         std::optional<px4_msgs::msg::VehicleStatus> status = this->gatherStatus();
 
         if (status) { // at least one status received
-            this->sendLogDebug(
+            this->sendLogInfo(
                 "Stored status message found! timestamp:{} arming_state:{} nav_state:{} "
                 "pre_flight_checks_pass:{} failsafe:{}",
                 status->timestamp, status->arming_state, status->nav_state,
@@ -165,6 +156,17 @@ void UNSCModule::runPreChecks() {
             else
                 this->sendLogError("Errors in the simulation detected!");
 
+            this->setHome();
+
+            // TODO: delete
+            this->starting_timer_ = this->node_->create_wall_timer(
+                this->briefing_time_,
+                [this] {
+                    this->takeoff();
+                },
+                this->gatherReentrantGroup()
+            );
+
             return;
         }
 
@@ -178,3 +180,81 @@ void UNSCModule::runPreChecks() {
     this->sitl_ready_ = false;
     this->sendLogError("Errors in the simulation detected!");
 }
+
+// Empty| Empty| Empty| Empty| Empty| Empty| Empty|
+void UNSCModule::returnToLaunchPosition() {
+    this->signalPublishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_RETURN_TO_LAUNCH
+    );
+
+    this->sendLogInfo("ReturnToLaunch sent");
+}
+
+void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {
+    if (this->offboard_setpoint_counter_ == 10) {
+        // Change to Offboard mode after 10 setpoints
+        this->sendLogDebug("Changing to Offboard mode!");
+        this->signalPublishVehicleCommand(
+            px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6
+        ); // CHECK: can use px4 constants? others?
+    }
+
+    // offboard_control_mode needs to be paired with trajectory_setpoint
+    this->signalPublishOffboardControlMode();
+
+    // stop the counter after reaching 11
+    if (this->offboard_setpoint_counter_ < 11) {
+        this->offboard_setpoint_counter_++;
+    }
+}
+
+void UNSCModule::setPositionMode() {
+    this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, 1, 0);
+
+    this->sendLogInfo("Set position mode sent");
+}
+
+/* void UNSCModule::prepareMission() {
+    std::string connection_url {"udp://"};
+        std::unique_ptr<mavsdk::Mission> _mission{};
+        Mission::MissionPlan mission_plan {};
+        mission_plan.mission_items.push_back(create_mission_item({20.0, 0.}, mission_options, ct));
+        mission_plan.mission_items.push_back(create_mission_item({20.0, 20.0}, mission_options,
+ct)); mission_plan.mission_items.push_back(create_mission_item({0., mission_options.leg_length_m},
+mission_options, ct));
+
+        _mission->set_return_to_launch_after_mission(mission_options.rtl_at_end);
+
+        REQUIRE(_mission->upload_mission(mission_plan) == Mission::Result::Success);
+}
+
+void UNSCModule::missionStart() {
+    this->signalPublishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
+        1, PX4_CUSTOM_MAIN_MODE_AUTO, PX4_CUSTOM_SUB_MODE_AUTO_MISSION
+    );
+}
+
+void UNSCModule::setAcceptanceRadius() { // only for missions
+    this->signalPublishVehicleCommand(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME,
+        1.0 // TODO: find or define constant
+    );
+
+    this->sendLogInfo("Set ROI sent");
+}
+
+Mission::MissionItem  UNSCModule::createMissionItem(
+            const CoordinateTransformation::LocalCoordinate &local_coordinate,
+            const MissionOptions &mission_options,
+            const CoordinateTransformation &ct) {
+        auto mission_item = Mission::MissionItem{};
+        const auto pos_north = ct.global_from_local(local_coordinate);
+
+        mission_item.latitude_deg = pos_north.latitude_deg;
+        mission_item.longitude_deg = pos_north.longitude_deg;
+        mission_item.relative_altitude_m = mission_options.relative_altitude_m;
+        mission_item.is_fly_through = mission_options.fly_through;
+
+        return mission_item;
+} */
