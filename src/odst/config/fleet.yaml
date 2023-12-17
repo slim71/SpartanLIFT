@@ -17,15 +17,15 @@ launchfile:
     - 'emesent_hovermap'
     - 'typhoon_h480'
   xs:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
+    - 6
+    - -6.5
+    - -6.5
+    - 6
+    - 7
   ys:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
+    - 7.5
+    - -5.5
+    - 7.5
+    - -5.5
+    - 0.5
   world: 'tugbot_depot'
