@@ -78,7 +78,6 @@ class TacMapTest : public ::testing::Test {
         mutable std::mutex data_ok_mutex_;
         bool data_ok_ {false};
 
-        rclcpp::Subscription<px4_msgs::msg::OffboardControlMode>::SharedPtr mode_sub_;
         rclcpp::Subscription<px4_msgs::msg::TrajectorySetpoint>::SharedPtr traj_sub_;
         rclcpp::Subscription<px4_msgs::msg::VehicleCommand>::SharedPtr command_sub_;
 

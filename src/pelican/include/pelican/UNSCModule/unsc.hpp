@@ -43,12 +43,7 @@ class UNSCModule {
         void setHome();
         void setPositionMode();
         void returnToLaunchPosition();
-        void lowerLoiter();         // TODO:?
-        void setAcceptanceRadius(); // TODO: needed?
-        void prepareMission();
-        void missionStart();
-        void setAcceptanceRadius();
-        // Mission::MissionItem  createMissionItem();
+        void lowerLoiter(); // TODO:?
 
         void runPreChecks();
         void setAndMaintainOffboardMode(float, float, float, float);
