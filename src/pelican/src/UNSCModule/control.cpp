@@ -1,8 +1,6 @@
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
-// #include "px4_custom_mode.h" // TODO: whole header needed?
-
 void UNSCModule::arm() {
     this->signalPublishVehicleCommand(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
@@ -23,51 +21,6 @@ void UNSCModule::disarm() {
 
 // Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
 void UNSCModule::takeoff(unsigned int height) {
-    /*
-        in case I'll nee to extend the functionality
-        int attempts = 0;
-
-        std::optional<px4_msgs::msg::VehicleGlobalPosition> pos;
-        std::optional<px4_msgs::msg::VehicleOdometry> odo;
-        // Continue checking for a bit, if program is not stopped
-        while (this->getRunningStatus() && attempts < MAX_DATA_ATTEMPTS) {
-            pos = this->gatherGlobalPosition();
-            odo = this->gatherOdometry();
-
-            if (pos && odo) {
-                break;
-            }
-
-            this->sendLogWarning(
-                "Data needed not yet ready (globalpos:{} odometry:{})! Retrying in a bit...",
-                pos ? 1 : 0, odo ? 1 : 0
-            );
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            attempts++;
-        };
-
-        // Do nothing more, if stopped by CTRL-C
-        if (!this->getRunningStatus())
-            return;
-
-        // If no data has been repeatedly received, stop everything
-        if (attempts >= MAX_DATA_ATTEMPTS) {
-            this->sendLogError("No data received from simulations! Is there one running?");
-            throw std::runtime_error("No simulation detected");
-        }
-
-        auto lat = pos->lat;
-        auto lon = pos->lon;
-        auto alt = pos->alt;
-
-        // Quaternion components, w, x, y, z (1 0 0 0 is the null-rotation)
-        auto quat = odo->q;
-        tf2::Quaternion tf2quat(quat[1], quat[2], quat[3], quat[0]);
-        tf2::Matrix3x3 mat(tf2quat);
-        double roll, pitch, yaw;
-        mat.getRPY(roll, pitch, yaw);
-        auto yaw_deg = yaw * 180.0 / M_PI;
-    */
     if (height > 0) {
         this->signalPublishVehicleCommand(
             px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
@@ -213,48 +166,3 @@ void UNSCModule::setPositionMode() {
 
     this->sendLogInfo("Set position mode sent");
 }
-
-/* void UNSCModule::prepareMission() {
-    std::string connection_url {"udp://"};
-        std::unique_ptr<mavsdk::Mission> _mission{};
-        Mission::MissionPlan mission_plan {};
-        mission_plan.mission_items.push_back(create_mission_item({20.0, 0.}, mission_options, ct));
-        mission_plan.mission_items.push_back(create_mission_item({20.0, 20.0}, mission_options,
-ct)); mission_plan.mission_items.push_back(create_mission_item({0., mission_options.leg_length_m},
-mission_options, ct));
-
-        _mission->set_return_to_launch_after_mission(mission_options.rtl_at_end);
-
-        REQUIRE(_mission->upload_mission(mission_plan) == Mission::Result::Success);
-}
-
-void UNSCModule::missionStart() {
-    this->signalPublishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
-        1, PX4_CUSTOM_MAIN_MODE_AUTO, PX4_CUSTOM_SUB_MODE_AUTO_MISSION
-    );
-}
-
-void UNSCModule::setAcceptanceRadius() { // only for missions
-    this->signalPublishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME,
-        1.0 // TODO: find or define constant
-    );
-
-    this->sendLogInfo("Set ROI sent");
-}
-
-Mission::MissionItem  UNSCModule::createMissionItem(
-            const CoordinateTransformation::LocalCoordinate &local_coordinate,
-            const MissionOptions &mission_options,
-            const CoordinateTransformation &ct) {
-        auto mission_item = Mission::MissionItem{};
-        const auto pos_north = ct.global_from_local(local_coordinate);
-
-        mission_item.latitude_deg = pos_north.latitude_deg;
-        mission_item.longitude_deg = pos_north.longitude_deg;
-        mission_item.relative_altitude_m = mission_options.relative_altitude_m;
-        mission_item.is_fly_through = mission_options.fly_through;
-
-        return mission_item;
-} */
