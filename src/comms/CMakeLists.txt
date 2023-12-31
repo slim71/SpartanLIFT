@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
-# TODO: add VERSION 1.0
-# DESCRIPTION "Very nice project"
-# LANGUAGES CXX)
-project(comms)
+project(comms
+        VERSION 0.1.0
+        DESCRIPTION "Package for custom ROS2 messages")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -26,9 +25,11 @@ if(BUILD_TESTING)
 endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Datapad.msg"
+  "msg/Proposal.msg"
   "msg/Heartbeat.msg"
   "msg/RequestVoteRPC.msg"
+  "msg/Status.msg"
+  "msg/Command.msg"
   DEPENDENCIES builtin_interfaces
 )
 
