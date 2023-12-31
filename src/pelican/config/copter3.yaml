@@ -1,4 +1,4 @@
 Pelican:
   ros__parameters:
-    model: "install/pelican/share/pelican/models/X4/model.sdf"
+    model: "PX4-Autopilot/Tools/simulation/gz/models/X3/model.sdf"
     id: 3
