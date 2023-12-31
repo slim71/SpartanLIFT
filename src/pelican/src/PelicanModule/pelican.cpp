@@ -23,18 +23,31 @@ Pelican::Pelican()
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
+    // Own setup
+    this->sub_to_discovery = this->create_subscription<comms::msg::Status>(
+        this->discovery_topic_, this->data_qos_,
+        std::bind(&Pelican::storeAttendance, this, std::placeholders::_1), this->reentrant_opt_
+    );
+    this->pub_to_discovery =
+        this->create_publisher<comms::msg::Status>(this->discovery_topic_, this->qos_value_);
+
+    // Other modules' setup
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
     this->hb_core_.initSetup(&(this->logger_));
     this->el_core_.initSetup(&(this->logger_));
     this->tac_core_.initSetup(&(this->logger_));
     this->unsc_core_.initSetup(&(this->logger_));
 
+    // Parse SDF model
     this->parseModel();
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
 
-    this->ready_ = true;
+    // Wait and notify presence to other agents
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    this->rollCall();
+
     this->sendLogInfo("Node ready!");
 
     this->becomeFollower();
@@ -84,5 +97,30 @@ void Pelican::signalHandler(int signum) {
         }
 
         rclcpp::shutdown();
+    }
+}
+
+void Pelican::rollCall() {
+    comms::msg::Status msg;
+    msg.agent_id = this->id_;
+    msg.status = true;
+
+    this->sendLogDebug("Notifying presence");
+    this->pub_to_discovery->publish(msg);
+}
+
+void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock(this->discovery_mutex_);
+
+    if (std::find_if_not(
+            this->discovery_vector_.begin(), this->discovery_vector_.end(),
+            [msg](const comms::msg::Status& obj) {
+                return msg->agent_id != obj.agent_id;
+            }
+        ) == this->discovery_vector_.end()) {
+        this->sendLogDebug("Storing discovery msg with id {}", msg->agent_id);
+        this->discovery_vector_.push_back(*msg);
+    } else {
+        this->sendLogDebug("Agent {} already discovered", msg->agent_id);
     }
 }

@@ -122,34 +122,23 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     auto term = this->gatherCurrentTerm();
 
     if (msg.term_id < term) {
-        // Ignore heartbeat
+        // Ignore heartbeat; do not reset election timer
         this->sendLogWarning(
             "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id, term
         );
         return;
     }
 
-    // If it comes to this, the msg.term is at least equal to the node's current term
-
-    // Executed by any node, but this should not apply to leaders
-    this->signalSetElectionStatus(msg.leader_id);
-
-    this->sendLogDebug("Resetting election_timer_");
-    this->signalResetElectionTimer();
-
     // Keep heartbeat vector limited
     if (this->getNumberOfHbs() >= this->getMaxHbs()) {
         this->flushHeartbeats();
     }
 
+    // Store heartbeat
     heartbeat hb;
     hb.term = msg.term_id;
     hb.leader = msg.leader_id;
     hb.timestamp = msg.timestamp;
-
-    this->sendLogDebug(
-        "Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id
-    );
 
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
@@ -162,10 +151,37 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     );
     this->hbs_mutex_.unlock();
 
-    if (this->gatherAgentRole() == leader) { // Switch back to follower!
-        // !This should never be needed, since Raft guarantees safety!
-        this->sendLogWarning("As a leader, I've received a heartbeat from some other leader agent");
-        this->signalTransitionToFollower();
+    this->sendLogDebug(
+        "Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id
+    );
+
+    switch (this->gatherAgentRole()) {
+        case follower:
+            if (msg.term_id > term)
+                this->signalNewTerm();
+            this->signalSetElectionStatus(msg.leader_id);
+            this->sendLogInfo("Heartbeat received! Resetting election timer");
+            this->signalResetElectionTimer();
+            break;
+        case candidate:
+            this->sendLogWarning("As a candidate, I've received a heartbeat from an external leader"
+            );
+            this->signalSetElectionStatus(msg.leader_id);
+            this->signalTransitionToFollower();
+            break;
+        case leader:
+            this->sendLogWarning(
+                "As a leader, I've received a heartbeat from some other leader agent"
+            );
+            this->signalSetElectionStatus(msg.leader_id);
+            this->signalTransitionToFollower();
+            break;
+        default:
+            this->sendLogWarning(
+                "Heartbeat received, but my role is undefined! Transitioning to follower"
+            );
+            this->signalSetElectionStatus(msg.leader_id);
+            this->signalTransitionToFollower();
     }
 }
 

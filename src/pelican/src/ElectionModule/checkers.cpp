@@ -2,7 +2,6 @@
 #include "PelicanModule/pelican.hpp"
 
 bool ElectionModule::checkElectionCompleted() const {
-    // Ensure safe access to election_timed_out
     std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
     return this->election_completed_;
 }
@@ -10,11 +9,6 @@ bool ElectionModule::checkElectionCompleted() const {
 bool ElectionModule::checkVotingCompleted() const {
     std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
     return this->voting_completed_;
-}
-
-bool ElectionModule::checkIsTerminated() const {
-    std::lock_guard<std::mutex> lock(this->terminated_mutex_);
-    return this->is_terminated_;
 }
 
 bool ElectionModule::checkForExternalLeader() {
@@ -36,7 +30,7 @@ bool ElectionModule::checkForExternalLeader() {
     if (last_hb_received.term >= this->gatherCurrentTerm()) {
         return true;
     } else {
-        // reject external leader and continue as no heartbeat arrived
+        // Reject external leader and continue, as no heartbeat arrived
         this->sendLogDebug("Most recent heartbeat has old term");
         this->clearElectionStatus();
         return false;
