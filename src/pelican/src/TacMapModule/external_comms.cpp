@@ -11,7 +11,6 @@ int TacMapModule::gatherAgentID() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getID();
 }
 
@@ -20,7 +19,6 @@ possible_roles TacMapModule::gatherAgentRole() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getRole();
 }
 
@@ -29,7 +27,6 @@ int TacMapModule::gatherCurrentTerm() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getCurrentTerm();
 }
 
@@ -38,7 +35,6 @@ rclcpp::Time TacMapModule::gatherTime() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getTime();
 }
 
@@ -47,7 +43,6 @@ rclcpp::CallbackGroup::SharedPtr TacMapModule::gatherReentrantGroup() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getReentrantGroup();
 }
 
@@ -56,6 +51,5 @@ rclcpp::SubscriptionOptions TacMapModule::gatherReentrantOptions() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getReentrantOptions();
 }

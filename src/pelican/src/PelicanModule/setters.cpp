@@ -7,6 +7,7 @@ void Pelican::setRole(possible_roles r) {
 
 void Pelican::commenceIncreaseCurrentTerm() {
     this->current_term_++;
+    this->sendLogInfo("New term: {}", this->current_term_);
 }
 
 void Pelican::setMass(double m) {
