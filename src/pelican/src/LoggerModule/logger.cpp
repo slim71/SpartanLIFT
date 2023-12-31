@@ -27,8 +27,14 @@ void LoggerModule::initSetup(std::shared_ptr<rclcpp::Logger> logger, int id) {
     this->ready_to_log_ = true;
 
     this->setID(id);
+
+    this->cached_role_ = tbd;
 }
 
 bool LoggerModule::isReady() const {
     return this->ready_to_log_;
+}
+
+void LoggerModule::cacheRole(possible_roles role) {
+    this->cached_role_ = role;
 }
