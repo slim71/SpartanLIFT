@@ -17,31 +17,25 @@ void Pelican::commenceCandidateOperations() {
     this->becomeCandidate();
 }
 
-void Pelican::commenceSetIsTerminated() {
-    this->sendLogDebug("Received signal for setting the termination flag");
-    this->el_core_.setIsTerminated();
-}
-
 /************************** Public methods ***************************/
 bool Pelican::isLeader() const {
-    this->sendLogDebug("Agent is leader? {}", this->getRole() == leader);
     return (this->getRole() == leader);
 }
 
 bool Pelican::isFollower() const {
-    this->sendLogDebug("Agent is follower? {}", this->getRole() == follower);
     return (this->getRole() == follower);
 }
 
 bool Pelican::isCandidate() const {
-    this->sendLogDebug("Agent is candidate? {}", this->getRole() == candidate);
     return (this->getRole() == candidate);
 }
 
 /************************** Private methods ***************************/
 void Pelican::becomeLeader() {
     this->setRole(leader);
-    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.cacheRole(leader);
+    this->sendLogInfo("Becoming {}", roles_to_string(leader));
+
     this->hb_core_.flushHeartbeats();
     this->el_core_.flushVotes();
 
@@ -56,7 +50,8 @@ void Pelican::becomeLeader() {
 
 void Pelican::becomeFollower() {
     this->setRole(follower);
-    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.cacheRole(follower);
+    this->sendLogInfo("Becoming {}", roles_to_string(follower));
 
     this->commenceStopHeartbeatService();
     this->hb_core_.resetPublisher();
@@ -67,7 +62,8 @@ void Pelican::becomeFollower() {
 
 void Pelican::becomeCandidate() {
     this->setRole(candidate);
-    this->sendLogInfo("Becoming {}", roles_to_string(this->getRole()));
+    this->logger_.cacheRole(candidate);
+    this->sendLogInfo("Becoming {}", roles_to_string(candidate));
 
     // Topic preparations outside specific actions
     this->el_core_.prepareTopics();
@@ -75,6 +71,5 @@ void Pelican::becomeCandidate() {
     this->hb_core_.resetPublisher();
     this->hb_core_.setupSubscription();
 
-    this->el_core_.prepareForCandidateActions();
     this->el_core_.candidateActions();
 }

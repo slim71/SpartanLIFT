@@ -54,6 +54,14 @@ heartbeat ElectionModule::gatherLastHb() const {
     return this->node_->requestLastHb();
 }
 
+int ElectionModule::gatherNetworkSize() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->requestNetworkSize();
+}
+
 rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {
     if (!this->node_) {
         throw MissingExternModule();

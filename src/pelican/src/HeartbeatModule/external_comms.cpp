@@ -78,3 +78,11 @@ void HeartbeatModule::signalResetElectionTimer() {
 
     this->node_->commenceResetElectionTimer();
 }
+
+void HeartbeatModule::signalNewTerm() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceIncreaseCurrentTerm();
+}

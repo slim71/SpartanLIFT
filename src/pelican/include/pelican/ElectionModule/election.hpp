@@ -24,14 +24,12 @@ class ElectionModule {
         void resetElectionTimer();
         void resetSubscriptions();
         void setElectionStatus(int id);
-        void prepareForCandidateActions();
         void followerActions();
         void candidateActions();
 
         // Both from outside and inside the module
         void stopService();
         void flushVotes();
-        void setIsTerminated();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -44,8 +42,7 @@ class ElectionModule {
         void triggerVotes();
         void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
         void vote(int id_to_vote, double candidate_mass) const;
-        void storeCandidacy(const comms::msg::Datapad::SharedPtr msg);
-        void resetVotingWindow();
+        void storeVotes(const comms::msg::Proposal::SharedPtr msg);
 
         // External communications
         int gatherAgentID() const;
@@ -54,6 +51,7 @@ class ElectionModule {
         int gatherCurrentTerm() const;
         int gatherNumberOfHbs() const;
         heartbeat gatherLastHb() const;
+        int gatherNetworkSize() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         bool confirmAgentIsCandidate() const;
@@ -71,15 +69,8 @@ class ElectionModule {
         void unsetVotingCompleted();
 
         void setRandomElectionTimeout();
-        void setRandomBallotWaittime();
-
-        // Ballot-related
-        void ballotCheckingThread();
-        void startBallotThread();
 
         void clearElectionStatus();
-
-        bool checkIsTerminated() const;
 
         bool checkForExternalLeader();
         bool checkExternalLeaderElected() const;
@@ -103,8 +94,8 @@ class ElectionModule {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
 
         std::string leader_election_topic_ {"/fleet/leader_election"};
-        rclcpp::Subscription<comms::msg::Datapad>::SharedPtr sub_to_leader_election_topic_;
-        rclcpp::Publisher<comms::msg::Datapad>::SharedPtr pub_to_leader_election_topic_;
+        rclcpp::Subscription<comms::msg::Proposal>::SharedPtr sub_to_leader_election_topic_;
+        rclcpp::Publisher<comms::msg::Proposal>::SharedPtr pub_to_leader_election_topic_;
 
         std::string request_vote_rpc_topic_ {"/fleet/request_vote_rpc"};
         rclcpp::Publisher<comms::msg::RequestVoteRPC>::SharedPtr pub_to_request_vote_rpc_topic_;
@@ -139,14 +130,14 @@ class ElectionModule {
         // received. Raft uses randomized election timeouts to ensure that split votes are rare and
         // that they are resolved quickly
         std::chrono::milliseconds election_timeout_;
-        // "election_timeout_" is thes same time window used by a follower to decide whether or not
+        // "election_timeout_" is the same time window used by a follower to decide whether or not
         // to candidate as leader. using another variable only for clarity purposes
         std::chrono::milliseconds new_ballot_waittime_;
         // tried using the same as it would be the period of a functioning leader's heartbeat;
         // works for now
         std::chrono::milliseconds voting_max_time_ {100};
 
-        std::vector<comms::msg::Datapad::SharedPtr> received_votes_;
+        std::vector<comms::msg::Proposal::SharedPtr> received_votes_;
 
         // mersenne_twister_engine seeded with random_device()
         std::mt19937 random_engine_ {std::random_device {}()};

@@ -75,3 +75,7 @@ std::optional<px4_msgs::msg::VehicleCommandAck> Pelican::requestAck() {
 std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() {
     return this->tac_core_.getStatus();
 }
+
+int Pelican::requestNetworkSize() {
+    return this->getNetworkSize();
+}

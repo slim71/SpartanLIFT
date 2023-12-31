@@ -1,9 +1,10 @@
 #ifndef _TYPES_HPP_
 #define _TYPES_HPP_
 
-#include "comms/msg/datapad.hpp"
 #include "comms/msg/heartbeat.hpp"
+#include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
+#include "comms/msg/status.hpp"
 #include "pugixml.hpp"
 #include "px4_msgs/msg/failsafe_flags.hpp"
 #include "px4_msgs/msg/offboard_control_mode.hpp"

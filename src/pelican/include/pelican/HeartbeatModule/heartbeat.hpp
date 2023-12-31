@@ -55,6 +55,7 @@ class HeartbeatModule {
         void signalTransitionToFollower() const;
         void signalSetElectionStatus(int64_t);
         void signalResetElectionTimer();
+        void signalNewTerm() const;
 
     private: // Attributes
         Pelican* node_;
