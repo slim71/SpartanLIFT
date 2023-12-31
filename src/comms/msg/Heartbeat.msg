@@ -1,7 +1,5 @@
 # TODO: make AppendEntriesRPC with no log entries?
 
-# TODO: make unsigned?
-int64 term_id
-int64 leader_id
-# TODO: check steadyclock
+uint64 term_id
+uint64 leader_id
 builtin_interfaces/Time timestamp
