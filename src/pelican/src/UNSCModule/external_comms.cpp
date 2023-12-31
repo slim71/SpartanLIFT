@@ -11,7 +11,6 @@ rclcpp::Time UNSCModule::gatherTime() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering time");
     return this->node_->getTime();
 }
 
@@ -20,7 +19,6 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherReentrantGroup() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant group");
     return this->node_->getReentrantGroup();
 }
 
@@ -29,7 +27,6 @@ std::optional<px4_msgs::msg::VehicleGlobalPosition> UNSCModule::gatherGlobalPosi
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering global position");
     return this->node_->requestGlobalPosition();
 }
 
@@ -38,7 +35,6 @@ std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering odometry");
     return this->node_->requestOdometry();
 }
 
@@ -47,7 +43,6 @@ std::optional<px4_msgs::msg::VehicleCommandAck> UNSCModule::gatherAck() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering ack");
     return this->node_->requestAck();
 }
 
@@ -56,7 +51,6 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering status");
     return this->node_->requestStatus();
 }
 
@@ -69,7 +63,6 @@ void UNSCModule::signalPublishVehicleCommand(
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling vehicle command publication");
     this->node_->commencePublishVehicleCommand(
         command, param1, param2, param3, param4, param5, param6, param7
     );
@@ -80,7 +73,6 @@ void UNSCModule::signalPublishOffboardControlMode() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling offboard control mode publication");
     this->node_->commencePublishOffboardControlMode();
 }
 
@@ -89,6 +81,5 @@ void UNSCModule::signalPublishTrajectorySetpoint(float x, float y, float z, floa
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling trajectory setpoint publication");
     this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw);
 }

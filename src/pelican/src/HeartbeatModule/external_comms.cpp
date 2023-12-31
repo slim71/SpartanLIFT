@@ -11,7 +11,6 @@ int HeartbeatModule::gatherAgentID() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering agent ID");
     return this->node_->getID();
 }
 
@@ -20,7 +19,6 @@ possible_roles HeartbeatModule::gatherAgentRole() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering agent role");
     return this->node_->getRole();
 }
 
@@ -29,7 +27,6 @@ unsigned int HeartbeatModule::gatherCurrentTerm() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering current term");
     return this->node_->getCurrentTerm();
 }
 
@@ -38,7 +35,6 @@ rclcpp::Time HeartbeatModule::gatherTime() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering time");
     return this->node_->getTime();
 }
 
@@ -47,7 +43,6 @@ rclcpp::CallbackGroup::SharedPtr HeartbeatModule::gatherReentrantGroup() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant group");
     return this->node_->getReentrantGroup();
 }
 
@@ -56,7 +51,6 @@ rclcpp::SubscriptionOptions HeartbeatModule::gatherReentrantOptions() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Gathering reentrant options");
     return this->node_->getReentrantOptions();
 }
 
@@ -66,7 +60,6 @@ void HeartbeatModule::signalTransitionToFollower() const {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling transition to follower");
     this->node_->commenceFollowerOperations();
 }
 
@@ -75,7 +68,6 @@ void HeartbeatModule::signalSetElectionStatus(int64_t id) {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling election status set");
     this->node_->commenceSetElectionStatus(id);
 }
 
@@ -84,6 +76,5 @@ void HeartbeatModule::signalResetElectionTimer() {
         throw MissingExternModule();
     }
 
-    this->sendLogDebug("Signaling election timer reset");
     this->node_->commenceResetElectionTimer();
 }
