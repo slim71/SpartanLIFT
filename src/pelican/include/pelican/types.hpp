@@ -50,7 +50,7 @@ struct vote_count {
 };
 
 struct heartbeat {
-        int term;
+        unsigned int term;
         int leader;
         rclcpp::Time timestamp;
 };

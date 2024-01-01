@@ -48,7 +48,7 @@ class ElectionModule {
         int gatherAgentID() const;
         double gatherAgentMass() const;
         possible_roles gatherAgentRole() const;
-        int gatherCurrentTerm() const;
+        unsigned int gatherCurrentTerm() const;
         int gatherNumberOfHbs() const;
         heartbeat gatherLastHb() const;
         int gatherNetworkSize() const;

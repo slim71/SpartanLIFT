@@ -48,6 +48,7 @@ Pelican::Pelican()
     std::this_thread::sleep_for(std::chrono::seconds(1));
     this->rollCall();
 
+    this->ready_ = true;
     this->sendLogInfo("Node ready!");
 
     this->becomeFollower();

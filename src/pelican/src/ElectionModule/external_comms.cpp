@@ -30,7 +30,7 @@ possible_roles ElectionModule::gatherAgentRole() const {
     return this->node_->getRole();
 }
 
-int ElectionModule::gatherCurrentTerm() const {
+unsigned int ElectionModule::gatherCurrentTerm() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
