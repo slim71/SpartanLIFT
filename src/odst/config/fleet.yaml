@@ -1,9 +1,5 @@
 launchfile:
   fleet_size: 5
-  names:
-    -
-    -
-    -
   codes:
     - 4001
     - 4242
