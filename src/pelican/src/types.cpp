@@ -1,13 +1,14 @@
 #include "types.hpp"
 
-heartbeat ERROR_HB = {-1, -1, rclcpp::Time(0, 0)};
+heartbeat ERROR_HB = {0, -1, rclcpp::Time(0, 0)};
 
 const char* modules_names[] = {MODULES(AS_STR) nullptr};
 const char* roles_names[] = {ROLES(AS_STR) nullptr};
 
 /**************************** heartbeat ****************************/
 std::ostream& operator<<(std::ostream& os, const heartbeat& m) {
-    os << "Heartbeat received from leader " << m.leader << " for term " << m.term << " (" << m.timestamp.seconds() << "s, " << m.timestamp.nanoseconds() << "ns)";
+    os << "Heartbeat received from leader " << m.leader << " for term " << m.term << " ("
+       << m.timestamp.seconds() << "s, " << m.timestamp.nanoseconds() << "ns)";
     return os;
 }
 

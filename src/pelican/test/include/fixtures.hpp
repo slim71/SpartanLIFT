@@ -16,7 +16,7 @@ class PelicanTest : public ::testing::Test {
         void TearDown() override;
 
         void HeartbeatPublisherTester();
-        void DatapadPublisherTester();
+        void ProposalPublisherTester();
         int RequestNumberOfHbsTester();
         heartbeat RequestLastHbTester();
         std::optional<px4_msgs::msg::VehicleGlobalPosition> RequestGlobalPositionTester();
@@ -39,7 +39,7 @@ class PelicanTest : public ::testing::Test {
 
         rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr pos_sub_;
         rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr hb_sub_;
-        rclcpp::Subscription<comms::msg::Datapad>::SharedPtr data_sub_;
+        rclcpp::Subscription<comms::msg::Proposal>::SharedPtr data_sub_;
         rclcpp::Subscription<px4_msgs::msg::VehicleCommand>::SharedPtr command_sub_;
 
         rclcpp::QoS px4_qos_ {rclcpp::QoS(

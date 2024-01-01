@@ -87,10 +87,10 @@ void PelicanTest::HeartbeatPublisherTester() {
     );
 }
 
-void PelicanTest::DatapadPublisherTester() {
-    this->data_sub_ = this->node_->create_subscription<comms::msg::Datapad>(
+void PelicanTest::ProposalPublisherTester() {
+    this->data_sub_ = this->node_->create_subscription<comms::msg::Proposal>(
         "/fleet/leader_election", this->standard_qos_,
-        [this](const comms::msg::Datapad::SharedPtr) {
+        [this](const comms::msg::Proposal::SharedPtr) {
             std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
