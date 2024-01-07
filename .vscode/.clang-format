@@ -61,5 +61,5 @@ SpacesInLineCommentPrefix:
   Minimum: 1
   Maximum: 1
 SpacesInSquareBrackets: false
-Standard: c++14 # TODO: update if needed
+Standard: c++17 # TODO: update if needed
 UseTab: Never #(VS Code current setting)
