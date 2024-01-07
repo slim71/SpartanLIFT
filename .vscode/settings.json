@@ -2,7 +2,7 @@
   "C_Cpp.clang_format_path": "/usr/bin/clang-format-17",
   "C_Cpp.clang_format_style": "file:${workspaceFolder}/.vscode/.clang-format",
   "C_Cpp.default.cStandard": "c17",
-  "C_Cpp.default.cppStandard": "c++14",
+  "C_Cpp.default.cppStandard": "c++17",
   "C_Cpp.default.intelliSenseMode": "linux-gcc-x86",
   "C_Cpp.formatting": "clangFormat",
   "[python]": {
@@ -129,5 +129,6 @@
     "**/node_modules": true
   },
   "uncrustify.configPath.linux": "/opt/ros/humble/lib/python3.10/site-packages/ament_uncrustify/configuration/ament_code_style.cfg",
-  "editor.foldingImportsByDefault": true
+  "editor.foldingImportsByDefault": true,
+  "clang-format.fallbackStyle": ""
 }
