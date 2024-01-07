@@ -78,11 +78,11 @@ void HeartbeatModule::setupTransmissionTimer() {
 }
 
 /************ Actions initiated from outside the module ************/
-void HeartbeatModule::resetSubscription() {
+void HeartbeatModule::resetSubscription() { // TODO: useless additional function?
     resetSharedPointer(this->sub_to_heartbeat_topic_);
 }
 
-void HeartbeatModule::resetPublisher() {
+void HeartbeatModule::resetPublisher() { // TODO: useless additional function?
     resetSharedPointer(this->pub_to_heartbeat_topic_);
 }
 
@@ -97,7 +97,7 @@ void HeartbeatModule::sendNow() {
 void HeartbeatModule::sendHeartbeat() const {
     // In case of missing MainModule, we could consider sending the ERROR_HB,
     // but to no use. Let the module just throw an exception
-    this->sendLogDebug("Sending heartbeat");
+    this->sendLogInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->gatherCurrentTerm();

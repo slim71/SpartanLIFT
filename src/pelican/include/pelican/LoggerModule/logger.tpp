@@ -1,5 +1,5 @@
-#ifndef _LOGGER_TPP
-#define _LOGGER_TPP
+#ifndef _LOGGER_TPP_
+#define _LOGGER_TPP_
 
 template<typename... Args>
 void LoggerModule::logDebug(possible_modules m, std::string s, Args... args) const {

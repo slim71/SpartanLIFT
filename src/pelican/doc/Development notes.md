@@ -53,6 +53,8 @@ colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
 colcon build --packages-select pelican --cmake-args -DBUILD_TESTING=1
 gdbtui build/pelican/pelican
 gdbtui install/pelican/lib/pelican/pelican_test
+handle SIGINT noprint nostop pass
+ros2 run datapad datapad --ros-args --log-level debug
 ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml

@@ -6,12 +6,11 @@ LoggerModule::LoggerModule() {
 }
 
 LoggerModule::LoggerModule(std::shared_ptr<rclcpp::Logger> logger) {
-    if (logger)
+    if (logger) {
         this->logger_ = logger;
-    else
+        this->ready_to_log_ = true;
+    } else
         this->logger_ = nullptr;
-
-    this->ready_to_log_ = true;
 }
 
 void LoggerModule::setID(int i) {

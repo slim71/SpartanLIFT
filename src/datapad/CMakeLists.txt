@@ -42,6 +42,7 @@ set(LOGGER_SOURCES
 
 set(DATAPAD_SOURCES
     src/datapad.cpp
+    src/functionalities.cpp
 )
 
 set(TEST_SOURCES

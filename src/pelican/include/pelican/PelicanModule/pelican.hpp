@@ -82,6 +82,9 @@ class Pelican : public rclcpp::Node {
         void rollCall();
         void storeAttendance(const comms::msg::Status::SharedPtr);
 
+        void
+        notifyPresence(const std::shared_ptr<comms::srv::Contact::Request>, const std::shared_ptr<comms::srv::Contact::Response>);
+
     private: // Attributes
         LoggerModule logger_;
         HeartbeatModule hb_core_;
@@ -120,6 +123,8 @@ class Pelican : public rclcpp::Node {
 
         std::chrono::seconds rollcall_timeout_ {1};
         rclcpp::TimerBase::SharedPtr rollcall_timer_;
+
+        rclcpp::Service<comms::srv::Contact>::SharedPtr leader_server_;
 };
 
 // Including templates definitions
