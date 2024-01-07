@@ -5,6 +5,7 @@
 #include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"
+#include "comms/srv/contact.hpp"
 #include "pugixml.hpp"
 #include "px4_msgs/msg/failsafe_flags.hpp"
 #include "px4_msgs/msg/offboard_control_mode.hpp"

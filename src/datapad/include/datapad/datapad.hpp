@@ -53,6 +53,8 @@ class Datapad : public rclcpp::Node {
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
         bool leader_present_ {false};
+
+        rclcpp::Client<comms::srv::Contact>::SharedPtr contact_client_;
 };
 
 // Including templates definitions
