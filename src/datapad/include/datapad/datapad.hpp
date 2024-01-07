@@ -21,6 +21,8 @@ class Datapad : public rclcpp::Node {
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
         void landingPage();
+        void contactLeader();
+        void processContact(rclcpp::Client<comms::srv::Contact>::SharedFuture);
         void inspectAck(const comms::msg::POI);
         void sendPointOfInterest(float, float, float, float);
 
@@ -49,6 +51,8 @@ class Datapad : public rclcpp::Node {
 
         std::chrono::seconds setup_timeout_ {1};
         rclcpp::TimerBase::SharedPtr setup_timer_;
+
+        bool leader_present_ {false};
 };
 
 // Including templates definitions

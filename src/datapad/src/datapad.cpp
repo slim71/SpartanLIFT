@@ -79,6 +79,7 @@ void Datapad::landingPage() {
         std::cout << "(3) Send payload position" << std::endl;
         std::cout << "(4) Send dropoff position" << std::endl;
         std::cout << "(5) Initiate landing" << std::endl;
+        std::cout << "(0) Exit" << std::endl;
         std::cout << " >>> ";
 
         std::cin >> choice;
@@ -93,10 +94,27 @@ void Datapad::landingPage() {
             this->sendLogDebug("Wrong input!");
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Input is not a number!" << std::endl;
+            std::cout << "Input is not a number!" << std::endl << std::endl;
             // break;
         } else {
             this->sendLogDebug("Choice made: {}", choice);
+            switch (choice) {
+                case 0:
+                    break;
+                case 1:
+                    this->contactLeader();
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                default:
+                    this->sendLogWarning("Choice not supported!");
+            }
         }
 
         // Simulate some wait between loop iterations
@@ -134,4 +152,54 @@ void Datapad::setInstance(rclcpp::Node::SharedPtr instance) {
 
 std::shared_ptr<Datapad> Datapad::getInstance() {
     return instance_.lock();
+}
+
+void Datapad::contactLeader() {
+    rclcpp::Client<comms::srv::Contact>::SharedPtr client =
+        this->create_client<comms::srv::Contact>("contactLeader_client");
+
+    auto request = std::make_shared<comms::srv::Contact::Request>();
+    request->question = true;
+
+    // Search for a second, then log and search again
+    int total_search_time = 0;
+    while (!client->wait_for_service(std::chrono::seconds(SEARCH_LEADER_STEP)) &&
+           total_search_time < MAX_SEARCH_TIME) {
+        if (!rclcpp::ok()) {
+            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            return; // CHECK: do something else?
+        }
+
+        this->sendLogDebug("Service not available; waiting some more...");
+        total_search_time += SEARCH_LEADER_STEP;
+    };
+
+    if (total_search_time < MAX_SEARCH_TIME) {
+        this->sendLogDebug("Server available");
+        auto result = client->async_send_request(
+            request, std::bind(&Datapad::processContact, this, std::placeholders::_1)
+        );
+    } else {
+        this->sendLogWarning("The server seems to be down. Please try again");
+    }
+
+    // Wait for a response
+}
+
+void Datapad::processContact(rclcpp::Client<comms::srv::Contact>::SharedFuture future) {
+    // Wait for 1s or untile the result is available
+    auto status = future.wait_for(std::chrono::seconds(1));
+
+    if (status == std::future_status::ready) {
+        auto response = future.get();
+        if (response->present) {
+            this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
+            this->leader_present_ = true;
+        } else {
+            this->sendLogInfo("The fleet has no leader yet");
+            this->leader_present_ = false; // CHECK: redundant?
+        }
+    } else {
+        this->sendLogDebug("Service In-Progress...");
+    }
 }
