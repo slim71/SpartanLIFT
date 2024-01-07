@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(comms
         VERSION 0.1.0
-        DESCRIPTION "Package for custom ROS2 messages")
+        DESCRIPTION "Package for custom ROS2 messages and services")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -24,12 +24,21 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+set(MESSAGE_FILES
+    msg/Command.msg
+    msg/Heartbeat.msg
+    msg/Proposal.msg
+    msg/RequestVoteRPC.msg
+    msg/Status.msg
+)
+
+set(SERVICE_FILES
+    srv/Contact.srv
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Proposal.msg"
-  "msg/Heartbeat.msg"
-  "msg/RequestVoteRPC.msg"
-  "msg/Status.msg"
-  "msg/Command.msg"
+  ${MESSAGE_FILES}
+  ${SERVICE_FILES}
   DEPENDENCIES builtin_interfaces
 )
 

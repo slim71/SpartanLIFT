@@ -19,13 +19,12 @@ endif()
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(px4_msgs REQUIRED) # TODO: needed?
 find_package(comms REQUIRED)
 find_package(fmt)
 
 # Create a library to allow separation of headers and sources
 add_library(Datapad_class src/datapad.cpp)
-ament_target_dependencies(Datapad_class rclcpp px4_msgs comms)
+ament_target_dependencies(Datapad_class rclcpp comms)
 target_include_directories(Datapad_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Datapad_class fmt::fmt)
 
@@ -41,6 +40,10 @@ set(LOGGER_SOURCES
     src/logger.cpp
 )
 
+set(DATAPAD_SOURCES
+    src/datapad.cpp
+)
+
 set(TEST_SOURCES
 )
 
@@ -52,6 +55,7 @@ if(BUILD_TESTING)
                   ${TEST_SOURCES}
                   ${SOURCES}
                   ${LOGGER_SOURCES}
+                  ${DATAPAD_SOURCES}
                   TIMEOUT 100
   )
   # Add needed include directories
@@ -61,7 +65,7 @@ if(BUILD_TESTING)
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
-  ament_target_dependencies(${PROJECT_NAME}_test rclcpp px4_msgs comms)
+  ament_target_dependencies(${PROJECT_NAME}_test rclcpp comms)
   # Link to local library
   target_link_libraries(${PROJECT_NAME}_test Datapad_class)
 
@@ -76,9 +80,10 @@ add_executable(datapad
               ${MAIN}
               ${SOURCES}
               ${LOGGER_SOURCES}
+              ${DATAPAD_SOURCES}
 )
 target_include_directories(datapad PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(datapad rclcpp px4_msgs comms)
+ament_target_dependencies(datapad rclcpp comms)
 target_link_libraries(datapad Datapad_class)
 # Once: install executables
 install(
