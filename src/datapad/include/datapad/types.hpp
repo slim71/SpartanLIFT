@@ -2,7 +2,7 @@
 #define _TYPES_HPP_
 
 #include "comms/msg/poi.hpp"
-#include "comms/srv/contact.hpp"
+#include "comms/srv/fleet_info_exchange.hpp"
 #include <chrono>
 #include <fmt/core.h>
 #include <iostream>

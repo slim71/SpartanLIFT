@@ -22,11 +22,10 @@ Datapad::Datapad() : Node("Datapad"), logger_() {
     this->pub_to_channel =
         this->create_publisher<comms::msg::POI>(this->channel_topic_, this->qos_value_);
 
+    this->fleetinfo_client_ =
+        this->create_client<comms::srv::FleetInfoExchange>("contactLeader_service");
+
     this->last_msg_ = std::make_unique<comms::msg::POI>();
-    this->sendLogDebug(
-        "last_msg_: {} {} {} {} {}", this->last_msg_->x, this->last_msg_->y, this->last_msg_->z,
-        this->last_msg_->radius, this->last_msg_->ack
-    );
 
     this->setup_timer_ = this->create_wall_timer(
         this->setup_timeout_,

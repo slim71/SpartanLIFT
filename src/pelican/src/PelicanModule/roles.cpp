@@ -44,9 +44,9 @@ void Pelican::becomeLeader() {
     this->el_core_.resetSubscriptions();
     this->hb_core_.setupPublisher();
 
-    this->leader_server_ = this->create_service<comms::srv::Contact>(
+    this->fleetinfo_server_ = this->create_service<comms::srv::FleetInfoExchange>(
         "contactLeader_service",
-        std::bind(&Pelican::notifyPresence, this, std::placeholders::_1, std::placeholders::_2)
+        std::bind(&Pelican::rogerWillCo, this, std::placeholders::_1, std::placeholders::_2)
     );
 
     this->hb_core_.sendNow(); // To promptly notify all agents about the new leader
@@ -61,22 +61,9 @@ void Pelican::becomeFollower() {
     this->commenceStopHeartbeatService();
     this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();
-    resetSharedPointer(this->leader_server_);
+    resetSharedPointer(this->fleetinfo_server_);
 
     this->el_core_.followerActions();
-}
-
-void Pelican::notifyPresence(
-    const std::shared_ptr<comms::srv::Contact::Request> request,
-    const std::shared_ptr<comms::srv::Contact::Response> response
-) {
-    if (request->question) {
-        this->sendLogDebug("Notifying I'm the leader to the user!");
-        response->leader_id = this->id_;
-        response->present = true;
-    } else {
-        this->sendLogDebug("A non-questioning request has been received");
-    }
 }
 
 void Pelican::becomeCandidate() {
@@ -91,4 +78,35 @@ void Pelican::becomeCandidate() {
     this->hb_core_.setupSubscription();
 
     this->el_core_.candidateActions();
+}
+
+void Pelican::rogerWillCo(
+    const std::shared_ptr<comms::srv::FleetInfoExchange::Request> request,
+    const std::shared_ptr<comms::srv::FleetInfoExchange::Response> response
+) {
+    response->leader_id = this->id_;
+    response->ack = true;
+
+    if (request->presence) {
+        this->sendLogDebug("Notifying I'm the leader to the user!");
+        response->present = true;
+        response->taking_off = false;
+        response->landing = false;
+    }
+
+    if (request->takeoff) {
+        // TODO: send command to other agents
+        this->sendLogDebug("Notifying start of takeoff!");
+        response->present = false;
+        response->taking_off = true;
+        response->landing = false;
+    }
+
+    if (request->landing) {
+        // TODO: send command to other agents
+        this->sendLogDebug("Notifying start of landing operations!");
+        response->present = false;
+        response->taking_off = false;
+        response->landing = true;
+    }
 }
