@@ -46,6 +46,7 @@ set(PELICAN_SOURCES
     src/PelicanModule/getters.cpp
     src/PelicanModule/setters.cpp
     src/PelicanModule/roles.cpp
+    src/PelicanModule/commands.cpp
     src/PelicanModule/module_comms.cpp
 )
 
