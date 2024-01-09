@@ -22,8 +22,11 @@ class Datapad : public rclcpp::Node {
 
         void landingPage();
         void contactLeader();
-        void processContact(rclcpp::Client<comms::srv::Contact>::SharedFuture);
+        void unitSortie();
+        void backToLZ();
+        void processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture);
         void inspectAck(const comms::msg::POI);
+        void sendFleetInfo(bool, bool, bool);
         void sendPointOfInterest(float, float, float, float);
 
     private:                                     // Attributes
@@ -53,8 +56,9 @@ class Datapad : public rclcpp::Node {
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
         bool leader_present_ {false};
+        bool fleet_fying_ {false};
 
-        rclcpp::Client<comms::srv::Contact>::SharedPtr contact_client_;
+        rclcpp::Client<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_client_;
 };
 
 // Including templates definitions

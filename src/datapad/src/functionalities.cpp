@@ -4,9 +4,6 @@ void Datapad::landingPage() {
     std::cout << std::endl << "Select functionality" << std::endl;
     int choice;
     while (true) {
-        if (this->contact_client_)
-            this->contact_client_.reset();
-
         std::cout << "(1) Ensure leader is elected" << std::endl;
         std::cout << "(2) Initiate takeoff" << std::endl;
         std::cout << "(3) Send payload position" << std::endl;
@@ -38,16 +35,19 @@ void Datapad::landingPage() {
                     this->contactLeader();
                     break;
                 case 2:
+                    this->unitSortie();
                     break;
                 case 3:
                     break;
                 case 4:
                     break;
                 case 5:
+                    this->backToLZ();
                     break;
                 default:
                     this->sendLogWarning("Choice not supported!");
             }
+            // TODO: dustoff/medevac for fault handling?
         }
 
         // Simulate some wait between loop iterations
@@ -59,14 +59,81 @@ void Datapad::landingPage() {
 }
 
 void Datapad::contactLeader() {
-    this->contact_client_ = this->create_client<comms::srv::Contact>("contactLeader_service");
+    this->sendFleetInfo(true, false, false); // TODO: constant for readability?
+}
 
-    auto request = std::make_shared<comms::srv::Contact::Request>();
-    request->question = true;
+void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture future) {
+    // Wait for 1s or until the result is available
+    this->sendLogDebug("Getting response...");
+    auto status = future.wait_for(std::chrono::seconds(1));
+
+    if (status == std::future_status::ready) {
+        auto response = future.get();
+
+        if (response->ack) { // Request acknowledged
+
+            if ((response->present) && (response->leader_id > 0)) {
+                this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
+                this->leader_present_ = true;
+            }
+
+            if (response->taking_off) {
+                this->sendLogInfo("Takeoff acknowledged");
+                this->fleet_fying_ = true;
+            }
+
+            if (response->landing) {
+                this->sendLogInfo("Land command acknowledged");
+                this->fleet_fying_ = false;
+            }
+
+        } else {
+            this->sendLogWarning("The fleet leader has deliberately ignored the request!");
+        }
+
+    } else {
+        this->sendLogDebug("Service not ready yet...");
+    }
+}
+
+void Datapad::unitSortie() {
+    // Check if the fleet has a leader, since everything goes through it
+    if (!this->leader_present_) {
+        this->sendLogWarning(
+            "No leader has been detected in the fleet! Please make sure it is present"
+        );
+        return;
+    }
+
+    this->sendFleetInfo(false, true, false); // TODO: constant for readability?
+}
+
+void Datapad::backToLZ() {
+    // Check if the fleet has a leader, since everything goes through it
+    if (!this->leader_present_) {
+        this->sendLogWarning(
+            "No leader has been detected in the fleet! Please make sure it is present"
+        );
+        return;
+    }
+    // Check that the fleet is indeed flying
+    if (!this->fleet_fying_) {
+        this->sendLogWarning("Units are not deployed!");
+        return;
+    }
+
+    this->sendFleetInfo(false, false, true); // TODO: constant for readability?
+}
+
+void Datapad::sendFleetInfo(bool presence, bool takeoff, bool landing) {
+    auto request = std::make_shared<comms::srv::FleetInfoExchange::Request>();
+    request->presence = presence;
+    request->takeoff = takeoff;
+    request->landing = landing;
 
     // Search for a second, then log and search again
     int total_search_time = 0;
-    while (!this->contact_client_->wait_for_service(std::chrono::seconds(SEARCH_LEADER_STEP)) &&
+    while (!this->fleetinfo_client_->wait_for_service(std::chrono::seconds(SEARCH_LEADER_STEP)) &&
            total_search_time < MAX_SEARCH_TIME) {
         if (!rclcpp::ok()) {
             this->sendLogError("Client interrupted while waiting for service. Terminating...");
@@ -81,30 +148,10 @@ void Datapad::contactLeader() {
         this->sendLogDebug("Server available");
 
         // Send request
-        auto result = this->contact_client_->async_send_request(
+        auto result = this->fleetinfo_client_->async_send_request(
             request, std::bind(&Datapad::processContact, this, std::placeholders::_1)
         );
     } else {
         this->sendLogWarning("The server seems to be down. Please try again.");
-    }
-}
-
-void Datapad::processContact(rclcpp::Client<comms::srv::Contact>::SharedFuture future) {
-    // Wait for 1s or until the result is available
-    this->sendLogDebug("Getting response...");
-    auto status = future.wait_for(std::chrono::seconds(1));
-
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-        if (response->present) {
-            this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
-            this->leader_present_ = true;
-
-        } else {
-            this->sendLogInfo("The fleet has no leader yet");
-            this->leader_present_ = false; // CHECK: redundant?
-        }
-    } else {
-        this->sendLogDebug("Service not ready yet...");
     }
 }
