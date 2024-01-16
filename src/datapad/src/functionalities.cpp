@@ -70,25 +70,28 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
     if (status == std::future_status::ready) {
         auto response = future.get();
 
-        if (response->ack) { // Request acknowledged
+        if ((response->leader_id != this->leader_) && (this->leader_present_)) {
+            this->sendLogWarning(
+                "Leader must have changed without proper notifications! New leader: {}",
+                response->leader_id
+            );
+            this->leader_ = response->leader_id;
+        }
 
-            if ((response->present) && (response->leader_id > 0)) {
-                this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
-                this->leader_present_ = true;
-            }
+        if (response->present) {
+            this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
+            this->leader_present_ = true;
+            this->leader_ = response->leader_id;
+        }
 
-            if (response->taking_off) {
-                this->sendLogInfo("Takeoff acknowledged");
-                this->fleet_fying_ = true;
-            }
+        if (response->taking_off) {
+            this->sendLogInfo("Takeoff acknowledged");
+            this->fleet_fying_ = true;
+        }
 
-            if (response->landing) {
-                this->sendLogInfo("Land command acknowledged");
-                this->fleet_fying_ = false;
-            }
-
-        } else {
-            this->sendLogWarning("The fleet leader has deliberately ignored the request!");
+        if (response->landing) {
+            this->sendLogInfo("Land command acknowledged");
+            this->fleet_fying_ = false;
         }
 
     } else {

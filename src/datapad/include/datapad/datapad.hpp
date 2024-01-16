@@ -55,6 +55,7 @@ class Datapad : public rclcpp::Node {
         std::chrono::seconds setup_timeout_ {1};
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
+        int leader_ {0};
         bool leader_present_ {false};
         bool fleet_fying_ {false};
 

@@ -32,6 +32,8 @@ bool Pelican::isCandidate() const {
 
 /************************** Private methods ***************************/
 void Pelican::becomeLeader() {
+    if (this->role_ == leader)
+        return;
     this->setRole(leader);
     this->logger_.cacheRole(leader);
     this->sendLogInfo("Becoming {}", roles_to_string(leader));
@@ -40,7 +42,6 @@ void Pelican::becomeLeader() {
     this->el_core_.flushVotes();
 
     // Topic preparations outside specific actions
-    this->hb_core_.resetSubscription();
     this->el_core_.resetSubscriptions();
     this->hb_core_.setupPublisher();
 
@@ -54,6 +55,8 @@ void Pelican::becomeLeader() {
 }
 
 void Pelican::becomeFollower() {
+    if (this->role_ == follower)
+        return;
     this->setRole(follower);
     this->logger_.cacheRole(follower);
     this->sendLogInfo("Becoming {}", roles_to_string(follower));
@@ -67,6 +70,8 @@ void Pelican::becomeFollower() {
 }
 
 void Pelican::becomeCandidate() {
+    if (this->role_ == candidate)
+        return;
     this->setRole(candidate);
     this->logger_.cacheRole(candidate);
     this->sendLogInfo("Becoming {}", roles_to_string(candidate));

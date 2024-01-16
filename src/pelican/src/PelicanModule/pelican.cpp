@@ -24,12 +24,18 @@ Pelican::Pelican()
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
     // Own setup
-    this->sub_to_discovery = this->create_subscription<comms::msg::Status>(
+    this->sub_to_discovery_ = this->create_subscription<comms::msg::Status>(
         this->discovery_topic_, this->data_qos_,
         std::bind(&Pelican::storeAttendance, this, std::placeholders::_1), this->reentrant_opt_
     );
-    this->pub_to_discovery =
-        this->create_publisher<comms::msg::Status>(this->discovery_topic_, this->qos_value_);
+    this->sub_to_dispatch_ = this->create_subscription<comms::msg::Command>(
+        this->dispatch_topic_, this->qos_,
+        std::bind(&Pelican::handleCommand, this, std::placeholders::_1), this->reentrant_opt_
+    );
+    this->pub_to_discovery_ =
+        this->create_publisher<comms::msg::Status>(this->discovery_topic_, this->data_qos_);
+    this->pub_to_dispatch_ =
+        this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
 
     // Other modules' setup
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
@@ -107,7 +113,7 @@ void Pelican::rollCall() {
     msg.status = true;
 
     this->sendLogDebug("Notifying presence");
-    this->pub_to_discovery->publish(msg);
+    this->pub_to_discovery_->publish(msg);
 }
 
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
