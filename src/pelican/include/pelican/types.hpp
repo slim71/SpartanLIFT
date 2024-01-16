@@ -1,6 +1,7 @@
 #ifndef _TYPES_HPP_
 #define _TYPES_HPP_
 
+#include "comms/msg/command.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
@@ -35,8 +36,16 @@
 #include <tf2/transform_datatypes.h>
 #include <vector>
 
+// TODO: read
+// https://stackoverflow.com/questions/34445336/constexpr-global-constants-in-a-header-file-and-odr
+// and move constant to proper source files? maybe with namespaces?
 // Used to wait max 30s of missing data from the simulation before stopping
 constexpr int MAX_DATA_ATTEMPTS = 30;
+constexpr unsigned int MAX_RETRIES = 10;
+
+constexpr unsigned int NO_COMMAND = 0;
+constexpr unsigned int TAKEOFF_COMMAND = 1;
+constexpr unsigned int LANDING_COMMAND = 2;
 
 class MissingExternModule : public std::exception {
     public:

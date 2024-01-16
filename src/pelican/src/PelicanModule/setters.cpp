@@ -17,3 +17,8 @@ void Pelican::setMass(double m) {
 void Pelican::setInstance(rclcpp::Node::SharedPtr instance) {
     instance_ = std::static_pointer_cast<Pelican>(instance);
 }
+
+void Pelican::setTerm(unsigned int t) {
+    this->current_term_ = t;
+    this->sendLogInfo("Updated term to {}", this->current_term_);
+}

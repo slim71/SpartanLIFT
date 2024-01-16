@@ -72,8 +72,9 @@ class Pelican : public rclcpp::Node {
         void becomeFollower();
         void becomeCandidate();
 
-        void setMass(double m);
-        void setRole(possible_roles r);
+        void setMass(double);
+        void setRole(possible_roles);
+        void setTerm(unsigned int);
 
         int getNetworkSize();
 
@@ -84,7 +85,12 @@ class Pelican : public rclcpp::Node {
 
         void
         rogerWillCo(const std::shared_ptr<comms::srv::FleetInfoExchange::Request>, const std::shared_ptr<comms::srv::FleetInfoExchange::Response>);
-        void notifyPresence();
+        void handleCommand(const comms::msg::Command);
+        void broadcastCommand(unsigned int);
+        void sendAppendEntryRPC(unsigned int, unsigned int, bool = false, bool = false);
+        void sendAck(unsigned int, unsigned int, bool = false);
+        bool waitForAcks(unsigned int, bool = false);
+        void appendEntry(unsigned int, unsigned int);
 
     private: // Attributes
         LoggerModule logger_;
@@ -95,13 +101,15 @@ class Pelican : public rclcpp::Node {
 
         static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
 
-        int id_;
+        unsigned int id_;
         std::string model_;
         double mass_ {0.0};
         possible_roles role_ {tbd};
         unsigned int current_term_ {0};
         bool ready_ {false};
         int network_size_ {0};
+        bool flying_ {false};
+        bool mission_in_progress_ {false};
 
         std::vector<comms::msg::Status> discovery_vector_;
         mutable std::mutex discovery_mutex_; // to be used with discovery_vector_
@@ -110,7 +118,8 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
 
         int qos_value_ = 10;
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
+        rmw_qos_profile_t qos_profile_ {
+            rmw_qos_profile_default}; // CHECK: can be deleted and value used directly
         rclcpp::QoS qos_ {
             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
         rclcpp::QoS data_qos_ {rclcpp::QoS(
@@ -119,13 +128,25 @@ class Pelican : public rclcpp::Node {
         )};
 
         std::string discovery_topic_ {"/fleet/network"};
-        rclcpp::Subscription<comms::msg::Status>::SharedPtr sub_to_discovery;
-        rclcpp::Publisher<comms::msg::Status>::SharedPtr pub_to_discovery;
+        rclcpp::Subscription<comms::msg::Status>::SharedPtr sub_to_discovery_;
+        rclcpp::Publisher<comms::msg::Status>::SharedPtr pub_to_discovery_;
 
-        std::chrono::seconds rollcall_timeout_ {1};
+        std::string dispatch_topic_ {"/fleet/dispatch"};
+        rclcpp::Subscription<comms::msg::Command>::SharedPtr sub_to_dispatch_;
+        rclcpp::Publisher<comms::msg::Command>::SharedPtr pub_to_dispatch_;
+
+        std::vector<comms::msg::Command> dispatch_vector_;
+        mutable std::mutex dispatch_mutex_;         // to be used with dispatch_vector_
+
+        std::chrono::seconds rollcall_timeout_ {1}; // TODO: constant/parameter
         rclcpp::TimerBase::SharedPtr rollcall_timer_;
 
         rclcpp::Service<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_server_;
+
+        std::chrono::seconds ack_timeout_ {1}; // TODO: constant/parameter
+
+        std::vector<std::tuple<unsigned int, unsigned int>> entries_rpcs_;
+        mutable std::mutex entries_mutex_;
 };
 
 // Including templates definitions
