@@ -3,19 +3,14 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/opt/ros/humble/include/**",
-                "/opt/ros/humble/bin/**",
-                "/usr/include/**",
-                "/home/slim71/Documents/git/pugixml",
-                "/opt/ros/humble/include/ament_index_cpp",
-                "/usr/src/gmock/include/*"
+                "${workspaceFolder}/src/**",
+                "/home/slim71/Documents/git/pugixml"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "${default}"
+            "intelliSenseMode": "${default}",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4
