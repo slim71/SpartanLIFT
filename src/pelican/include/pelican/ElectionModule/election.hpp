@@ -45,7 +45,7 @@ class ElectionModule {
         void storeVotes(const comms::msg::Proposal::SharedPtr msg);
 
         // External communications
-        int gatherAgentID() const;
+        unsigned int gatherAgentID() const;
         double gatherAgentMass() const;
         possible_roles gatherAgentRole() const;
         unsigned int gatherCurrentTerm() const;
@@ -55,7 +55,8 @@ class ElectionModule {
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         bool confirmAgentIsCandidate() const;
-        void signalNewTerm() const;
+        void signalIncreaseTerm() const;
+        void signalSetTerm(uint64_t) const;
         void signalTransitionToLeader() const;
         void signalTransitionToCandidate() const;
         void signalTransitionToFollower() const;
@@ -89,9 +90,9 @@ class ElectionModule {
 
         std::thread ballot_thread_;
 
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
-        rclcpp::QoS standard_qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
+        rclcpp::QoS standard_qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
 
         std::string leader_election_topic_ {"/fleet/leader_election"};
         rclcpp::Subscription<comms::msg::Proposal>::SharedPtr sub_to_leader_election_topic_;

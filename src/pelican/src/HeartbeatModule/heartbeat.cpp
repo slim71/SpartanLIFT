@@ -78,11 +78,7 @@ void HeartbeatModule::setupTransmissionTimer() {
 }
 
 /************ Actions initiated from outside the module ************/
-void HeartbeatModule::resetSubscription() { // TODO: useless additional function?
-    resetSharedPointer(this->sub_to_heartbeat_topic_);
-}
-
-void HeartbeatModule::resetPublisher() { // TODO: useless additional function?
+void HeartbeatModule::resetPublisher() {
     resetSharedPointer(this->pub_to_heartbeat_topic_);
 }
 
@@ -97,12 +93,13 @@ void HeartbeatModule::sendNow() {
 void HeartbeatModule::sendHeartbeat() const {
     // In case of missing MainModule, we could consider sending the ERROR_HB,
     // but to no use. Let the module just throw an exception
-    this->sendLogInfo("Sending heartbeat");
 
     comms::msg::Heartbeat hb;
     hb.term_id = this->gatherCurrentTerm();
     hb.leader_id = this->gatherAgentID();
     hb.timestamp = this->gatherTime();
+
+    this->sendLogInfo("Sending heartbeat (term {})", hb.term_id);
 
     if (this->pub_to_heartbeat_topic_) {
         this->pub_to_heartbeat_topic_->publish(hb);
@@ -121,10 +118,15 @@ void HeartbeatModule::stopService() {
 void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     auto term = this->gatherCurrentTerm();
 
+    if (msg.leader_id == this->gatherAgentID()) {
+        return;
+    }
+
     if (msg.term_id < term) {
         // Ignore heartbeat; do not reset election timer
         this->sendLogWarning(
-            "Ignoring heartbeat received with previous term ID ({} vs {})", msg.term_id, term
+            "Ignoring heartbeat form agent received with previous term ID ({} vs {})",
+            msg.leader_id, msg.term_id, term
         );
         return;
     }
@@ -158,7 +160,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     switch (this->gatherAgentRole()) {
         case follower:
             if (msg.term_id > term)
-                this->signalNewTerm();
+                this->signalSetTerm(msg.term_id); // CHECK: maybe directly set msg.term_id
             this->signalSetElectionStatus(msg.leader_id);
             this->sendLogInfo("Heartbeat received! Resetting election timer");
             this->signalResetElectionTimer();
@@ -170,11 +172,13 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
             this->signalTransitionToFollower();
             break;
         case leader:
-            this->sendLogWarning(
-                "As a leader, I've received a heartbeat from some other leader agent"
-            );
-            this->signalSetElectionStatus(msg.leader_id);
-            this->signalTransitionToFollower();
+            if (msg.leader_id != this->gatherAgentID()) {
+                this->sendLogWarning(
+                    "As a leader, I've received a heartbeat from some other leader agent"
+                );
+                this->signalSetElectionStatus(msg.leader_id);
+                this->signalTransitionToFollower();
+            }
             break;
         default:
             this->sendLogWarning(

@@ -62,6 +62,7 @@ MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 colcon test --packages-select pelican --event-handlers=console_cohesion+
 colcon test-result --all
+grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
 
 ---
 ### Offboard control
@@ -116,3 +117,6 @@ CHECK: ROI as fleet radius?
 
 ---
 CHECK [this](https://github.com/PX4/PX4-Autopilot/issues/18983) in case you use sethome and there0ì's instability
+
+---
+Theoretically, the leader keeps trying to send entries indefinitely in Raft. Here we try for a max amount of times

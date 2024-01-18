@@ -6,7 +6,7 @@
 // node_ is not set
 
 /*************************** Get methods ***************************/
-int HeartbeatModule::gatherAgentID() const {
+unsigned int HeartbeatModule::gatherAgentID() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -79,10 +79,10 @@ void HeartbeatModule::signalResetElectionTimer() {
     this->node_->commenceResetElectionTimer();
 }
 
-void HeartbeatModule::signalNewTerm() const {
+void HeartbeatModule::signalSetTerm(uint64_t term) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commenceIncreaseCurrentTerm();
+    this->node_->commenceSetTerm(term);
 }

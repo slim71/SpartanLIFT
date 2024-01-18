@@ -17,7 +17,7 @@ This will go through a pass-through method of the main module if the target data
 ## Actions taken by the Main module
 
 `commence[...]`
-The main module actually initiates operations triggered by a secondary module.
+The main module actually initiates operations triggered by another module.
 
 `is[...]`
 The main module computes and returns a flag to the requiring module.

@@ -112,7 +112,8 @@ void ElectionModule::leaderElection() {
         this->sendLogDebug("Logging clusters..");
         for (const vote_count& canvote : ballot) {
             this->sendLogDebug(
-                "Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total
+                "Accumulated votes for candidate {} during term {}: {}", canvote.candidate_id,
+                this->gatherCurrentTerm(), canvote.total
             );
         };
 
@@ -126,15 +127,16 @@ void ElectionModule::leaderElection() {
         );
 
         // If favorable votes >= network size, I'm the new leader
-        if (!this->checkLeaderElected() && !this->checkExternalLeaderElected() &&
-            (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1))) {
-            cancelTimer(this->election_timer_);
-            this->sendLogInfo("Majority acquired!");
-            this->setLeader(this->gatherAgentID());
-            this->setLeaderElected();
-            this->setVotingCompleted();
-        } else {
-            this->sendLogInfo("No majority yet");
+        if (!this->checkLeaderElected() && !this->checkExternalLeaderElected()) {
+            if (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1)) {
+                cancelTimer(this->election_timer_);
+                this->sendLogInfo("Majority acquired during term {}!", this->gatherCurrentTerm());
+                this->setLeader(this->gatherAgentID());
+                this->setLeaderElected();
+                this->setVotingCompleted();
+            } else {
+                this->sendLogInfo("No majority yet");
+            }
         }
 
     } else {
@@ -206,11 +208,10 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
         msg->proposed_leader, msg->candidate_mass, msg->term_id
     );
 
-    auto msg_term = msg->term_id;
     auto term = this->gatherCurrentTerm();
 
     // Ingore messages with past terms
-    if (msg_term < term) {
+    if (msg->term_id < term) {
         this->sendLogInfo("Ignoring candidacy referencing old term");
         return;
     }
@@ -223,26 +224,28 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
     auto role = this->gatherAgentRole();
     switch (role) {
         case follower:
-            if (msg_term > term)
-                this->signalNewTerm();
+            if (msg->term_id > term)
+                this->signalSetTerm(msg->term_id);
             break;
         case candidate:
-            if (msg_term > term) { // another leader is elected, or new candidacy in progress
+            // Another leader is elected, or new candidacy in progress
+            if (msg->term_id > term) {
                 this->sendLogWarning(
                     "Received vote with higher term (as candidate). Switching to follower"
                 );
-                this->signalNewTerm();
+                this->signalSetTerm(msg->term_id);
                 this->signalTransitionToFollower();
             } else {
                 this->leaderElection();
             }
             break;
         case leader:
-            if (msg_term >= term) { // another leader is elected, or new candidacy in progress
+            // Another leader is elected, or new candidacy in progress
+            if (msg->term_id >= term) {
                 this->sendLogWarning(
                     "Received vote with equal or higher term (as leader). Switching to follower"
                 );
-                this->signalNewTerm();
+                this->signalSetTerm(msg->term_id);
                 this->signalTransitionToFollower();
             }
             break;
@@ -315,7 +318,7 @@ void ElectionModule::candidateActions() {
             this->gatherReentrantGroup()
         );
 
-        this->signalNewTerm();
+        this->signalIncreaseTerm();
         this->sendLogInfo("New voting round for term {}", this->gatherCurrentTerm());
 
         // Self-vote and trigger votes from other agents

@@ -1,53 +1,50 @@
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
-void UNSCModule::arm() {
-    this->signalPublishVehicleCommand(
+bool UNSCModule::arm() {
+    return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
         px4_msgs::msg::VehicleCommand::ARMING_ACTION_ARM
     );
-
-    this->sendLogInfo("Arm command sent");
 }
 
-void UNSCModule::disarm() {
-    this->signalPublishVehicleCommand(
+bool UNSCModule::disarm() {
+    return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
         px4_msgs::msg::VehicleCommand::ARMING_ACTION_DISARM
     );
-
-    this->sendLogInfo("Disarm command sent");
 }
 
 // Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
-void UNSCModule::takeoff(unsigned int height) {
-    if (height > 0) {
-        this->signalPublishVehicleCommand(
-            px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
-            height
-        );
-    } else {
-        this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF);
-    }
-
-    if (waitForAck(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF)) {
-        this->arm();
-    }
+bool UNSCModule::takeoff(unsigned int height) {
+    return this->sendToCommanderUnit(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
+        (height > 0) ? height : NAN
+    );
 }
 
 // Empty| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
-void UNSCModule::land() {
-    this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
+bool UNSCModule::land() {
+    return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
 }
 
 // Use current?| Empty| Empty| Empty| Latitude| Longitude| Altitude|
-void UNSCModule::setHome() {
-    this->signalPublishVehicleCommand(
+bool UNSCModule::setHome() {
+    return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME,
         1.0 // TODO: find or define constant
     );
+}
 
-    this->sendLogInfo("Set home sent");
+// bool UNSCModule::setPositionMode() {
+//     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, 1,
+//     0);
+// }
+
+// Empty| Empty| Empty| Empty| Empty| Empty| Empty|
+bool UNSCModule::returnToLaunchPosition() {
+    return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_RETURN_TO_LAUNCH
+    );
 }
 
 bool UNSCModule::waitForAck(uint16_t cmd) {
@@ -69,7 +66,7 @@ bool UNSCModule::waitForAck(uint16_t cmd) {
             }
         }
 
-        // Wait for a bit before retrying
+        // Wait for a bit before retrying CHECK: milli?
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
     this->sendLogDebug("ACK wait finished");
@@ -91,7 +88,7 @@ void UNSCModule::runPreChecks() {
         std::optional<px4_msgs::msg::VehicleStatus> status = this->gatherStatus();
 
         if (status) { // at least one status received
-            this->sendLogInfo(
+            this->sendLogDebug(
                 "Stored status message found! timestamp:{} arming_state:{} nav_state:{} "
                 "pre_flight_checks_pass:{} failsafe:{}",
                 status->timestamp, status->arming_state, status->nav_state,
@@ -111,15 +108,6 @@ void UNSCModule::runPreChecks() {
 
             this->setHome();
 
-            // TODO: delete
-            this->starting_timer_ = this->node_->create_wall_timer(
-                this->briefing_time_,
-                [this] {
-                    this->takeoff();
-                },
-                this->gatherReentrantGroup()
-            );
-
             return;
         }
 
@@ -132,15 +120,6 @@ void UNSCModule::runPreChecks() {
     // Default to the hypothesis that the simulation has some problem
     this->sitl_ready_ = false;
     this->sendLogError("Errors in the simulation detected!");
-}
-
-// Empty| Empty| Empty| Empty| Empty| Empty| Empty|
-void UNSCModule::returnToLaunchPosition() {
-    this->signalPublishVehicleCommand(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_RETURN_TO_LAUNCH
-    );
-
-    this->sendLogInfo("ReturnToLaunch sent");
 }
 
 void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {
@@ -161,8 +140,24 @@ void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw
     }
 }
 
-void UNSCModule::setPositionMode() {
-    this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, 1, 0);
+bool UNSCModule::sendToCommanderUnit(
+    uint16_t command, float param1, float param2, float param3, float param4, float param5,
+    float param6, float param7
+) {
+    unsigned int attempt = 1;
+    do {
+        this->sendLogDebug("Trying to send command {} and to get an ack", command);
+        this->signalPublishVehicleCommand(
+            command, param1, param2, param3, param4, param5, param6, param7
+        );
+        attempt++;
+    } while ((!this->waitForAck(command)) && attempt < MAX_RETRIES);
 
-    this->sendLogInfo("Set position mode sent");
+    if (attempt >= MAX_RETRIES) {
+        this->sendLogWarning("No ack received from the commander unit for command {}", command);
+        return false;
+    }
+
+    this->sendLogInfo("Command {} sent", command);
+    return true;
 }

@@ -46,6 +46,7 @@ constexpr unsigned int MAX_RETRIES = 10;
 constexpr unsigned int NO_COMMAND = 0;
 constexpr unsigned int TAKEOFF_COMMAND = 1;
 constexpr unsigned int LANDING_COMMAND = 2;
+constexpr unsigned int EMERGENCY_LANDING = 10;
 
 class MissingExternModule : public std::exception {
     public:
@@ -55,7 +56,7 @@ class MissingExternModule : public std::exception {
 };
 
 struct vote_count {
-        int candidate_id;
+        unsigned int candidate_id;
         int total;
 };
 

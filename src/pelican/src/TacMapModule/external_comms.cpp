@@ -6,7 +6,7 @@
 // node_ is not set
 
 /*************************** Get methods ***************************/
-int TacMapModule::gatherAgentID() const {
+unsigned int TacMapModule::gatherAgentID() const {
     if (!this->node_) {
         throw MissingExternModule();
     }

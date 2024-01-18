@@ -6,7 +6,7 @@
 // node_ is not set
 
 /*************************** Get methods ***************************/
-int ElectionModule::gatherAgentID() const {
+unsigned int ElectionModule::gatherAgentID() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -88,12 +88,20 @@ bool ElectionModule::confirmAgentIsCandidate() const {
 }
 
 /************* To make other modules carry on an action ************/
-void ElectionModule::signalNewTerm() const {
+void ElectionModule::signalIncreaseTerm() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
     this->node_->commenceIncreaseCurrentTerm();
+}
+
+void ElectionModule::signalSetTerm(uint64_t term) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceSetTerm(term);
 }
 
 void ElectionModule::signalTransitionToLeader() const {

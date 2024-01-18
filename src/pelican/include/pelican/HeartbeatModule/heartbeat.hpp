@@ -21,7 +21,6 @@ class HeartbeatModule {
         void setupTransmissionTimer();
 
         // Actions initiated from outside the module
-        void resetSubscription();
         void resetPublisher();
 
         // Both from outside and inside the module
@@ -46,7 +45,7 @@ class HeartbeatModule {
         void storeHeartbeat(const comms::msg::Heartbeat msg);
 
         // External communications
-        int gatherAgentID() const;
+        unsigned int gatherAgentID() const;
         possible_roles gatherAgentRole() const;
         unsigned int gatherCurrentTerm() const;
         rclcpp::Time gatherTime() const;
@@ -55,7 +54,7 @@ class HeartbeatModule {
         void signalTransitionToFollower() const;
         void signalSetElectionStatus(int64_t);
         void signalResetElectionTimer();
-        void signalNewTerm() const;
+        void signalSetTerm(uint64_t term) const;
 
     private: // Attributes
         Pelican* node_;
@@ -68,9 +67,9 @@ class HeartbeatModule {
         rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr sub_to_heartbeat_topic_;
         rclcpp::Publisher<comms::msg::Heartbeat>::SharedPtr pub_to_heartbeat_topic_;
 
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
-        rclcpp::QoS qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
+        rclcpp::QoS qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
 
         // Not random, it has to be lower than the election_timeout_
         std::chrono::milliseconds heartbeat_period_ {100};

@@ -15,7 +15,7 @@ class Pelican : public rclcpp::Node {
         ~Pelican();
 
         // Getters
-        int getID() const;
+        unsigned int getID() const;
         std::string getModel() const;
         double getMass() const;
         possible_roles getRole() const;
@@ -49,13 +49,20 @@ class Pelican : public rclcpp::Node {
         std::optional<px4_msgs::msg::VehicleStatus> requestStatus();
         int requestNetworkSize();
 
+        // TODO: differentiate name of funs initiated outside the module
+        // from the one initiated BY the module?
         void commenceSetElectionStatus(int);
         void commenceResetElectionTimer();
         void commenceIncreaseCurrentTerm();
+        void commenceSetTerm(uint64_t);
         void commenceStopHeartbeatService();
         void commenceStopElectionService();
         void commenceStopTacMapService();
         void commenceStopUNSCService();
+        bool commenceSetHome();
+        bool commenceTakeoff();
+        bool commenceLand();
+        bool commenceReturnToLaunchPosition();
 
         bool isLeader() const;
         bool isFollower() const;
@@ -91,6 +98,7 @@ class Pelican : public rclcpp::Node {
         void sendAck(unsigned int, unsigned int, bool = false);
         bool waitForAcks(unsigned int, bool = false);
         void appendEntry(unsigned int, unsigned int);
+        void executeCommand(unsigned int);
 
     private: // Attributes
         LoggerModule logger_;
@@ -118,10 +126,9 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
 
         int qos_value_ = 10;
-        rmw_qos_profile_t qos_profile_ {
-            rmw_qos_profile_default}; // CHECK: can be deleted and value used directly
-        rclcpp::QoS qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
+        rclcpp::QoS qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
         rclcpp::QoS data_qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
             rmw_qos_profile_sensor_data

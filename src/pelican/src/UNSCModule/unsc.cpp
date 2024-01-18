@@ -20,7 +20,6 @@ void UNSCModule::initSetup(LoggerModule* logger) {
     this->logger_ = logger;
 
     // Allow for some loading time before starting all operations...
-    // TODO: try synchronizing to the topics and stuff
     this->starting_timer_ = this->node_->create_wall_timer(
         this->briefing_time_, std::bind(&UNSCModule::runPreChecks, this),
         this->gatherReentrantGroup()
