@@ -1,6 +1,6 @@
 #include "PelicanModule/pelican.hpp"
 
-int Pelican::getID() const {
+unsigned int Pelican::getID() const {
     return this->id_;
 }
 

@@ -60,6 +60,22 @@ void Pelican::commencePublishTrajectorySetpoint(float x, float y, float z, float
     this->tac_core_.publishTrajectorySetpoint(x, y, z, yaw);
 }
 
+bool Pelican::commenceSetHome() {
+    return this->unsc_core_.setHome();
+}
+
+bool Pelican::commenceTakeoff() {
+    return this->unsc_core_.takeoff();
+}
+
+bool Pelican::commenceLand() {
+    return this->unsc_core_.land();
+}
+
+bool Pelican::commenceReturnToLaunchPosition() {
+    return this->unsc_core_.returnToLaunchPosition();
+}
+
 std::optional<px4_msgs::msg::VehicleGlobalPosition> Pelican::requestGlobalPosition() {
     return this->tac_core_.getGlobalPosition();
 }

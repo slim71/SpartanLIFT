@@ -21,6 +21,11 @@ class UNSCModule {
 
         bool getRunningStatus();
 
+        bool takeoff(unsigned int = 0);
+        bool land();
+        bool setHome();
+        bool returnToLaunchPosition();
+
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
@@ -35,20 +40,20 @@ class UNSCModule {
         std::optional<px4_msgs::msg::VehicleCommandAck> gatherAck() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
 
-        void arm();
-        void disarm();
+        bool arm();
+        bool disarm();
 
-        void takeoff(unsigned int = 0);
-        void land();
-        void setHome();
         void setPositionMode();
-        void returnToLaunchPosition();
         void lowerLoiter(); // TODO:?
 
         void runPreChecks();
         void setAndMaintainOffboardMode(float, float, float, float);
 
-        bool waitForAck(uint16_t); // TODO: do after each command?
+        bool waitForAck(uint16_t);
+        bool sendToCommanderUnit(
+            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
+            float = NAN
+        );
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(

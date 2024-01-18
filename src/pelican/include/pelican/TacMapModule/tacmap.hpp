@@ -41,7 +41,7 @@ class TacMapModule {
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
         // External communications
-        int gatherAgentID() const;
+        unsigned int gatherAgentID() const;
         possible_roles gatherAgentRole() const;
         int gatherCurrentTerm() const;
         rclcpp::Time gatherTime() const;
@@ -80,9 +80,9 @@ class TacMapModule {
             rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
             rmw_qos_profile_sensor_data
         )};
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
-        rclcpp::QoS standard_qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
+        rclcpp::QoS standard_qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
 
         std::string flags_topic_; // i.e. "/px4_{id}/fmu/out/failsafe_flags";
         rclcpp::Subscription<px4_msgs::msg::FailsafeFlags>::SharedPtr sub_to_flags_topic_;
@@ -124,6 +124,7 @@ class TacMapModule {
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
+        // TODO: dimensions in constants
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {10};
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {10};

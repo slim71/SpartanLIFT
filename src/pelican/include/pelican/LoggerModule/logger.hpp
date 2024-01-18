@@ -25,6 +25,7 @@ class LoggerModule {
         bool isReady() const;
 
         void cacheRole(possible_roles);
+        // TODO: add term?
 
     private:
         std::shared_ptr<rclcpp::Logger> logger_;
