@@ -3,7 +3,7 @@ bool takeoff
 bool landing
 ---
 int64 leader_id
-bool ack
 bool present
 bool taking_off
 bool landing
+bool success
