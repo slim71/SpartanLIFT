@@ -78,20 +78,28 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
             this->leader_ = response->leader_id;
         }
 
-        if (response->present) {
+        if ((response->present) && (response->leader_id > 0)) {
             this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
             this->leader_present_ = true;
             this->leader_ = response->leader_id;
         }
 
         if (response->taking_off) {
-            this->sendLogInfo("Takeoff acknowledged");
-            this->fleet_fying_ = true;
+            if (response->success) {
+                this->sendLogInfo("Takeoff acknowledged");
+                this->fleet_fying_ = true;
+            } else {
+                this->sendLogWarning("Takeoff not successful");
+            }
         }
 
         if (response->landing) {
-            this->sendLogInfo("Land command acknowledged");
-            this->fleet_fying_ = false;
+            if (response->success) {
+                this->sendLogInfo("Land command acknowledged");
+                this->fleet_fying_ = false;
+            } else {
+                this->sendLogWarning("Landing not successful");
+            }
         }
 
     } else {
@@ -105,6 +113,12 @@ void Datapad::unitSortie() {
         this->sendLogWarning(
             "No leader has been detected in the fleet! Please make sure it is present"
         );
+        return;
+    }
+
+    // Check that the fleet is indeed flying
+    if (this->fleet_fying_) {
+        this->sendLogWarning("Units are already deployed!");
         return;
     }
 
