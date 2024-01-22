@@ -6,9 +6,9 @@ TEST_F(PelicanTest, TestGetID) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     auto ret = this->node_.get()->getID();
     std::cout << "ID: " << ret << std::endl;
-    ASSERT_EQ(typeid(this->node_.get()->getID()), typeid(int));
-    ASSERT_GT(ret, 0);
-    ASSERT_EQ(ret, 1);
+    ASSERT_EQ(typeid(this->node_.get()->getID()), typeid(unsigned int));
+    ASSERT_GT(ret, 0U);
+    ASSERT_EQ(ret, 1U);
 }
 
 TEST_F(PelicanTest, TestGetModel) {

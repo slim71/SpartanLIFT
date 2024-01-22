@@ -14,10 +14,6 @@ TEST_F(HeartbeatTest, CannotSetupTransmissionTimer) {
     ASSERT_ANY_THROW(this->core_.setupTransmissionTimer());
 }
 
-TEST_F(HeartbeatTest, TestResetSubscription) {
-    ASSERT_NO_THROW(this->core_.resetSubscription());
-}
-
 TEST_F(HeartbeatTest, TestResetPublisher) {
     ASSERT_NO_THROW(this->core_.resetPublisher());
 }

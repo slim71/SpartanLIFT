@@ -46,9 +46,9 @@ class PelicanTest : public ::testing::Test {
             rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
             rmw_qos_profile_sensor_data
         )};
-        rmw_qos_profile_t qos_profile_ {rmw_qos_profile_default};
-        rclcpp::QoS standard_qos_ {
-            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos_profile_), qos_profile_)};
+        rclcpp::QoS standard_qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
 
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
