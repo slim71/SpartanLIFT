@@ -109,16 +109,17 @@ void Pelican::signalHandler(int signum) {
 
 void Pelican::rollCall() {
     comms::msg::Status msg;
-    msg.agent_id = this->id_;
+    msg.agent_id = this->getID();
     msg.status = true;
 
-    this->sendLogDebug("Notifying presence");
+    this->sendLogInfo("Notifying presence to the fleet");
     this->pub_to_discovery_->publish(msg);
 }
 
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
 
+    // CHECK: do not consider this node here, then count it already in the fleet?
     if (std::find_if_not(
             this->discovery_vector_.begin(), this->discovery_vector_.end(),
             [msg](const comms::msg::Status& obj) {

@@ -14,6 +14,17 @@ class Pelican : public rclcpp::Node {
         explicit Pelican();
         ~Pelican();
 
+        // Core functionalities
+        static void signalHandler(int signum);
+        static void setInstance(rclcpp::Node::SharedPtr instance);
+        static std::shared_ptr<Pelican> getInstance();
+
+        // Actions initiated by the module
+        bool initiateSetHome();
+        bool initiateTakeoff();
+        bool initiateLand();
+        bool initiateReturnToLaunchPosition();
+
         // Getters
         unsigned int getID() const;
         std::string getModel() const;
@@ -23,22 +34,13 @@ class Pelican : public rclcpp::Node {
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
+        int getNetworkSize() const;
 
-        // Core functionalities
-        static void signalHandler(int signum);
-        static void setInstance(rclcpp::Node::SharedPtr instance);
-        static std::shared_ptr<Pelican> getInstance();
-
-        // Actions initiated from outside the module
-        void commenceFollowerOperations();
-        void commenceLeaderOperations();
-        void commenceCandidateOperations();
-        void commencePublishVehicleCommand(
-            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
-            float = NAN
-        );
-        void commencePublishOffboardControlMode();
-        void commencePublishTrajectorySetpoint(float, float, float, float);
+        // Status check
+        bool isLeader() const;
+        bool isFollower() const;
+        bool isCandidate() const;
+        bool isReady() const;
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
@@ -47,27 +49,27 @@ class Pelican : public rclcpp::Node {
         std::optional<px4_msgs::msg::VehicleOdometry> requestOdometry();
         std::optional<px4_msgs::msg::VehicleCommandAck> requestAck();
         std::optional<px4_msgs::msg::VehicleStatus> requestStatus();
-        int requestNetworkSize();
 
-        // TODO: differentiate name of funs initiated outside the module
-        // from the one initiated BY the module?
-        void commenceSetElectionStatus(int);
-        void commenceResetElectionTimer();
-        void commenceIncreaseCurrentTerm();
-        void commenceSetTerm(uint64_t);
+        // Actions initiated from outside the module
+        void commenceFollowerOperations();  // Election and Heartbeat modules
+        void commenceLeaderOperations();    // Election module
+        void commenceCandidateOperations(); // Election module
+        void commencePublishVehicleCommand(
+            uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
+            float = NAN
+        );                                                                  // UNSC module
+        void commencePublishOffboardControlMode();                          // UNSC module
+        void commencePublishTrajectorySetpoint(float, float, float, float); // UNSC module
+        void commenceSetElectionStatus(int);                                // Heartbeat module
+        void commenceResetElectionTimer();                                  // Heartbeat module
+        void commenceIncreaseCurrentTerm();                                 // Election module
+        void commenceSetTerm(uint64_t); // Election and Heartbeat modules
+
+        // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
         void commenceStopElectionService();
         void commenceStopTacMapService();
         void commenceStopUNSCService();
-        bool commenceSetHome();
-        bool commenceTakeoff();
-        bool commenceLand();
-        bool commenceReturnToLaunchPosition();
-
-        bool isLeader() const;
-        bool isFollower() const;
-        bool isCandidate() const;
-        bool isReady() const;
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -75,23 +77,22 @@ class Pelican : public rclcpp::Node {
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
+        void parseModel();
+        void rollCall();
+        void storeAttendance(const comms::msg::Status::SharedPtr);
+
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
 
+        void setID(unsigned int);
         void setMass(double);
         void setRole(possible_roles);
         void setTerm(unsigned int);
 
-        int getNetworkSize();
-
-        void parseModel();
-
-        void rollCall();
-        void storeAttendance(const comms::msg::Status::SharedPtr);
-
         void
         rogerWillCo(const std::shared_ptr<comms::srv::FleetInfoExchange::Request>, const std::shared_ptr<comms::srv::FleetInfoExchange::Response>);
+        bool checkCommandMsgValidity(const comms::msg::Command);
         void handleCommand(const comms::msg::Command);
         void broadcastCommand(unsigned int);
         void sendAppendEntryRPC(unsigned int, unsigned int, bool = false, bool = false);
@@ -107,32 +108,36 @@ class Pelican : public rclcpp::Node {
         TacMapModule tac_core_;
         UNSCModule unsc_core_;
 
-        static std::weak_ptr<Pelican> instance_; // Weak pointer to the instance of the node
+        // Weak pointer to the instance of the node
+        static std::weak_ptr<Pelican> instance_;
 
         unsigned int id_;
-        std::string model_;
-        double mass_ {0.0};
-        possible_roles role_ {tbd};
         unsigned int current_term_ {0};
-        bool ready_ {false};
         int network_size_ {0};
+        double mass_ {0.0};
+        bool ready_ {false};
         bool flying_ {false};
         bool mission_in_progress_ {false};
+        std::string model_;
+        possible_roles role_ {tbd};
 
-        std::vector<comms::msg::Status> discovery_vector_;
-        mutable std::mutex discovery_mutex_; // to be used with discovery_vector_
+        mutable std::mutex id_mutex_;   // Used to access id_
+        mutable std::mutex term_mutex_; // Used to access current_term_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
 
-        int qos_value_ = 10;
         rclcpp::QoS qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
         )};
         rclcpp::QoS data_qos_ {rclcpp::QoS(
-            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
+            rclcpp::QoSInitialization(
+                rmw_qos_profile_sensor_data.history, constants::QOS_HISTORY_AMOUNT
+            ),
             rmw_qos_profile_sensor_data
         )};
+
+        rclcpp::Service<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_server_;
 
         std::string discovery_topic_ {"/fleet/network"};
         rclcpp::Subscription<comms::msg::Status>::SharedPtr sub_to_discovery_;
@@ -142,18 +147,19 @@ class Pelican : public rclcpp::Node {
         rclcpp::Subscription<comms::msg::Command>::SharedPtr sub_to_dispatch_;
         rclcpp::Publisher<comms::msg::Command>::SharedPtr pub_to_dispatch_;
 
-        std::vector<comms::msg::Command> dispatch_vector_;
-        mutable std::mutex dispatch_mutex_;         // to be used with dispatch_vector_
+        std::vector<comms::msg::Status> discovery_vector_;
+        mutable std::mutex discovery_mutex_; // To be used with discovery_vector_
 
-        std::chrono::seconds rollcall_timeout_ {1}; // TODO: constant/parameter
+        std::vector<comms::msg::Command> dispatch_vector_;
+        mutable std::mutex dispatch_mutex_; // To be used with dispatch_vector_
+
+        std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
+        mutable std::mutex rpcs_mutex_;
+
+        std::chrono::seconds rollcall_timeout_ {constants::ROLLCALL_TIME_SECS};
         rclcpp::TimerBase::SharedPtr rollcall_timer_;
 
-        rclcpp::Service<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_server_;
-
-        std::chrono::seconds ack_timeout_ {1}; // TODO: constant/parameter
-
-        std::vector<std::tuple<unsigned int, unsigned int>> entries_rpcs_;
-        mutable std::mutex entries_mutex_;
+        std::chrono::seconds ack_timeout_ {constants::ACK_TIME_SECS};
 };
 
 // Including templates definitions

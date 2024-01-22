@@ -49,38 +49,59 @@ void TacMapModule::initTopics() {
 }
 
 void TacMapModule::initSubscribers() {
-    // this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
-    //     this->flags_topic_, this->px4_qos_,
-    //     std::bind(
-    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::FailsafeFlags::SharedPtr)
-    //                         const>(&TacMapModule::printData),
-    //         this, std::placeholders::_1
-    //     ),
-    //     this->gatherReentrantOptions()
-    // );
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
 
-    // this->sub_to_attitude_topic_ =
-    // this->node_->create_subscription<px4_msgs::msg::VehicleAttitude>(
-    //     this->attitude_topic_, this->px4_qos_,
-    //     std::bind(
-    //         static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleAttitude::SharedPtr)
-    //                         const>(&TacMapModule::printData),
-    //         this, std::placeholders::_1
-    //     ),
-    //     this->gatherReentrantOptions()
-    // );
+    /*
+        this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
+            this->flags_topic_, this->px4_qos_,
+            std::bind(
+                static_cast<void (TacMapModule::*)(const px4_msgs::msg::FailsafeFlags::SharedPtr)
+                                const>(&TacMapModule::printData),
+                this, std::placeholders::_1
+            ),
+            this->gatherReentrantOptions()
+        );
 
-    // this->sub_to_control_mode_topic_ = this->node_->create_subscription<
-    //     px4_msgs::msg::VehicleControlMode>(
-    //     this->control_mode_topic_, this->px4_qos_,
-    //     std::bind(
-    //         static_cast<void (TacMapModule::*)(const
-    //         px4_msgs::msg::VehicleControlMode::SharedPtr)
-    //                         const>(&TacMapModule::printData),
-    //         this, std::placeholders::_1
-    //     ),
-    //     this->gatherReentrantOptions()
-    // );
+        this->sub_to_attitude_topic_ =
+        this->node_->create_subscription<px4_msgs::msg::VehicleAttitude>(
+            this->attitude_topic_, this->px4_qos_,
+            std::bind(
+                static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleAttitude::SharedPtr)
+                                const>(&TacMapModule::printData),
+                this, std::placeholders::_1
+            ),
+            this->gatherReentrantOptions()
+        );
+
+        this->sub_to_control_mode_topic_ = this->node_->create_subscription<
+            px4_msgs::msg::VehicleControlMode>(
+            this->control_mode_topic_, this->px4_qos_,
+            std::bind(
+                static_cast<void (TacMapModule::*)(const
+                px4_msgs::msg::VehicleControlMode::SharedPtr)
+                                const>(&TacMapModule::printData),
+                this, std::placeholders::_1
+            ),
+            this->gatherReentrantOptions()
+        );
+
+        // In NED. The coordinate system origin is the vehicle position at the time when the
+        EKF2-module
+        // was started. Needed by every type of agent and never canceled
+        this->sub_to_local_pos_topic_ = this->node_->create_subscription<
+            px4_msgs::msg::VehicleLocalPosition>(
+            this->local_pos_topic_, this->px4_qos_,
+            std::bind(
+                static_cast<void (TacMapModule::*)(const
+                px4_msgs::msg::VehicleLocalPosition::SharedPtr)
+                                const>(&TacMapModule::printData),
+                this, std::placeholders::_1
+            ),
+            this->gatherReentrantOptions()
+        );
+    */
 
     this->sub_to_global_pos_topic_ =
         this->node_->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(
@@ -88,21 +109,6 @@ void TacMapModule::initSubscribers() {
             std::bind(&TacMapModule::storeGlobalPosition, this, std::placeholders::_1),
             this->gatherReentrantOptions()
         );
-
-    // // In NED. The coordinate system origin is the vehicle position at the time when the
-    // EKF2-module
-    // // was started. Needed by every type of agent and never canceled
-    // this->sub_to_local_pos_topic_ = this->node_->create_subscription<
-    //     px4_msgs::msg::VehicleLocalPosition>(
-    //     this->local_pos_topic_, this->px4_qos_,
-    //     std::bind(
-    //         static_cast<void (TacMapModule::*)(const
-    //         px4_msgs::msg::VehicleLocalPosition::SharedPtr)
-    //                         const>(&TacMapModule::printData),
-    //         this, std::placeholders::_1
-    //     ),
-    //     this->gatherReentrantOptions()
-    // );
 
     this->sub_to_odometry_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
         this->odometry_topic_, this->px4_qos_,
@@ -125,18 +131,22 @@ void TacMapModule::initSubscribers() {
 }
 
 void TacMapModule::initPublishers() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
     this->pub_to_command_topic_ = this->node_->create_publisher<px4_msgs::msg::VehicleCommand>(
-        this->command_topic_, this->standard_qos_value_
+        this->command_topic_, this->standard_qos_
     );
 
     this->pub_to_offboard_control_topic_ =
         this->node_->create_publisher<px4_msgs::msg::OffboardControlMode>(
-            this->offboard_control_topic_, this->standard_qos_value_
+            this->offboard_control_topic_, this->standard_qos_
         );
 
     this->pub_to_trajectory_setpoint_topic =
         this->node_->create_publisher<px4_msgs::msg::TrajectorySetpoint>(
-            this->trajectory_setpoint_topic_, this->standard_qos_value_
+            this->trajectory_setpoint_topic_, this->standard_qos_
         );
 }
 

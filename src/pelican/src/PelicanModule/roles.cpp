@@ -1,39 +1,11 @@
 #include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
 
-/************** Actions initiated from outside the module *************/
-void Pelican::commenceFollowerOperations() {
-    this->sendLogDebug("Received signal for transitioning to Follower");
-    this->becomeFollower();
-}
-
-void Pelican::commenceLeaderOperations() {
-    this->sendLogDebug("Received signal for transitioning to Leader");
-    this->becomeLeader();
-}
-
-void Pelican::commenceCandidateOperations() {
-    this->sendLogDebug("Received signal for transitioning to Candidate");
-    this->becomeCandidate();
-}
-
-/************************** Public methods ***************************/
-bool Pelican::isLeader() const {
-    return (this->getRole() == leader);
-}
-
-bool Pelican::isFollower() const {
-    return (this->getRole() == follower);
-}
-
-bool Pelican::isCandidate() const {
-    return (this->getRole() == candidate);
-}
-
-/************************** Private methods ***************************/
+/*************************** Role handling ****************************/
 void Pelican::becomeLeader() {
     if (this->role_ == leader)
         return;
+
     this->setRole(leader);
     this->logger_.cacheRole(leader);
     this->sendLogInfo("Becoming {}", roles_to_string(leader));
@@ -57,6 +29,7 @@ void Pelican::becomeLeader() {
 void Pelican::becomeFollower() {
     if (this->role_ == follower)
         return;
+
     this->setRole(follower);
     this->logger_.cacheRole(follower);
     this->sendLogInfo("Becoming {}", roles_to_string(follower));
@@ -72,6 +45,7 @@ void Pelican::becomeFollower() {
 void Pelican::becomeCandidate() {
     if (this->role_ == candidate)
         return;
+
     this->setRole(candidate);
     this->logger_.cacheRole(candidate);
     this->sendLogInfo("Becoming {}", roles_to_string(candidate));

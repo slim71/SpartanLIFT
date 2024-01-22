@@ -26,13 +26,13 @@ class HeartbeatModule {
         // Both from outside and inside the module
         void flushHeartbeats();
 
-        int getNumberOfHbs() const;
-        heartbeat getLastHb() const;
-        int getMaxHbs() const;
-
         // Special functionalities
         void sendNow();
         void stopService();
+
+        int getNumberOfHbs() const;
+        heartbeat getLastHb() const;
+        int getMaxHbs() const;
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -42,7 +42,8 @@ class HeartbeatModule {
 
         // Core functionalities
         void sendHeartbeat() const;
-        void storeHeartbeat(const comms::msg::Heartbeat msg);
+        void storeHeartbeat(const comms::msg::Heartbeat);
+        bool checkHeartbeatValidity(const comms::msg::Heartbeat);
 
         // External communications
         unsigned int gatherAgentID() const;
@@ -60,8 +61,7 @@ class HeartbeatModule {
         Pelican* node_;
         LoggerModule* logger_;
 
-        // Heartbeat period is 100ms, so this keeps a log of 10s
-        int max_hbs_ {100};
+        int max_hbs_ {constants::MAX_HB_NUM};
 
         std::string heartbeat_topic_ {"/fleet/heartbeat"};
         rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr sub_to_heartbeat_topic_;
@@ -72,7 +72,7 @@ class HeartbeatModule {
         )};
 
         // Not random, it has to be lower than the election_timeout_
-        std::chrono::milliseconds heartbeat_period_ {100};
+        std::chrono::milliseconds heartbeat_period_ {constants::HB_REPETITION_PERIOD_MILLIS};
         rclcpp::TimerBase::SharedPtr hb_transmission_timer_;
 
         std::vector<heartbeat> received_hbs_;

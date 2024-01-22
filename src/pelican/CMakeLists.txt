@@ -7,7 +7,12 @@ project(pelican
 set(CMAKE_CXX_STANDARD 17) # Minimum
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+if(PEDANTIC_MODE)
+  message("I'll be pedantic!")
+  add_compile_options(-Werror)
 endif()
 
 if(DEBUG_MODE)

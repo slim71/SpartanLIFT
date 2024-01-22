@@ -1,5 +1,7 @@
 # Naming convention
 
+As a structure, I've decided no direct communications among modules is to be done. Everything passes though the main module and is redirected to the appropriate one
+
 ## Actions taken by a secondary module
 
 `gather[...]`

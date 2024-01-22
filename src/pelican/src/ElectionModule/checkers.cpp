@@ -12,9 +12,6 @@ bool ElectionModule::checkVotingCompleted() const {
 }
 
 bool ElectionModule::checkForExternalLeader() {
-    // If the (external) leader’s term is at least as large as the candidate’s current term,
-    // then the candidate recognizes the leader as legitimate and returns to follower state
-
     if (!this->checkExternalLeaderElected()) {
         return false;
     }

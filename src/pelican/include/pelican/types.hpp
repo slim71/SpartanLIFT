@@ -7,6 +7,7 @@
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"
 #include "comms/srv/fleet_info_exchange.hpp"
+#include "constants.hpp"
 #include "pugixml.hpp"
 #include "px4_msgs/msg/failsafe_flags.hpp"
 #include "px4_msgs/msg/offboard_control_mode.hpp"
@@ -35,18 +36,6 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/transform_datatypes.h>
 #include <vector>
-
-// TODO: read
-// https://stackoverflow.com/questions/34445336/constexpr-global-constants-in-a-header-file-and-odr
-// and move constant to proper source files? maybe with namespaces?
-// Used to wait max 30s of missing data from the simulation before stopping
-constexpr int MAX_DATA_ATTEMPTS = 30;
-constexpr unsigned int MAX_RETRIES = 10;
-
-constexpr unsigned int NO_COMMAND = 0;
-constexpr unsigned int TAKEOFF_COMMAND = 1;
-constexpr unsigned int LANDING_COMMAND = 2;
-constexpr unsigned int EMERGENCY_LANDING = 10;
 
 class MissingExternModule : public std::exception {
     public:

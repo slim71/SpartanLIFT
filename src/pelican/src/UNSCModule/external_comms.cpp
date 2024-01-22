@@ -1,10 +1,6 @@
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
-// Considering that external functionalities are not active
-// if the main module is not present, everything can throw an error if
-// node_ is not set
-
 /*************************** Get methods ***************************/
 rclcpp::Time UNSCModule::gatherTime() const {
     if (!this->node_) {

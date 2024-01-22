@@ -2,6 +2,8 @@
 
 void Datapad::landingPage() {
     std::cout << std::endl << "Select functionality" << std::endl;
+    this->sendLogDebug("Select functionality");
+
     int choice;
     while (true) {
         std::cout << "(1) Ensure leader is elected" << std::endl;
@@ -11,6 +13,12 @@ void Datapad::landingPage() {
         std::cout << "(5) Initiate landing" << std::endl;
         std::cout << "(0) Exit" << std::endl;
         std::cout << " >>> ";
+        this->sendLogDebug("(1) Ensure leader is elected");
+        this->sendLogDebug("(2) Initiate takeoff");
+        this->sendLogDebug("(3) Send payload position");
+        this->sendLogDebug("(4) Send dropoff position");
+        this->sendLogDebug("(5) Initiate landing");
+        this->sendLogDebug("(0) Exit");
 
         std::cin >> choice;
 
@@ -21,10 +29,10 @@ void Datapad::landingPage() {
             break;
 
         if (std::cin.fail()) {
+            std::cout << "Input is not a number!" << std::endl << std::endl;
             this->sendLogDebug("Wrong input!");
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Input is not a number!" << std::endl << std::endl;
         } else {
             this->sendLogDebug("Choice made: {}", choice);
             switch (choice) {
@@ -59,7 +67,9 @@ void Datapad::landingPage() {
 }
 
 void Datapad::contactLeader() {
-    this->sendFleetInfo(true, false, false); // TODO: constant for readability?
+    this->sendFleetInfo(
+        constants::PRESENCE_FLAG_ON, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF
+    );
 }
 
 void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture future) {
@@ -89,7 +99,7 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
                 this->sendLogInfo("Takeoff acknowledged");
                 this->fleet_fying_ = true;
             } else {
-                this->sendLogWarning("Takeoff not successful");
+                this->sendLogWarning("Takeoff operations not successful");
             }
         }
 
@@ -98,7 +108,7 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
                 this->sendLogInfo("Land command acknowledged");
                 this->fleet_fying_ = false;
             } else {
-                this->sendLogWarning("Landing not successful");
+                this->sendLogWarning("Landing operations not successful");
             }
         }
 
@@ -122,7 +132,9 @@ void Datapad::unitSortie() {
         return;
     }
 
-    this->sendFleetInfo(false, true, false); // TODO: constant for readability?
+    this->sendFleetInfo(
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_ON, constants::LANDING_FLAG_OFF
+    );
 }
 
 void Datapad::backToLZ() {
@@ -139,7 +151,9 @@ void Datapad::backToLZ() {
         return;
     }
 
-    this->sendFleetInfo(false, false, true); // TODO: constant for readability?
+    this->sendFleetInfo(
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_ON
+    );
 }
 
 void Datapad::sendFleetInfo(bool presence, bool takeoff, bool landing) {
@@ -150,18 +164,20 @@ void Datapad::sendFleetInfo(bool presence, bool takeoff, bool landing) {
 
     // Search for a second, then log and search again
     int total_search_time = 0;
-    while (!this->fleetinfo_client_->wait_for_service(std::chrono::seconds(SEARCH_LEADER_STEP)) &&
-           total_search_time < MAX_SEARCH_TIME) {
+    while (!this->fleetinfo_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_LEADER_STEP)
+           ) &&
+           total_search_time < constants::MAX_SEARCH_TIME) {
         if (!rclcpp::ok()) {
             this->sendLogError("Client interrupted while waiting for service. Terminating...");
-            return; // CHECK: do something else?
+            return;
         }
 
         this->sendLogDebug("Service not available; waiting some more...");
-        total_search_time += SEARCH_LEADER_STEP;
+        total_search_time += constants::SEARCH_LEADER_STEP;
     };
 
-    if (total_search_time < MAX_SEARCH_TIME) {
+    if (total_search_time < constants::MAX_SEARCH_TIME) {
         this->sendLogDebug("Server available");
 
         // Send request

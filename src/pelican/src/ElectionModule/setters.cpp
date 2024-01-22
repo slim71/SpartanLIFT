@@ -12,8 +12,6 @@ void ElectionModule::resetElectionTimer() {
 }
 
 void ElectionModule::resetSubscriptions() {
-    // This is not needed by leaders, since Raft guarantees safety;
-    // it's just an additional check to avoid multiple leaders
     resetSharedPointer(this->sub_to_leader_election_topic_);
     resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
 }
