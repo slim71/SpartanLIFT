@@ -18,8 +18,6 @@ class ElectionModule {
         void initSetup(LoggerModule*);
         void prepareTopics();
 
-        int getLeaderID();
-
         // Actions initiated from outside the module
         void resetElectionTimer();
         void resetSubscriptions();
@@ -31,6 +29,8 @@ class ElectionModule {
         void stopService();
         void flushVotes();
 
+        int getLeaderID();
+
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
@@ -40,26 +40,9 @@ class ElectionModule {
         // Core functionalities
         void leaderElection();
         void triggerVotes();
-        void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
         void vote(int id_to_vote, double candidate_mass) const;
+        void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
         void storeVotes(const comms::msg::Proposal::SharedPtr msg);
-
-        // External communications
-        unsigned int gatherAgentID() const;
-        double gatherAgentMass() const;
-        possible_roles gatherAgentRole() const;
-        unsigned int gatherCurrentTerm() const;
-        int gatherNumberOfHbs() const;
-        heartbeat gatherLastHb() const;
-        int gatherNetworkSize() const;
-        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
-        rclcpp::SubscriptionOptions gatherReentrantOptions() const;
-        bool confirmAgentIsCandidate() const;
-        void signalIncreaseTerm() const;
-        void signalSetTerm(uint64_t) const;
-        void signalTransitionToLeader() const;
-        void signalTransitionToCandidate() const;
-        void signalTransitionToFollower() const;
 
         bool checkElectionCompleted() const;
         void setElectionCompleted();
@@ -82,13 +65,28 @@ class ElectionModule {
         void unsetLeaderElected();
         void setLeader(int id = 0);
 
+        // External communications
+        unsigned int gatherAgentID() const;
+        double gatherAgentMass() const;
+        possible_roles gatherAgentRole() const;
+        unsigned int gatherCurrentTerm() const;
+        int gatherNumberOfHbs() const;
+        heartbeat gatherLastHb() const;
+        int gatherNetworkSize() const;
+        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
+        rclcpp::SubscriptionOptions gatherReentrantOptions() const;
+        bool confirmAgentIsCandidate() const;
+        void signalIncreaseTerm() const;
+        void signalSetTerm(uint64_t) const;
+        void signalTransitionToLeader() const;
+        void signalTransitionToCandidate() const;
+        void signalTransitionToFollower() const;
+
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
         int leader_id_ {0};
-
-        std::thread ballot_thread_;
 
         rclcpp::QoS standard_qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
@@ -105,38 +103,20 @@ class ElectionModule {
         rclcpp::TimerBase::SharedPtr election_timer_;
         rclcpp::TimerBase::SharedPtr voting_timer_;
 
-        // candidate (current node) has won an election
         std::atomic<bool> election_completed_ {false};
-        // the appropriate amount of time after a vote to judge if all agents voted has passed
         std::atomic<bool> voting_completed_ {false};
-        // default memory ordering: std::memory_order_seq_cst -->
-        // it guarantees sequential consistency (total global ordering) between all atomic
-        // operations.
-        std::atomic<bool> is_terminated_ {false};
         std::atomic<bool> leader_elected_ {false};
         std::atomic<bool> external_leader_elected_ {false};
-
-        std::condition_variable cv;
 
         mutable std::mutex votes_mutex_;              // to use with received_votes_
         mutable std::mutex election_completed_mutex_; // to use with election_completed_
         mutable std::mutex voting_completed_mutex_;   // to use with voting_completed_
         mutable std::mutex external_leader_mutex_;    // to use with external_leader_elected_
         mutable std::mutex leader_mutex_;             // to use with leader_elected_
-        mutable std::mutex terminated_mutex_;         // to use with is_terminated_
-        mutable std::mutex candidate_mutex_; // to use on the condition variable cv when the node is
-                                             // a candidate and tries to win an election
 
-        // Time frame after which a candidacy will begin if no heartbeat from a leader has been
-        // received. Raft uses randomized election timeouts to ensure that split votes are rare and
-        // that they are resolved quickly
+        // Time frame after which a candidacy will begin if no heartbeat from a
+        // leader has been received
         std::chrono::milliseconds election_timeout_;
-        // "election_timeout_" is the same time window used by a follower to decide whether or not
-        // to candidate as leader. using another variable only for clarity purposes
-        std::chrono::milliseconds new_ballot_waittime_;
-        // tried using the same as it would be the period of a functioning leader's heartbeat;
-        // works for now
-        std::chrono::milliseconds voting_max_time_ {100};
 
         std::vector<comms::msg::Proposal::SharedPtr> received_votes_;
 

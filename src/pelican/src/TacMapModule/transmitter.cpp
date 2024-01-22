@@ -25,11 +25,15 @@ void TacMapModule::publishVehicleCommand(
     msg.param6 = param6;
     msg.param7 = param7;
 
-    msg.command = command;                // Command ID
+    msg.command = command; // Command ID
 
+    this->system_id_mutex_.lock();
     msg.target_system = this->system_id_; // System which should execute the command
+    this->system_id_mutex_.unlock();
+    this->component_id_mutex_.lock();
     msg.target_component =
         this->component_id_; // Component which should execute the command, 0 for all components
+    this->component_id_mutex_.unlock();
     // msg.source_system = sys_id;    // System sending the command
     // msg.source_component = 1; // Component sending the command
 
@@ -44,11 +48,6 @@ void TacMapModule::publishVehicleCommand(
 }
 
 void TacMapModule::publishOffboardControlMode() {
-    // PX4 requires that the vehicle is already receiving OffboardControlMode messages
-    // before it will arm in offboard mode, or before it will switch to offboard mode
-    // when flying. In addition, PX4 will switch out of offboard mode if the stream rate
-    // of OffboardControlMode messages drops below approximately 2Hz.
-
     px4_msgs::msg::OffboardControlMode msg {};
 
     // The OffboardControlMode is required in order to inform PX4 of the type of offboard

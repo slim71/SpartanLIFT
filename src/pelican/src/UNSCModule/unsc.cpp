@@ -17,6 +17,10 @@ UNSCModule::~UNSCModule() {
 /************************** Setup methods **************************/
 
 void UNSCModule::initSetup(LoggerModule* logger) {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
     this->logger_ = logger;
 
     // Allow for some loading time before starting all operations...

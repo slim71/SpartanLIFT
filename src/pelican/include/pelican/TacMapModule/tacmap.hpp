@@ -40,14 +40,6 @@ class TacMapModule {
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
-        // External communications
-        unsigned int gatherAgentID() const;
-        possible_roles gatherAgentRole() const;
-        int gatherCurrentTerm() const;
-        rclcpp::Time gatherTime() const;
-        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
-        rclcpp::SubscriptionOptions gatherReentrantOptions() const;
-
         // Topics-related setups
         void initTopics();
         void initSubscribers();
@@ -63,12 +55,19 @@ class TacMapModule {
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
 
+        // External communications
+        unsigned int gatherAgentID() const;
+        possible_roles gatherAgentRole() const;
+        int gatherCurrentTerm() const;
+        rclcpp::Time gatherTime() const;
+        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
+        rclcpp::SubscriptionOptions gatherReentrantOptions() const;
+
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
         std::atomic<bool> running_ {true};
-        int standard_qos_value_ = 10;
 
         int system_id_ {0};
         int component_id_ {0};
@@ -124,16 +123,21 @@ class TacMapModule {
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
-        // TODO: dimensions in constants
-        boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {10};
-        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {10};
-        boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {10};
 
-        mutable std::mutex running_mutex_;   // to be used with running_
-        mutable std::mutex ack_mutex_;       // to be used with last_ack_
-        mutable std::mutex globalpos_mutex_; // to be used with gps_buffer_
-        mutable std::mutex odometry_mutex_;  // to be used with odometry_buffer_
-        mutable std::mutex status_mutex_;    // to be used with status_buffer_
+        boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {
+            constants::GLOBALPOS_BUFFER_SIZE};
+        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {
+            constants::ODOMETRY_BUFFER_SIZE};
+        boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
+            constants::STATUS_BUFFER_SIZE};
+
+        mutable std::mutex running_mutex_;      // to be used with running_
+        mutable std::mutex ack_mutex_;          // to be used with last_ack_
+        mutable std::mutex globalpos_mutex_;    // to be used with gps_buffer_
+        mutable std::mutex odometry_mutex_;     // to be used with odometry_buffer_
+        mutable std::mutex status_mutex_;       // to be used with status_buffer_
+        mutable std::mutex system_id_mutex_;    // to be used with system_id_
+        mutable std::mutex component_id_mutex_; // to be used with component_id_
 };
 
 #include "tacmap_template.tpp"

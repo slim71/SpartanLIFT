@@ -23,8 +23,6 @@ ElectionModule::~ElectionModule() {
     std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
     std::lock_guard<std::mutex> lock_external_leader(this->external_leader_mutex_);
     std::lock_guard<std::mutex> lock_leader(this->leader_mutex_);
-    std::lock_guard<std::mutex> lock_terminated(this->terminated_mutex_);
-    std::lock_guard<std::mutex> lock_candidate(this->candidate_mutex_);
 
     // Clear shared resources
     this->received_votes_.clear();
@@ -34,7 +32,7 @@ ElectionModule::~ElectionModule() {
 }
 
 /************************** Setup methods **************************/
-void ElectionModule::initSetup(LoggerModule* l) { // for followers and candidates
+void ElectionModule::initSetup(LoggerModule* l) {
     this->logger_ = l;
 
     this->prepareTopics();
@@ -44,7 +42,6 @@ void ElectionModule::prepareTopics() {
     if (!this->node_) {
         throw MissingExternModule();
     }
-    // If no error has been thrown, node_ is actually set and the rest can be executed
 
     /********************** Subscribrers **********************/
     // Subscribe to incoming votes from other agents
@@ -86,7 +83,7 @@ void ElectionModule::leaderElection() {
 
         // Create clusters with accumulated votes for each proposed leader
         for (auto it = std::cbegin(app_votes); it != std::cend(app_votes);
-             /*iterator incremented inside*/) {
+             /*iterator incremented inside the loop*/) {
             vote_count candidate_support;
             candidate_support.candidate_id = (*it)->proposed_leader;
             candidate_support.total = std::count_if(
@@ -116,7 +113,6 @@ void ElectionModule::leaderElection() {
                 this->gatherCurrentTerm(), canvote.total
             );
         };
-
         auto cluster_for_this_node =
             std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
                 return v.candidate_id == this->gatherAgentID();
@@ -126,7 +122,7 @@ void ElectionModule::leaderElection() {
             (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total
         );
 
-        // If favorable votes >= network size, I'm the new leader
+        // If favorable votes >= network size/2, I'm the new leader
         if (!this->checkLeaderElected() && !this->checkExternalLeaderElected()) {
             if (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1)) {
                 cancelTimer(this->election_timer_);
@@ -145,6 +141,10 @@ void ElectionModule::leaderElection() {
 }
 
 void ElectionModule::triggerVotes() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
     // Do not send request in case another leader has been already chosen
     if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
         this->sendLogWarning(
@@ -210,7 +210,7 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
 
     auto term = this->gatherCurrentTerm();
 
-    // Ingore messages with past terms
+    // Ignore messages with past terms
     if (msg->term_id < term) {
         this->sendLogInfo("Ignoring candidacy referencing old term");
         return;
@@ -284,7 +284,7 @@ void ElectionModule::followerActions() {
         this->election_timeout_,
         [this]() {
             cancelTimer(this->election_timer_);
-            // 'if not needed, but just in case
+            // 'if' not needed, but just in case
             if (this->gatherAgentRole() == follower) {
                 this->sendLogWarning("No heartbeat received within the 'election timeout' window; "
                                      "switching to candidate...");
@@ -296,12 +296,16 @@ void ElectionModule::followerActions() {
 }
 
 void ElectionModule::candidateActions() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
     cancelTimer(this->election_timer_);
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // unsubscribe from topic
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // Unsubscribe from topic
     this->clearElectionStatus();
 
     while (!this->checkElectionCompleted()) {
-        this->flushVotes(); // clean received votes
+        this->flushVotes(); // Clear received votes
 
         this->sendLogInfo("Setting a new election timeout");
         this->setRandomElectionTimeout();
@@ -329,7 +333,7 @@ void ElectionModule::candidateActions() {
         while (!this->checkVotingCompleted()) {
             this->sendLogDebug("Ballot checking...");
             // Simulate some delay between checks
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
         }
         this->sendLogDebug("Ballot finished");
 
@@ -355,17 +359,4 @@ void ElectionModule::candidateActions() {
 }
 
 /************* Both from outside and inside the module *************/
-void ElectionModule::stopService() {
-    // this->candidate_mutex_.lock();
-    // this->setIsBallotTerminated();
-    // this->cv.notify_all(); // in this instance, either notify_one or notify_all should be the
-    // same
-    // // this->candidate_mutex_.unlock();
-    // this->sendLogDebug("Notified through the condition variable while stopping the ballot
-    // thread!");
-
-    // if (this->ballot_thread_.joinable()) {
-    //     this->sendLogDebug("Waiting on the ballot thread completion...");
-    //     this->ballot_thread_.join();
-    // }
-}
+void ElectionModule::stopService() {}

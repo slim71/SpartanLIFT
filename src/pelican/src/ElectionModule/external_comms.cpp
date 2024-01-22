@@ -1,10 +1,6 @@
 #include "ElectionModule/election.hpp"
 #include "PelicanModule/pelican.hpp"
 
-// Considering that external functionalities are not active
-// if the main module is not present, everything can throw an error if
-// node_ is not set
-
 /*************************** Get methods ***************************/
 unsigned int ElectionModule::gatherAgentID() const {
     if (!this->node_) {
@@ -59,7 +55,7 @@ int ElectionModule::gatherNetworkSize() const {
         throw MissingExternModule();
     }
 
-    return this->node_->requestNetworkSize();
+    return this->node_->getNetworkSize();
 }
 
 rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {

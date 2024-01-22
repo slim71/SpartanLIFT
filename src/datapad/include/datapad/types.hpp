@@ -11,7 +11,17 @@
 #include <signal.h>
 #include <string>
 
-extern const int SEARCH_LEADER_STEP; // [s]
-extern const int MAX_SEARCH_TIME;    // [s]
+namespace constants {
+    static constexpr int SEARCH_LEADER_STEP = 1; // [s]
+    static constexpr int MAX_SEARCH_TIME = 10;   // [s]
+    static constexpr bool PRESENCE_FLAG_ON = true;
+    static constexpr bool PRESENCE_FLAG_OFF = false;
+    static constexpr bool TAKEOFF_FLAG_ON = true;
+    static constexpr bool TAKEOFF_FLAG_OFF = false;
+    static constexpr bool LANDING_FLAG_ON = true;
+    static constexpr bool LANDING_FLAG_OFF = false;
+    static constexpr unsigned int QOS_HISTORY_AMOUNT = 5;
+    static constexpr unsigned int SETUP_TIME_SECS = 1;
+} // namespace constants
 
 #endif

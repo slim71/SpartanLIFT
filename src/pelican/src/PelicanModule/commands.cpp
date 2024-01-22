@@ -4,63 +4,127 @@ void Pelican::rogerWillCo(
     const std::shared_ptr<comms::srv::FleetInfoExchange::Request> request,
     const std::shared_ptr<comms::srv::FleetInfoExchange::Response> response
 ) {
-    response->leader_id = this->id_;
+    response->leader_id = this->getID();
 
     if (request->presence) {
         this->sendLogDebug("Notifying I'm the leader to the user!");
         response->present = true;
         response->taking_off = false;
         response->landing = false;
+        response->success = true;
     }
 
     if (request->takeoff) {
         response->present = false;
         response->landing = false;
-        if (!this->flying_) { // TODO: this condition is not enough
-            this->sendLogDebug("Notifying start of takeoff!");
-            response->taking_off = true;
+        response->taking_off = true;
 
-            std::thread takeoff_thread(&Pelican::broadcastCommand, this, TAKEOFF_COMMAND);
+        if (!this->flying_) {
+            this->sendLogDebug("Notifying start of takeoff operations!");
+            response->success = true;
+
+            std::thread takeoff_thread(
+                &Pelican::broadcastCommand, this, constants::TAKEOFF_COMMAND
+            );
             takeoff_thread.detach();
         } else {
-            this->sendLogWarning("Duplicate 'takeoff' command received!");
+            this->sendLogWarning("The fleet should already be flying!");
+            response->success = false;
         }
     }
 
     if (request->landing) {
         response->present = false;
         response->taking_off = false;
-        if (this->flying_) { // TODO: this condition is not enough
-            this->sendLogDebug("Notifying start of landing operations!");
-            response->landing = true;
+        response->landing = true;
 
-            std::thread landing_thread(&Pelican::broadcastCommand, this, LANDING_COMMAND);
+        if (this->flying_) {
+            this->sendLogDebug("Notifying start of landing operations!");
+            response->success = true;
+
+            std::thread landing_thread(
+                &Pelican::broadcastCommand, this, constants::LANDING_COMMAND
+            );
             landing_thread.detach();
         } else {
-            this->sendLogWarning("Duplicate 'land' command received!");
+            this->sendLogWarning("The fleet is not flying!");
+            response->success = false;
         }
     }
 }
 
-void Pelican::broadcastCommand(unsigned int command) {
-    this->appendEntry(command, this->current_term_);
+bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
+    // Valid agent ID
+    if (msg.agent <= 0) {
+        this->sendLogWarning("Received command from invalid agent ID ({})", msg.agent);
+        return false;
+    }
 
-    // Theoretically, the leader keeps trying to send entries indefinitely in Raft
-    // Here we try for a max amount of times
+    // Exclude case of leader-me sending messages
+    if ((msg.leader_id == this->getID()) && !msg.ack) {
+        this->sendLogDebug("Intercepted my own command{}", msg.apply ? " execution" : "");
+        return false;
+    };
+
+    // Valid term ids
+    if (msg.term_id < this->getCurrentTerm()) {
+        this->sendLogWarning("Received old command (referring to term {})", msg.term_id);
+        return false;
+    }
+    if ((msg.prev_term != msg.term_id - 1) || (msg.prev_term != this->getCurrentTerm() - 1)) {
+        this->sendLogWarning(
+            "Invalid command message received! prev_term:{} term_id:{} own_term:{}", msg.prev_term,
+            msg.term_id, this->getCurrentTerm()
+        );
+        return false;
+    }
+    if (msg.term_id > this->getCurrentTerm()) {
+        this->sendLogWarning(
+            "Aligning term ID (current: {}) with the one received from command ({})",
+            this->getCurrentTerm(), msg.term_id
+        );
+        this->setTerm(msg.term_id);
+    }
+
+    // Valid command
+    if (msg.command <= constants::NO_COMMAND) {
+        this->sendLogWarning("Invalid command received! {}", msg.command);
+        return false;
+    }
+
+    // Index in AppendEntryRPC vector
+    this->rpcs_mutex_.lock();
+    unsigned int size = this->rpcs_vector_.size();
+    this->rpcs_mutex_.unlock();
+    if (msg.index >= size + 1) {
+        /* request Logs if follower*/
+    };
+
+    // TODO: check if I'm a leader and I receive a command from another leader:
+    // if previous term, reject (and let them know?)
+    // if next/equal term, step down if last command is not committed
+
+    return true;
+}
+
+void Pelican::broadcastCommand(unsigned int command) {
+    this->appendEntry(command, this->getCurrentTerm());
+
+    // Send command to other agents
     unsigned int attempt = 0;
     bool command_successful = false;
-    while ((!command_successful) && (attempt < MAX_RETRIES)) {
+    while ((!command_successful) && (attempt < constants::MAX_BROADCAST_RETRIES)) {
         this->dispatch_mutex_.lock();
         this->dispatch_vector_.clear();
         this->dispatch_mutex_.unlock();
 
         this->sendLogInfo("Sending command {}", command);
-        this->sendAppendEntryRPC(this->id_, command);
+        this->sendAppendEntryRPC(this->getID(), command);
         command_successful = this->waitForAcks(command);
 
         attempt++;
     }
-    if (attempt >= MAX_RETRIES) {
+    if (attempt >= constants::MAX_BROADCAST_RETRIES) {
         this->sendLogWarning("Max retries reached while waiting for acks");
         return;
     } else
@@ -69,18 +133,18 @@ void Pelican::broadcastCommand(unsigned int command) {
     // If enough acks have been received, then notify agents to execute the received command
     attempt = 0;
     bool ack_successful = false;
-    while ((!ack_successful) && (attempt < MAX_RETRIES)) {
+    while ((!ack_successful) && (attempt < constants::MAX_GET_ACK_RETRIES)) {
         this->dispatch_mutex_.lock();
         this->dispatch_vector_.clear();
         this->dispatch_mutex_.unlock();
 
         this->sendLogInfo("Sending confirmation to execute command {}", command);
-        this->sendAppendEntryRPC(this->id_, command, false, true);
+        this->sendAppendEntryRPC(this->getID(), command, false, true);
         ack_successful = this->waitForAcks(command, true);
 
         attempt++;
     }
-    if (attempt >= MAX_RETRIES) {
+    if (attempt >= constants::MAX_GET_ACK_RETRIES) {
         this->sendLogWarning("Max retries reached while waiting for command application's acks");
     } else
         this->sendLogDebug("Successfully sent confirmation to execute command {}", command);
@@ -88,101 +152,9 @@ void Pelican::broadcastCommand(unsigned int command) {
     this->sendLogInfo("Broadcasted command {}", command);
 }
 
-bool Pelican::waitForAcks(unsigned int command, bool apply) {
-    rclcpp::Time start = this->now();
-    std::this_thread::sleep_for(this->ack_timeout_);
-
-    this->dispatch_mutex_.lock();
-    auto app_vector = this->dispatch_vector_;
-    this->dispatch_mutex_.unlock();
-
-    int ack_received = std::count_if(
-        app_vector.cbegin(), app_vector.cend(),
-        [this, command, apply](const comms::msg::Command elem) {
-            return (
-                (elem.leader_id == this->id_) && (elem.term_id == this->current_term_) &&
-                (elem.command == command) && (elem.ack) && (elem.apply == apply)
-            );
-        }
-    );
-    this->sendLogDebug(
-        "Counted {} acks for command {}{}", ack_received, command, apply ? " execution" : ""
-    );
-
-    // A log entry is committed once the leader that created the entry has
-    // replicated it on a majority of the servers
-    if (ack_received >= this->network_size_ / 2 + 1) {
-        this->sendLogInfo(
-            "Enough acks received for command {}{}", command, apply ? " execution" : ""
-        );
-        return true;
-    }
-    this->sendLogDebug(
-        "Not enough acks received for command {}{}", command, apply ? " execution" : ""
-    );
-    return false;
-}
-
-void Pelican::sendAck(unsigned int leader, unsigned int command, bool apply) {
-    this->sendLogInfo("Sending ack for command {}{}", command, apply ? " execution" : "");
-    this->sendAppendEntryRPC(leader, command, true, apply);
-}
-
-void Pelican::sendAppendEntryRPC(unsigned int leader, unsigned int command, bool ack, bool apply) {
-    auto cmd_msg = comms::msg::Command();
-    cmd_msg.agent = this->id_;             // CHECK: mutex?
-    cmd_msg.leader_id = leader;
-    cmd_msg.term_id = this->current_term_; // CHECK: mutex?
-    cmd_msg.command = command;
-    cmd_msg.prev_term = cmd_msg.term_id - 1;
-    cmd_msg.ack = ack;
-    cmd_msg.apply = apply;
-    // TODO: index
-
-    this->pub_to_dispatch_->publish(cmd_msg);
-}
-
 void Pelican::handleCommand(const comms::msg::Command msg) {
-    if (msg.agent <= 0) { // Valid agent ID
-        this->sendLogWarning("Received command from invalid agent ID ({})", msg.agent);
+    if (!this->checkCommandMsgValidity(msg))
         return;
-    }
-    if ((msg.leader_id == this->id_) && !msg.ack) { // Exclude case of leader-me sending messages
-        this->sendLogDebug("Intercepted my own command{}", msg.apply ? " execution" : "");
-        return;                                     // simply ignore
-    };
-    if (msg.term_id < this->current_term_) {
-        this->sendLogWarning("Received old command (referring to term {})", msg.term_id);
-        return;
-    }
-    if ((msg.prev_term != msg.term_id - 1) || (msg.prev_term != this->current_term_ - 1)) {
-        this->sendLogWarning(
-            "Invalid command message received! prev_term:{} term_id:{} own_term:{}", msg.prev_term,
-            msg.term_id, this->current_term_
-        );
-        return;
-    }
-    if (msg.command <= NO_COMMAND) {
-        this->sendLogWarning("Invalid command received! {}", msg.command);
-        return;
-    }
-    this->entries_mutex_.lock();
-    unsigned int size = this->entries_rpcs_.size();
-    this->entries_mutex_.unlock();
-    if (msg.index >= size + 1) {
-        /* request Logs if follower*/
-    };
-    if (msg.term_id > this->current_term_) {
-        this->sendLogWarning(
-            "Aligning term ID (current: {}) with the one received from command ({})",
-            this->current_term_, msg.term_id
-        );
-        this->setTerm(msg.term_id);
-    }
-
-    // TODO: check if I'm a leader and I receive a command from another leader:
-    // if previous term, reject (and let them know?)
-    // if next/equal term, step down if last command is not committed
 
     this->sendLogDebug(
         "Handling command {}{}{} received from agent {} during term {}", msg.command,
@@ -195,13 +167,15 @@ void Pelican::handleCommand(const comms::msg::Command msg) {
         if (!msg.ack) {
             if (this->role_ == candidate) {
                 this->sendLogWarning("Received a command from an external leader!");
+                this->commenceSetElectionStatus(msg.leader_id);
                 this->becomeFollower();
                 return;
             }
 
             this->sendAck(msg.leader_id, msg.command, msg.apply);
 
-            if (!msg.apply) { // Append Entry RPC
+            // Append Entry RPC
+            if (!msg.apply) {
                 this->appendEntry(msg.command, msg.term_id);
 
             } else { // Commit and execute command entry
@@ -219,34 +193,88 @@ void Pelican::handleCommand(const comms::msg::Command msg) {
     }
 }
 
+void Pelican::sendAppendEntryRPC(unsigned int leader, unsigned int command, bool ack, bool apply) {
+    auto cmd_msg = comms::msg::Command();
+    cmd_msg.agent = this->getID();
+    cmd_msg.leader_id = leader;
+    cmd_msg.term_id = this->getCurrentTerm();
+    cmd_msg.command = command;
+    cmd_msg.prev_term = cmd_msg.term_id - 1;
+    cmd_msg.ack = ack;
+    cmd_msg.apply = apply;
+    // TODO: index
+
+    this->pub_to_dispatch_->publish(cmd_msg);
+}
+
+void Pelican::sendAck(unsigned int leader, unsigned int command, bool apply) {
+    this->sendLogInfo("Sending ack for command {}{}", command, apply ? " execution" : "");
+    this->sendAppendEntryRPC(leader, command, true, apply);
+}
+
+bool Pelican::waitForAcks(unsigned int command, bool apply) {
+    rclcpp::Time start = this->now();
+    std::this_thread::sleep_for(this->ack_timeout_);
+
+    this->dispatch_mutex_.lock();
+    auto app_vector = this->dispatch_vector_;
+    this->dispatch_mutex_.unlock();
+
+    int ack_received = std::count_if(
+        app_vector.cbegin(), app_vector.cend(),
+        [this, command, apply](const comms::msg::Command elem) {
+            return (
+                (elem.leader_id == this->getID()) && (elem.term_id == this->getCurrentTerm()) &&
+                (elem.command == command) && (elem.ack) && (elem.apply == apply)
+            );
+        }
+    );
+    this->sendLogDebug(
+        "Counted {} acks for command {}{}", ack_received, command, apply ? " execution" : ""
+    );
+
+    // A log entry is committed once the leader that created the entry has
+    // replicated it on a majority of the servers
+    if (ack_received >= this->network_size_ / 2) { // +1 deleted: the leader is already "agreeing"
+        this->sendLogInfo(
+            "Enough acks received for command {}{}", command, apply ? " execution" : ""
+        );
+        return true;
+    }
+    this->sendLogDebug(
+        "Not enough acks received for command {}{}", command, apply ? " execution" : ""
+    );
+    return false;
+}
+
 void Pelican::appendEntry(unsigned int command, unsigned int term) {
     this->sendLogInfo("Appending entry for command {} in term {}", command, term);
-    std::lock_guard<std::mutex> lock(this->entries_mutex_);
-    this->entries_rpcs_.push_back(std::tie(command, term));
+    std::lock_guard<std::mutex> lock(this->rpcs_mutex_);
+    this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
 void Pelican::executeCommand(unsigned int command) {
+    // TODO: signal to datapad in case of operation failed
     switch (command) {
-        case TAKEOFF_COMMAND:
-            if (this->commenceSetHome() && this->commenceTakeoff())
+        case constants::TAKEOFF_COMMAND:
+            if (this->initiateSetHome() && this->initiateTakeoff())
                 this->sendLogInfo("Takeoff operations initated");
             else
                 this->sendLogWarning("Takeoff operations failed! Try again");
             break;
-        case LANDING_COMMAND:
-            if (this->commenceReturnToLaunchPosition())
+        case constants::LANDING_COMMAND:
+            if (this->initiateReturnToLaunchPosition())
                 this->sendLogInfo("Operations to complete a land at initial position initated");
             else
                 this->sendLogWarning("Landing operations failed! Try again");
             break;
-        case EMERGENCY_LANDING:
-            if (this->commenceLand())
+        case constants::EMERGENCY_LANDING:
+            if (this->initiateLand())
                 this->sendLogInfo("Emergency landing operations initated");
             else
                 this->sendLogWarning("Emergency landing operations failed! Try again");
             break;
         default:
-            // TODO: do more?
             this->sendLogWarning("Command received is not supported!");
     }
 }

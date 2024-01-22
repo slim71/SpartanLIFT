@@ -1,24 +1,26 @@
 # Development notes
+## Raft
 From the official [Raft paper](https://raft.github.io/raft.pdf):
 > The broadcast time should be an order of magnitude less than the election timeout so that leaders can
 > reliably send the heartbeat messages required to keep followers from starting elections; given the randomized approach
 > used for election timeouts, this inequality also makes split votes unlikely. The election timeout should be
 > a few orders of magnitude less than MTBF so that the system makes steady progress
 
----
-// TODO: consider mutex or interrupt for consecutive changes in role
+Theoretically, the leader keeps trying to send entries indefinitely in Raft. Here we try for a max amount of times
+
+Raft uses randomized election timeouts to ensure that split votes are rare and that they are resolved quickly
 
 ---
+## Gazebo
 Following the [official guide about the migration from Gazebo classic](https://github.com/gazebosim/gz-sim/blob/gz-sim7/tutorials/migration_sdf.md#path-relative-to-an-environment-variable), I've noticed I had the wrong environmental variable setup for the models loading. I've fixed that and now, *after sourcing the local overlay,* Gazebo can successfully load each model's meshes with no problems.
 As of this note creation, the correct variable used by Gazebo is `GZ_SIM_RESOURCE_PATH`.
 
 ---
-### PX4 topics
+## PX4 topics
 
 Mapped in [this file](https://github.com/PX4/PX4-Autopilot/blob/main/src/modules/uxrce_dds_client/dds_topics.yaml).
-
 All messages are already defined in PX4.
-
+List:
 /px4_{id}/fmu/in
     /obstacle_distance
     /offboard_control_mode
@@ -47,48 +49,48 @@ All messages are already defined in PX4.
         /vehicle_odometry
         /vehicle_status
 
----
-### Commands
-colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
-colcon build --packages-select pelican --cmake-args -DBUILD_TESTING=1
-gdbtui build/pelican/pelican
-gdbtui install/pelican/lib/pelican/pelican_test
-handle SIGINT noprint nostop pass
-ros2 run datapad datapad --ros-args --log-level debug
-ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
-ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
-ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
-MicroXRCEAgent udp4 -p 8888
-PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
-colcon test --packages-select pelican --event-handlers=console_cohesion+
-colcon test-result --all
-grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
-
----
-### Offboard control
-https://docs.px4.io/main/en/flight_modes/offboard.html
-https://docs.px4.io/main/en/flight_modes/offboard.html
-PX4 requires that the external controller provides a continuous 2Hz "proof of life" signal, by streaming any of the supported MAVLink setpoint messages **or** the ROS 2 OffboardControlMode message.
-All values are interpreted in NED (Nord, East, Down); unit is [m].
-
----
 PX4 accepts VehicleCommand messages only if their target_system field is zero (broadcast
 communication) or coincides with MAV_SYS_ID. In all other situations, the messages are
 ignored. For example, if you want to send a command to your third vehicle, which has
 px4_instance=2, you need to set target_system=3 in all your VehicleCommand messages.
 
----
 Note about the VehicleCommandAck:
 https://github.com/PX4/PX4-Autopilot/issues/21430#issuecomment-1497484098
 
----
-CHECK: change HeartbeatModule/Election name?
-
----
 The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was taken directly from the PX4 commander.
 It checks whether the current nav_state of the agent is set or not.
 
+CHECK [this](https://github.com/PX4/PX4-Autopilot/issues/18983) in case you use sethome and there's instability
+
+PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
+
+### Offboard control
+https://docs.px4.io/main/en/flight_modes/offboard.html
+PX4 requires that the external controller provides a continuous 2Hz "proof of life" signal, by streaming any of the supported MAVLink setpoint messages **or** the ROS 2 OffboardControlMode message.
+All values are interpreted in NED (Nord, East, Down); unit is [m].
+
 ---
+## Commands
+colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
+colcon build --packages-select pelican --cmake-args -DBUILD_TESTING=1
+colcon build --packages-select pelican --cmake-args -DPEDANTIC_MODE=1
+colcon test --packages-select pelican --event-handlers=console_cohesion+
+colcon test-result --all
+gdbtui build/pelican/pelican
+gdbtui install/pelican/lib/pelican/pelican_test
+gdbtui --args build/pelican/pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
+handle SIGINT noprint nostop pass
+ros2 run datapad datapad --ros-args --log-level debug
+ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
+ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
+ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
+ros2 launch odst ros_agents.launch.py loglevel:=debug
+MicroXRCEAgent udp4 -p 8888
+PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
+grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
+
+---
+## General notes
 Can't use this in the tests
 ```cpp
 EXPECT_THAT(
@@ -97,6 +99,15 @@ EXPECT_THAT(
 );
 ```
 because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other functions) is not defined
+
+
+CHECK: ROI as fleet radius?
+
+
+TODO: consider mutex or interrupt for consecutive changes in role
+
+
+Considering that external functionalities are not active if the main module is not present, everything can throw an error if node_ is not set
 
 ---
 ## Mission useful stuff
@@ -111,12 +122,3 @@ Vehicles switch to the next waypoint as soon as they enter the acceptance radius
 For a multi-rotor drones, the acceptance radius is tuned using the parameter NAV_ACC_RAD.
 
 During mission execution this will cause the vehicle to ascend vertically to the minimum takeoff altitude defined in the MIS_TAKEOFF_ALT parameter, then head towards the 3D position defined in the mission item.
-
----
-CHECK: ROI as fleet radius?
-
----
-CHECK [this](https://github.com/PX4/PX4-Autopilot/issues/18983) in case you use sethome and there0ì's instability
-
----
-Theoretically, the leader keeps trying to send entries indefinitely in Raft. Here we try for a max amount of times

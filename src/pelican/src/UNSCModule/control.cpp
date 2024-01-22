@@ -31,15 +31,9 @@ bool UNSCModule::land() {
 // Use current?| Empty| Empty| Empty| Latitude| Longitude| Altitude|
 bool UNSCModule::setHome() {
     return this->sendToCommanderUnit(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME,
-        1.0 // TODO: find or define constant
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, constants::CONFIRM_SET_HOME
     );
 }
-
-// bool UNSCModule::setPositionMode() {
-//     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, 1,
-//     0);
-// }
 
 // Empty| Empty| Empty| Empty| Empty| Empty| Empty|
 bool UNSCModule::returnToLaunchPosition() {
@@ -48,11 +42,14 @@ bool UNSCModule::returnToLaunchPosition() {
 }
 
 bool UNSCModule::waitForAck(uint16_t cmd) {
-    auto start_time = this->gatherTime().nanoseconds() / 1000000; // [ms]
+    auto start_time =
+        this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION; // [ms]
     this->sendLogDebug("ACK wait started at timestamp {}", start_time);
 
     // Check for a bit, in case the ACK has not been received yet
-    while (this->gatherTime().nanoseconds() / 1000000 - start_time < 100) {
+    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION -
+               start_time <
+           constants::ACK_WAIT_MILLIS) {
         std::optional<px4_msgs::msg::VehicleCommandAck> ack = this->gatherAck();
 
         if (ack) { // at least one ACK received
@@ -66,8 +63,8 @@ bool UNSCModule::waitForAck(uint16_t cmd) {
             }
         }
 
-        // Wait for a bit before retrying CHECK: milli?
-        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+        // Wait for a bit before retrying
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
     }
     this->sendLogDebug("ACK wait finished");
 
@@ -80,14 +77,17 @@ void UNSCModule::runPreChecks() {
 
     this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_RUN_PREARM_CHECKS);
 
-    auto start_time = this->gatherTime().nanoseconds() / 1000000; // [ms]
+    auto start_time =
+        this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION; // [ms]
     this->sendLogDebug("Status data wait started at timestamp {}", start_time);
 
     // Check for a bit, in case the ACK has not been received yet
-    while (this->gatherTime().nanoseconds() / 1000000 - start_time < 100) {
+    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION -
+               start_time <
+           constants::ACK_WAIT_MILLIS) {
         std::optional<px4_msgs::msg::VehicleStatus> status = this->gatherStatus();
 
-        if (status) { // at least one status received
+        if (status) { // At least one status received
             this->sendLogDebug(
                 "Stored status message found! timestamp:{} arming_state:{} nav_state:{} "
                 "pre_flight_checks_pass:{} failsafe:{}",
@@ -98,7 +98,7 @@ void UNSCModule::runPreChecks() {
             // Check whether the agent in the simulation is good to go
             this->sitl_ready_ =
                 status->pre_flight_checks_pass && !status->failsafe &&
-                ((1u << status->nav_state) != 0) && // taken from the PX4 commander
+                ((1u << status->nav_state) != 0) && // Taken from the PX4 commander
                 status->arming_state < px4_msgs::msg::VehicleStatus::ARMING_STATE_STANDBY_ERROR;
 
             if (this->sitl_ready_)
@@ -112,7 +112,7 @@ void UNSCModule::runPreChecks() {
         }
 
         // Wait for a bit before retrying
-        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
     }
 
     this->sendLogDebug("Status data wait finished");
@@ -123,19 +123,20 @@ void UNSCModule::runPreChecks() {
 }
 
 void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {
-    if (this->offboard_setpoint_counter_ == 10) {
-        // Change to Offboard mode after 10 setpoints
+    if (this->offboard_setpoint_counter_ == constants::OFFBOARD_SETPOINT_LIMIT) {
+        // Change to Offboard mode after the needed amount of setpoints
         this->sendLogDebug("Changing to Offboard mode!");
         this->signalPublishVehicleCommand(
-            px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6
-        ); // CHECK: can use px4 constants? others?
+            px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
+            constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_OFFBOARD_MODE
+        );
     }
 
     // offboard_control_mode needs to be paired with trajectory_setpoint
     this->signalPublishOffboardControlMode();
 
-    // stop the counter after reaching 11
-    if (this->offboard_setpoint_counter_ < 11) {
+    // stop the counter after reaching OFFBOARD_SETPOINT_LIMIT + 1
+    if (this->offboard_setpoint_counter_ <= constants::OFFBOARD_SETPOINT_LIMIT) {
         this->offboard_setpoint_counter_++;
     }
 }
@@ -151,9 +152,9 @@ bool UNSCModule::sendToCommanderUnit(
             command, param1, param2, param3, param4, param5, param6, param7
         );
         attempt++;
-    } while ((!this->waitForAck(command)) && attempt < MAX_RETRIES);
+    } while ((!this->waitForAck(command)) && attempt < constants::MAX_SEND_COMMAND_RETRIES);
 
-    if (attempt >= MAX_RETRIES) {
+    if (attempt >= constants::MAX_SEND_COMMAND_RETRIES) {
         this->sendLogWarning("No ack received from the commander unit for command {}", command);
         return false;
     }

@@ -52,7 +52,7 @@ class Datapad : public rclcpp::Node {
         rclcpp::Subscription<comms::msg::POI>::SharedPtr sub_to_channel;
         rclcpp::Publisher<comms::msg::POI>::SharedPtr pub_to_channel;
 
-        std::chrono::seconds setup_timeout_ {1};
+        std::chrono::seconds setup_timeout_ {constants::SETUP_TIME_SECS};
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
         int leader_ {0};
