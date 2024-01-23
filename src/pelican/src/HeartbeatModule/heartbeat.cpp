@@ -88,7 +88,7 @@ void HeartbeatModule::sendHeartbeat() const {
     hb.leader_id = this->gatherAgentID();
     hb.timestamp = this->gatherTime();
 
-    this->sendLogInfo("Sending heartbeat (term {})", hb.term_id);
+    this->sendLogInfo("Sending heartbeat");
 
     if (this->pub_to_heartbeat_topic_) {
         this->pub_to_heartbeat_topic_->publish(hb);
@@ -103,17 +103,15 @@ void HeartbeatModule::stopService() {
 }
 
 bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {
-    auto term = this->gatherCurrentTerm();
-
     if (msg.leader_id == this->gatherAgentID()) {
         return false;
     }
 
-    if (msg.term_id < term) {
+    if (msg.term_id < this->gatherCurrentTerm()) {
         // Ignore heartbeat; do not reset election timer
         this->sendLogWarning(
-            "Ignoring heartbeat form agent received with previous term ID ({} vs {})",
-            msg.leader_id, msg.term_id, term
+            "Ignoring heartbeat form agent received with previous term ID ({})", msg.leader_id,
+            msg.term_id
         );
         return false;
     }
@@ -149,9 +147,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     );
     this->hbs_mutex_.unlock();
 
-    this->sendLogDebug(
-        "Received heartbeat from agent {} during term {}", msg.leader_id, msg.term_id
-    );
+    this->sendLogDebug("Received heartbeat from agent {}", msg.leader_id);
 
     switch (this->gatherAgentRole()) {
         case follower:

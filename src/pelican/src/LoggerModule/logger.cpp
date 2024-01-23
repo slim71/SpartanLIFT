@@ -26,8 +26,6 @@ void LoggerModule::initSetup(std::shared_ptr<rclcpp::Logger> logger, int id) {
     this->ready_to_log_ = true;
 
     this->setID(id);
-
-    this->cached_role_ = tbd;
 }
 
 bool LoggerModule::isReady() const {
@@ -36,4 +34,8 @@ bool LoggerModule::isReady() const {
 
 void LoggerModule::cacheRole(possible_roles role) {
     this->cached_role_ = role;
+}
+
+void LoggerModule::cacheTerm(unsigned int term) {
+    this->cached_term_ = term;
 }
