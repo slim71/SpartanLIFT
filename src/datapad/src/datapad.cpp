@@ -20,7 +20,7 @@ Datapad::Datapad() : Node("Datapad"), logger_() {
         std::bind(&Datapad::inspectAck, this, std::placeholders::_1), this->reentrant_opt_
     );
     this->pub_to_channel =
-        this->create_publisher<comms::msg::POI>(this->channel_topic_, this->qos_value_);
+        this->create_publisher<comms::msg::POI>(this->channel_topic_, this->standard_qos_);
 
     this->fleetinfo_client_ =
         this->create_client<comms::srv::FleetInfoExchange>("contactLeader_service");
@@ -88,12 +88,4 @@ void Datapad::signalHandler(int signum) {
 
         rclcpp::shutdown();
     }
-}
-
-void Datapad::setInstance(rclcpp::Node::SharedPtr instance) {
-    instance_ = std::static_pointer_cast<Datapad>(instance);
-}
-
-std::shared_ptr<Datapad> Datapad::getInstance() {
-    return instance_.lock();
 }
