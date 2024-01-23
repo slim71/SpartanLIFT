@@ -27,6 +27,7 @@ void Pelican::rogerWillCo(
                 &Pelican::broadcastCommand, this, constants::TAKEOFF_COMMAND
             );
             takeoff_thread.detach();
+            // TODO: set flying somewhere!
         } else {
             this->sendLogWarning("The fleet should already be flying!");
             response->success = false;
@@ -46,6 +47,7 @@ void Pelican::rogerWillCo(
                 &Pelican::broadcastCommand, this, constants::LANDING_COMMAND
             );
             landing_thread.detach();
+            // TODO: unset flying somewhere!
         } else {
             this->sendLogWarning("The fleet is not flying!");
             response->success = false;
@@ -68,20 +70,18 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
 
     // Valid term ids
     if (msg.term_id < this->getCurrentTerm()) {
-        this->sendLogWarning("Received old command (referring to term {})", msg.term_id);
+        this->sendLogWarning("Received old command");
         return false;
     }
     if ((msg.prev_term != msg.term_id - 1) || (msg.prev_term != this->getCurrentTerm() - 1)) {
         this->sendLogWarning(
-            "Invalid command message received! prev_term:{} term_id:{} own_term:{}", msg.prev_term,
-            msg.term_id, this->getCurrentTerm()
+            "Invalid command message received! prev_term:{} term_id:{}", msg.prev_term, msg.term_id
         );
         return false;
     }
     if (msg.term_id > this->getCurrentTerm()) {
         this->sendLogWarning(
-            "Aligning term ID (current: {}) with the one received from command ({})",
-            this->getCurrentTerm(), msg.term_id
+            "Aligning term ID with the one received in a command ({})", msg.term_id
         );
         this->setTerm(msg.term_id);
     }
@@ -157,7 +157,7 @@ void Pelican::handleCommand(const comms::msg::Command msg) {
         return;
 
     this->sendLogDebug(
-        "Handling command {}{}{} received from agent {} during term {}", msg.command,
+        "Handling command {}{}{} received from agent {} for term {}", msg.command,
         msg.apply ? " execution" : "", msg.ack ? " ack" : "", msg.agent, msg.term_id
     );
 
@@ -248,7 +248,7 @@ bool Pelican::waitForAcks(unsigned int command, bool apply) {
 }
 
 void Pelican::appendEntry(unsigned int command, unsigned int term) {
-    this->sendLogInfo("Appending entry for command {} in term {}", command, term);
+    this->sendLogInfo("Appending entry for command {} for term {}", command, term);
     std::lock_guard<std::mutex> lock(this->rpcs_mutex_);
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
@@ -258,19 +258,19 @@ void Pelican::executeCommand(unsigned int command) {
     switch (command) {
         case constants::TAKEOFF_COMMAND:
             if (this->initiateSetHome() && this->initiateTakeoff())
-                this->sendLogInfo("Takeoff operations initated");
+                this->sendLogInfo("Takeoff operations initiated");
             else
                 this->sendLogWarning("Takeoff operations failed! Try again");
             break;
         case constants::LANDING_COMMAND:
             if (this->initiateReturnToLaunchPosition())
-                this->sendLogInfo("Operations to complete a land at initial position initated");
+                this->sendLogInfo("Operations to complete a land at initial position initiated");
             else
                 this->sendLogWarning("Landing operations failed! Try again");
             break;
         case constants::EMERGENCY_LANDING:
             if (this->initiateLand())
-                this->sendLogInfo("Emergency landing operations initated");
+                this->sendLogInfo("Emergency landing operations initiated");
             else
                 this->sendLogWarning("Emergency landing operations failed! Try again");
             break;

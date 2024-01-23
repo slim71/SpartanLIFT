@@ -37,13 +37,10 @@ class PelicanTest : public ::testing::Test {
         mutable std::mutex data_ok_mutex_;
         bool data_ok_ {false};
 
-        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr pos_sub_;
-        rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr hb_sub_;
-        rclcpp::Subscription<comms::msg::Proposal>::SharedPtr data_sub_;
-        rclcpp::Subscription<px4_msgs::msg::VehicleCommand>::SharedPtr command_sub_;
-
         rclcpp::QoS px4_qos_ {rclcpp::QoS(
-            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
+            rclcpp::QoSInitialization(
+                rmw_qos_profile_sensor_data.history, constants::QOS_HISTORY_AMOUNT
+            ),
             rmw_qos_profile_sensor_data
         )};
         rclcpp::QoS standard_qos_ {rclcpp::QoS(
@@ -52,6 +49,11 @@ class PelicanTest : public ::testing::Test {
 
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
+
+        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr pos_sub_;
+        rclcpp::Subscription<comms::msg::Heartbeat>::SharedPtr hb_sub_;
+        rclcpp::Subscription<comms::msg::Proposal>::SharedPtr data_sub_;
+        rclcpp::Subscription<px4_msgs::msg::VehicleCommand>::SharedPtr command_sub_;
 };
 
 class HeartbeatTest : public ::testing::Test {
@@ -82,7 +84,9 @@ class TacMapTest : public ::testing::Test {
         rclcpp::Subscription<px4_msgs::msg::VehicleCommand>::SharedPtr command_sub_;
 
         rclcpp::QoS px4_qos_ {rclcpp::QoS(
-            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
+            rclcpp::QoSInitialization(
+                rmw_qos_profile_sensor_data.history, constants::QOS_HISTORY_AMOUNT
+            ),
             rmw_qos_profile_sensor_data
         )};
 

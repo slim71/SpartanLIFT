@@ -16,6 +16,7 @@ void Pelican::setInstance(rclcpp::Node::SharedPtr instance) {
 
 void Pelican::setTerm(unsigned int t) {
     this->sendLogInfo("Updating term to {}", t);
+    this->logger_.cacheTerm(t);
     std::lock_guard<std::mutex> lock(this->term_mutex_);
     this->current_term_ = t;
 }

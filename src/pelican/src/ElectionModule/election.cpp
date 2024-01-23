@@ -109,8 +109,7 @@ void ElectionModule::leaderElection() {
         this->sendLogDebug("Logging clusters..");
         for (const vote_count& canvote : ballot) {
             this->sendLogDebug(
-                "Accumulated votes for candidate {} during term {}: {}", canvote.candidate_id,
-                this->gatherCurrentTerm(), canvote.total
+                "Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total
             );
         };
         auto cluster_for_this_node =
@@ -126,7 +125,7 @@ void ElectionModule::leaderElection() {
         if (!this->checkLeaderElected() && !this->checkExternalLeaderElected()) {
             if (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1)) {
                 cancelTimer(this->election_timer_);
-                this->sendLogInfo("Majority acquired during term {}!", this->gatherCurrentTerm());
+                this->sendLogInfo("Majority acquired!");
                 this->setLeader(this->gatherAgentID());
                 this->setLeaderElected();
                 this->setVotingCompleted();
@@ -153,9 +152,7 @@ void ElectionModule::triggerVotes() {
         return;
     }
 
-    this->sendLogInfo(
-        "Triggering votes from the other agents during term {}", this->gatherCurrentTerm()
-    );
+    this->sendLogInfo("Triggering votes from the other agents");
 
     this->pub_to_request_vote_rpc_topic_ =
         this->node_->create_publisher<comms::msg::RequestVoteRPC>(
@@ -172,7 +169,7 @@ void ElectionModule::triggerVotes() {
 
 void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
     this->sendLogInfo(
-        "Serving vote request from candidate {} during term {}", msg.solicitant_id, msg.term_id
+        "Serving vote request from candidate {} for term {}", msg.solicitant_id, msg.term_id
     );
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
@@ -198,14 +195,14 @@ void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
     msg.proposed_leader = id_to_vote;
     msg.candidate_mass = candidate_mass;
 
-    this->sendLogInfo("Voting agent {} for term {}", id_to_vote, msg.term_id);
+    this->sendLogInfo("Voting agent {}", id_to_vote);
     this->pub_to_leader_election_topic_->publish(msg);
 }
 
 void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
     this->sendLogDebug(
-        "Received vote| agent {} voted for agent {} (mass {}) during term {} ", msg->voter_id,
-        msg->proposed_leader, msg->candidate_mass, msg->term_id
+        "Received vote| agent {} voted for agent {} (mass {})", msg->voter_id, msg->proposed_leader,
+        msg->candidate_mass
     );
 
     auto term = this->gatherCurrentTerm();
@@ -313,17 +310,14 @@ void ElectionModule::candidateActions() {
             this->election_timeout_,
             [this]() {
                 cancelTimer(this->election_timer_);
-                this->sendLogDebug(
-                    "Election timeout elapsed for candidate agent during term {}",
-                    this->gatherCurrentTerm()
-                );
+                this->sendLogDebug("Election timeout elapsed for candidate agent");
                 this->setVotingCompleted();
             },
             this->gatherReentrantGroup()
         );
 
         this->signalIncreaseTerm();
-        this->sendLogInfo("New voting round for term {}", this->gatherCurrentTerm());
+        this->sendLogInfo("New voting round");
 
         // Self-vote and trigger votes from other agents
         this->vote(this->gatherAgentID(), this->gatherAgentMass());
