@@ -14,6 +14,8 @@ class Datapad : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Datapad> getInstance();
 
+        bool isRunning() const;
+
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
@@ -33,18 +35,25 @@ class Datapad : public rclcpp::Node {
         LoggerModule logger_;
         static std::weak_ptr<Datapad> instance_; // Weak pointer to the instance of the node
 
+        int leader_ {0};
+        bool leader_present_ {false};
+        bool fleet_fying_ {false};
+
         bool running_ {false};
         mutable std::mutex running_mutex_;
 
-        std::chrono::seconds ack_expectation_ {10};
         std::unique_ptr<comms::msg::POI> last_msg_;
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
 
-        int qos_value_ = 10;
+        rclcpp::QoS standard_qos_ {rclcpp::QoS(
+            rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
+        )};
         rclcpp::QoS data_qos_ {rclcpp::QoS(
-            rclcpp::QoSInitialization(rmw_qos_profile_sensor_data.history, 5),
+            rclcpp::QoSInitialization(
+                rmw_qos_profile_sensor_data.history, constants::QOS_HISTORY_AMOUNT
+            ),
             rmw_qos_profile_sensor_data
         )};
 
@@ -54,10 +63,6 @@ class Datapad : public rclcpp::Node {
 
         std::chrono::seconds setup_timeout_ {constants::SETUP_TIME_SECS};
         rclcpp::TimerBase::SharedPtr setup_timer_;
-
-        int leader_ {0};
-        bool leader_present_ {false};
-        bool fleet_fying_ {false};
 
         rclcpp::Client<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_client_;
 };

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(datapad
-        VERSION 0.1.0
+        VERSION 0.1.4
         DESCRIPTION "Package simulating a tablet through which a human agent would interact with the fleet"
         LANGUAGES CXX)
 
@@ -29,11 +29,11 @@ target_include_directories(Datapad_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/in
 target_link_libraries(Datapad_class fmt::fmt)
 
 set(MAIN
-    src/main.cpp
+  src/main.cpp
 )
 
 set(SOURCES
-    src/types.cpp
+  src/types.cpp
 )
 
 set(LOGGER_SOURCES
@@ -41,11 +41,15 @@ set(LOGGER_SOURCES
 )
 
 set(DATAPAD_SOURCES
-    src/datapad.cpp
-    src/functionalities.cpp
+  src/datapad.cpp
+  src/getters.cpp
+  src/setters.cpp
+  src/functionalities.cpp
 )
 
 set(TEST_SOURCES
+  test/src/fixtures.cpp
+  test/src/datapad_tests.cpp
 )
 
 if(BUILD_TESTING)
