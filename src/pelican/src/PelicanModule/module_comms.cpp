@@ -27,6 +27,10 @@ void Pelican::commenceStopElectionService() {
 }
 
 /**************************** UNSC Module *****************************/
+bool Pelican::initiateArm() {
+    return this->unsc_core_.arm();
+}
+
 bool Pelican::initiateSetHome() {
     return this->unsc_core_.setHome();
 }

@@ -104,9 +104,6 @@ because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other f
 CHECK: ROI as fleet radius?
 
 
-TODO: consider mutex or interrupt for consecutive changes in role
-
-
 Considering that external functionalities are not active if the main module is not present, everything can throw an error if node_ is not set
 
 ---

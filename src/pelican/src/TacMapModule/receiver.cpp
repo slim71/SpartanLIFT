@@ -92,11 +92,11 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr 
 }
 
 void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
-    this->sendLogDebug(
-        "Received GlobalPosition data! timestamp:{} lat:{} long:{} alt:{} terrain_alt:{} "
-        "terr_valid:{}",
-        msg->timestamp, msg->lat, msg->lon, msg->alt, msg->terrain_alt, msg->terrain_alt_valid
-    );
+    // this->sendLogDebug(
+    //     "Received GlobalPosition data! timestamp:{} lat:{} long:{} alt:{} terrain_alt:{} "
+    //     "terr_valid:{}",
+    //     msg->timestamp, msg->lat, msg->lon, msg->alt, msg->terrain_alt, msg->terrain_alt_valid
+    // );
 
     px4_msgs::msg::VehicleGlobalPosition globalpos_data;
     globalpos_data.timestamp = msg->timestamp;               // [us]
@@ -141,11 +141,11 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPt
 }
 
 void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
-    this->sendLogDebug(
-        "Received Odometry data! timestamp:{} position:[{}, {}, {}] q:[{}, {}, {}, {}]",
-        msg->timestamp, msg->position[0], msg->position[1], msg->position[2], msg->q[0], msg->q[1],
-        msg->q[2], msg->q[3]
-    );
+    // this->sendLogDebug(
+    //     "Received Odometry data! timestamp:{} position:[{}, {}, {}] q:[{}, {}, {}, {}]",
+    //     msg->timestamp, msg->position[0], msg->position[1], msg->position[2], msg->q[0],
+    //     msg->q[1], msg->q[2], msg->q[3]
+    // );Trying to send
 
     px4_msgs::msg::VehicleOdometry odometry_data;
     odometry_data.timestamp = msg->timestamp;
@@ -158,10 +158,10 @@ void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr
 }
 
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
-    this->sendLogDebug(
-        "Received status data! timestamp:{} system_id:{} component_id:{}", msg->timestamp,
-        msg->system_id, msg->component_id
-    );
+    // this->sendLogDebug(
+    //     "Received status data! timestamp:{} system_id:{} component_id:{}", msg->timestamp,
+    //     msg->system_id, msg->component_id
+    // );
 
     px4_msgs::msg::VehicleStatus status_data;
     status_data.timestamp = msg->timestamp;       // [us]

@@ -30,7 +30,8 @@ Pelican::Pelican()
     );
     this->sub_to_dispatch_ = this->create_subscription<comms::msg::Command>(
         this->dispatch_topic_, this->qos_,
-        std::bind(&Pelican::handleCommand, this, std::placeholders::_1), this->reentrant_opt_
+        std::bind(&Pelican::handleCommandReception, this, std::placeholders::_1),
+        this->reentrant_opt_
     );
     this->pub_to_discovery_ =
         this->create_publisher<comms::msg::Status>(this->discovery_topic_, this->data_qos_);
