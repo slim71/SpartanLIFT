@@ -72,7 +72,7 @@ def generate_launch_description():
 
         # Prepare each PX4 instance
         simulation_headstart = 10
-        for count in range(agent_num):  # CHECK: change with enumerate?
+        for count in range(agent_num):
             code = config_params["codes"][count]
             x = config_params["xs"][count]
             y = config_params["ys"][count]
@@ -101,10 +101,20 @@ def generate_launch_description():
         agents_launchfile = f"ros2 launch {pkg} {launchfile} loglevel:={level}"
         launch_cmd = (
             "gnome-terminal --tab -t 'ROS2 nodes' "
-            f"-- bash -c ' {sleep_part}; {source_local_wos}; {agents_launchfile}; bash'"
+            f"-- bash -c ' {sleep_part}; {source_local_wos}; {agents_launchfile}'"
         )
         logger.print(launch_cmd)
         tmp.write(launch_cmd)
+        tmp.write("\n")
+
+        # Datapad node
+        datapad_cmd = (
+            "gnome-terminal --tab -t 'Datapad' "
+            f"-- bash -c ' {sleep_part}; {source_local_wos}; "
+            "ros2 run datapad datapad'"
+        )
+        logger.print(datapad_cmd)
+        tmp.write(datapad_cmd)
         tmp.write("\n")
 
         # Interactive shell
