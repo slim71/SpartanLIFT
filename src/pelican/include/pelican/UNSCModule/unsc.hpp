@@ -18,6 +18,8 @@ class UNSCModule {
         void initSetup(LoggerModule*);
         void stopService();
 
+        bool arm();
+        bool disarm();
         bool takeoff(unsigned int = 0);
         bool land();
         bool setHome();
@@ -30,9 +32,6 @@ class UNSCModule {
         template<typename... Args> void sendLogDebug(std::string, Args...) const;
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
         template<typename... Args> void sendLogError(std::string, Args...) const;
-
-        bool arm();
-        bool disarm();
 
         void setPositionMode();
         void lowerLoiter(); // TODO:?

@@ -25,3 +25,13 @@ void Pelican::setID(unsigned int id) {
     std::lock_guard<std::mutex> lock(this->id_mutex_);
     this->id_ = id;
 }
+
+void Pelican::setFlyingStatus() {
+    std::lock_guard<std::mutex> lock(this->flying_mutex_);
+    this->flying_ = true;
+}
+
+void Pelican::unsetFlyingStatus() {
+    std::lock_guard<std::mutex> lock(this->flying_mutex_);
+    this->flying_ = false;
+}

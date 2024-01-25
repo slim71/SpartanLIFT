@@ -19,15 +19,14 @@ void Pelican::rogerWillCo(
         response->landing = false;
         response->taking_off = true;
 
-        if (!this->flying_) {
+        if (!this->isFlying()) {
             this->sendLogDebug("Notifying start of takeoff operations!");
             response->success = true;
 
             std::thread takeoff_thread(
-                &Pelican::broadcastCommand, this, constants::TAKEOFF_COMMAND
+                &Pelican::handleCommandDispatch, this, constants::TAKEOFF_COMMAND
             );
             takeoff_thread.detach();
-            // TODO: set flying somewhere!
         } else {
             this->sendLogWarning("The fleet should already be flying!");
             response->success = false;
@@ -39,15 +38,14 @@ void Pelican::rogerWillCo(
         response->taking_off = false;
         response->landing = true;
 
-        if (this->flying_) {
+        if (this->isFlying()) {
             this->sendLogDebug("Notifying start of landing operations!");
             response->success = true;
 
             std::thread landing_thread(
-                &Pelican::broadcastCommand, this, constants::LANDING_COMMAND
+                &Pelican::handleCommandDispatch, this, constants::LANDING_COMMAND
             );
             landing_thread.detach();
-            // TODO: unset flying somewhere!
         } else {
             this->sendLogWarning("The fleet is not flying!");
             response->success = false;
@@ -107,7 +105,7 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     return true;
 }
 
-void Pelican::broadcastCommand(unsigned int command) {
+bool Pelican::broadcastCommand(unsigned int command) {
     this->appendEntry(command, this->getCurrentTerm());
 
     // Send command to other agents
@@ -126,9 +124,10 @@ void Pelican::broadcastCommand(unsigned int command) {
     }
     if (attempt >= constants::MAX_BROADCAST_RETRIES) {
         this->sendLogWarning("Max retries reached while waiting for acks");
-        return;
-    } else
+        return false;
+    } else {
         this->sendLogDebug("Successfully sent command {}", command);
+    }
 
     // If enough acks have been received, then notify agents to execute the received command
     attempt = 0;
@@ -146,13 +145,32 @@ void Pelican::broadcastCommand(unsigned int command) {
     }
     if (attempt >= constants::MAX_GET_ACK_RETRIES) {
         this->sendLogWarning("Max retries reached while waiting for command application's acks");
-    } else
+        return false;
+    } else {
         this->sendLogDebug("Successfully sent confirmation to execute command {}", command);
-
-    this->sendLogInfo("Broadcasted command {}", command);
+        this->sendLogInfo("Command {} broadcasted", command);
+        return true;
+    }
 }
 
-void Pelican::handleCommand(const comms::msg::Command msg) {
+void Pelican::handleCommandDispatch(unsigned int command) {
+    if (this->broadcastCommand(command) && this->executeCommand(command)) {
+        this->sendLogInfo("Fleet is executing command {}", command);
+        switch (command) {
+            case constants::TAKEOFF_COMMAND:
+                this->setFlyingStatus();
+                break;
+            case constants::LANDING_COMMAND:
+                this->unsetFlyingStatus();
+                break;
+            default:
+                this->sendLogDebug("Handling operations for command {} unknown", command);
+        };
+    } else
+        this->sendLogWarning("Fleet execution of command {} failed", command);
+}
+
+void Pelican::handleCommandReception(const comms::msg::Command msg) {
     if (!this->checkCommandMsgValidity(msg))
         return;
 
@@ -208,7 +226,9 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, unsigned int command, bool
 }
 
 void Pelican::sendAck(unsigned int leader, unsigned int command, bool apply) {
-    this->sendLogInfo("Sending ack for command {}{}", command, apply ? " execution" : "");
+    this->sendLogInfo(
+        "Sending ack for command {}{} to the Leader", command, apply ? " execution" : ""
+    );
     this->sendAppendEntryRPC(leader, command, true, apply);
 }
 
@@ -253,28 +273,38 @@ void Pelican::appendEntry(unsigned int command, unsigned int term) {
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
-void Pelican::executeCommand(unsigned int command) {
+bool Pelican::executeCommand(unsigned int command) {
     // TODO: signal to datapad in case of operation failed
     switch (command) {
         case constants::TAKEOFF_COMMAND:
-            if (this->initiateSetHome() && this->initiateTakeoff())
+            if (this->initiateSetHome() && this->initiateArm() && this->initiateTakeoff()) {
                 this->sendLogInfo("Takeoff operations initiated");
-            else
+                return true;
+            } else {
                 this->sendLogWarning("Takeoff operations failed! Try again");
+                return false;
+            }
             break;
         case constants::LANDING_COMMAND:
-            if (this->initiateReturnToLaunchPosition())
+            if (this->initiateReturnToLaunchPosition()) {
                 this->sendLogInfo("Operations to complete a land at initial position initiated");
-            else
+                return true;
+            } else {
                 this->sendLogWarning("Landing operations failed! Try again");
+                return false;
+            }
             break;
         case constants::EMERGENCY_LANDING:
-            if (this->initiateLand())
+            if (this->initiateLand()) {
                 this->sendLogInfo("Emergency landing operations initiated");
-            else
+                return true;
+            } else {
                 this->sendLogWarning("Emergency landing operations failed! Try again");
+                return false;
+            }
             break;
         default:
             this->sendLogWarning("Command received is not supported!");
+            return false;
     }
 }

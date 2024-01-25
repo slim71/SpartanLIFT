@@ -21,6 +21,7 @@ class Pelican : public rclcpp::Node {
 
         // Actions initiated by the module
         bool initiateSetHome();
+        bool initiateArm();
         bool initiateTakeoff();
         bool initiateLand();
         bool initiateReturnToLaunchPosition();
@@ -41,6 +42,7 @@ class Pelican : public rclcpp::Node {
         bool isFollower() const;
         bool isCandidate() const;
         bool isReady() const;
+        bool isFlying() const;
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
@@ -89,17 +91,20 @@ class Pelican : public rclcpp::Node {
         void setMass(double);
         void setRole(possible_roles);
         void setTerm(unsigned int);
+        void setFlyingStatus();
+        void unsetFlyingStatus();
 
         void
         rogerWillCo(const std::shared_ptr<comms::srv::FleetInfoExchange::Request>, const std::shared_ptr<comms::srv::FleetInfoExchange::Response>);
         bool checkCommandMsgValidity(const comms::msg::Command);
-        void handleCommand(const comms::msg::Command);
-        void broadcastCommand(unsigned int);
+        void handleCommandDispatch(unsigned int);
+        void handleCommandReception(const comms::msg::Command);
+        bool broadcastCommand(unsigned int);
         void sendAppendEntryRPC(unsigned int, unsigned int, bool = false, bool = false);
         void sendAck(unsigned int, unsigned int, bool = false);
         bool waitForAcks(unsigned int, bool = false);
         void appendEntry(unsigned int, unsigned int);
-        void executeCommand(unsigned int);
+        bool executeCommand(unsigned int);
 
     private: // Attributes
         LoggerModule logger_;
@@ -121,8 +126,9 @@ class Pelican : public rclcpp::Node {
         std::string model_;
         possible_roles role_ {tbd};
 
-        mutable std::mutex id_mutex_;   // Used to access id_
-        mutable std::mutex term_mutex_; // Used to access current_term_
+        mutable std::mutex id_mutex_;     // Used to access id_
+        mutable std::mutex term_mutex_;   // Used to access current_term_
+        mutable std::mutex flying_mutex_; // Used to access flying_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;

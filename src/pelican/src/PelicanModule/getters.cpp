@@ -62,3 +62,8 @@ bool Pelican::isCandidate() const {
 bool Pelican::isReady() const {
     return this->ready_;
 }
+
+bool Pelican::isFlying() const {
+    std::lock_guard<std::mutex> lock(this->flying_mutex_);
+    return this->flying_;
+}

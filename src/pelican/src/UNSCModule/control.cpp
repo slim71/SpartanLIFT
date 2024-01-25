@@ -54,7 +54,8 @@ bool UNSCModule::waitForAck(uint16_t cmd) {
 
         if (ack) { // at least one ACK received
             this->sendLogDebug(
-                "Stored ACK found! cmd:{} timestamp:{}", ack->command, ack->timestamp
+                "Stored ACK found! cmd:{} timestamp:{} result: {}", ack->command, ack->timestamp,
+                ack->result
             );
             if ((ack->command == cmd)) {
                 auto result =
