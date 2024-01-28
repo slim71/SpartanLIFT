@@ -3,7 +3,6 @@
 
 #include "types.hpp"
 
-// TODO: add colors?
 class LoggerModule {
     public:
         explicit LoggerModule();

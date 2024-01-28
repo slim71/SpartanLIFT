@@ -120,11 +120,11 @@ void Pelican::rollCall() {
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
 
-    // CHECK: do not consider this node here, then count it already in the fleet?
+    // Exclude this node's own ID, since he doesn't make sense
     if (std::find_if_not(
             this->discovery_vector_.begin(), this->discovery_vector_.end(),
-            [msg](const comms::msg::Status& obj) {
-                return msg->agent_id != obj.agent_id;
+            [msg, this](const comms::msg::Status& obj) {
+                return (msg->agent_id != obj.agent_id) && (msg->agent_id != this->getID());
             }
         ) == this->discovery_vector_.end()) {
         this->sendLogDebug("Storing discovery msg with id {}", msg->agent_id);

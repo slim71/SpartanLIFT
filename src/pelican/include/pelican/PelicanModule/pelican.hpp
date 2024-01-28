@@ -118,7 +118,6 @@ class Pelican : public rclcpp::Node {
 
         unsigned int id_;
         unsigned int current_term_ {0};
-        int network_size_ {0};
         double mass_ {0.0};
         bool ready_ {false};
         bool flying_ {false};

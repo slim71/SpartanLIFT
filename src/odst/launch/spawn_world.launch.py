@@ -34,20 +34,11 @@ def generate_launch_description():
     # Arguments to be used in simulations only, not with real hw
     # From the docs: "A launch argument is stored in a "launch configuration" of the same name."
 
-    # TODO: consider checking for headless mode?
-    # headless_argument = DeclareLaunchArgument(
-    #     name="headless",
-    #     default_value="False",
-    #     description="Whether to execute gzclient",
-    # )
-
     use_sim_time_argument = DeclareLaunchArgument(
         name="use_sim_time",
         default_value="true",
         description="Use simulation (a.k.a. Ignition) clock if true",
     )
-
-    # TODO: spawn in second screen if available
 
     # Include the Ignition launch file
     ignition = IncludeLaunchDescription(

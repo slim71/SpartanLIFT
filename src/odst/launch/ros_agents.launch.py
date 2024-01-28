@@ -1,7 +1,7 @@
 import os
 import sys
 import yaml
-from odst.logs import LogDebug  # Gives error in VSCode but it's valid
+from odst.logs import LogDebug
 from pathlib import Path  # Debug
 from launch import LaunchDescription, LaunchContext
 from launch.actions import DeclareLaunchArgument
