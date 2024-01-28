@@ -90,6 +90,20 @@ PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sit
 grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
 
 ---
+## Mission useful stuff
+If set, a multi-rotor vehicle will yaw to face the Heading value specified in the target waypoint (corresponding to MAV_CMD_NAV_WAYPOINT.param4).
+If Heading has not been explicitly set for the target waypoint (param4=NaN) then the vehicle will yaw towards a location specified in the parameter MPC_YAW_MODE. By default this is the next waypoint.
+
+PX4 runs some basic sanity checks to determine if a mission is feasible when it is uploaded, and when the vehicle is first armed. If any of the checks fail, the user is notified and it is not possible to start the mission.
+
+PX4 expects to follow a straight line from the previous waypoint to the current target (it does not plan any other kind of path between waypoints - if you need one you can simulate this by adding additional waypoints).
+
+Vehicles switch to the next waypoint as soon as they enter the acceptance radius.
+For a multi-rotor drones, the acceptance radius is tuned using the parameter NAV_ACC_RAD.
+
+During mission execution this will cause the vehicle to ascend vertically to the minimum takeoff altitude defined in the MIS_TAKEOFF_ALT parameter, then head towards the 3D position defined in the mission item.
+
+---
 ## General notes
 Can't use this in the tests
 ```cpp
@@ -103,19 +117,35 @@ because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other f
 
 CHECK: ROI as fleet radius?
 
-
 Considering that external functionalities are not active if the main module is not present, everything can throw an error if node_ is not set
 
+TODO: add ros_gz_sim as package?
+TODO: create Micro-XRCE as own package
+
 ---
-## Mission useful stuff
-If set, a multi-rotor vehicle will yaw to face the Heading value specified in the target waypoint (corresponding to MAV_CMD_NAV_WAYPOINT.param4).
-If Heading has not been explicitly set for the target waypoint (param4=NaN) then the vehicle will yaw towards a location specified in the parameter MPC_YAW_MODE. By default this is the next waypoint.
+## Launch file notes
+The optional dictionary `launch_arguments` for `IncludeLaunchDescription` is only valid to pass arguments to a target launch file that defines arguments with `LaunchConfiguration`s.
 
-PX4 runs some basic sanity checks to determine if a mission is feasible when it is uploaded, and when the vehicle is first armed. If any of the checks fail, the user is notified and it is not possible to start the mission.
+For node executables, use a list `arguments`, depending on the executable's source.
 
-PX4 expects to follow a straight line from the previous waypoint to the current target (it does not plan any other kind of path between waypoints - if you need one you can simulate this by adding additional waypoints).
+---
+To correctly spawn everything in the same window with `gnome-terminal`, I had to use a temporary file. That's because, even when the `--tab` option is used, launching it from another application always opens a new window instead of a tab.
 
-Vehicles switch to the next waypoint as soon as they enter the acceptance radius.
-For a multi-rotor drones, the acceptance radius is tuned using the parameter NAV_ACC_RAD.
+As reference, see [this comment](https://github.com/GNS3/gns3-gui/issues/3449#issuecomment-1532133451) on GitHub.
 
-During mission execution this will cause the vehicle to ascend vertically to the minimum takeoff altitude defined in the MIS_TAKEOFF_ALT parameter, then head towards the 3D position defined in the mission item.
+---
+The empty file in the temp folder is needed because it will be copied over to the share folder of the package and used to structure a bash script.
+
+---
+The overall launch with all applications is mostly done via Bash to have more flexibility. \
+As an example, starting Gazebo as done in other files (including the launch description of the `ros_gz_sim` package) is equally valid,
+but this prevented me from changing the content of the `GZ_SIM_RESOURCE_PATH` environment variable to allow the simulator to find all PX4 models/worlds. Instead of doing it in the `.bashrc` file of the local machine, I opted to highlight this need in the project itself.
+
+---
+When launching Gazebo, an error usually appears on screen
+```shell
+libEGL warning: egl: failed to create dri2 screen
+libEGL warning: egl: failed to create dri2 screen
+```
+This is only a warning and does not affect Gazebo's behavior.\
+More info [here](https://github.com/gazebosim/gz-rendering/issues/587).

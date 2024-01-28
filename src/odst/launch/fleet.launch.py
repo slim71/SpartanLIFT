@@ -1,7 +1,7 @@
 import os
 import sys
 import yaml
-from odst.logs import LogDebug  # Gives error in VSCode but it's valid
+from odst.logs import LogDebug
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
 from launch.actions import ExecuteProcess

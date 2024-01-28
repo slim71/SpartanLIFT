@@ -1,5 +1,5 @@
 import sys
-from odst.logs import print_arguments  # Gives error in VSCode but it's valid
+from odst.logs import print_arguments
 from pathlib import Path  # Debug
 from launch import LaunchDescription, LaunchContext
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo

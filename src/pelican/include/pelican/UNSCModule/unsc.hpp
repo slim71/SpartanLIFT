@@ -34,7 +34,6 @@ class UNSCModule {
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
         void setPositionMode();
-        void lowerLoiter(); // TODO:?
 
         void runPreChecks();
         void setAndMaintainOffboardMode(float, float, float, float);

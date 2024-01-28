@@ -19,7 +19,6 @@ def generate_launch_description():
     spawn_yaw = LaunchConfiguration("yaw", default='0.0')
     world = LaunchConfiguration("world", default='empty.sdf')
 
-    # TODO: get models from PX4 instead of pelican?
     model_pkg_share = FindPackageShare("pelican")
     model_middleware = "models/X4/"
     sdf_model = "model.sdf"

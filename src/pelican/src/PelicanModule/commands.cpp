@@ -90,12 +90,32 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
         return false;
     }
 
+    unsigned int last_stored_command;
     // Index in AppendEntryRPC vector
     this->rpcs_mutex_.lock();
     unsigned int size = this->rpcs_vector_.size();
+    if (size > 0)
+        last_stored_command = std::get<0>(this->rpcs_vector_.back());
+    else
+        last_stored_command = 0;
     this->rpcs_mutex_.unlock();
-    if (msg.index >= size + 1) {
-        /* request Logs if follower*/
+
+    // Valid previous command
+    if (msg.prev_command != last_stored_command) {
+        this->sendLogWarning(
+            "The last command is not coherent-> msg:{} stored:{}", msg.prev_command,
+            last_stored_command
+        );
+        return false;
+    }
+
+    // Valid index
+    if (msg.index > size) {
+        this->sendLogWarning(
+            "Received command with index {} greater than the number of stored RPCs {}", msg.index,
+            size
+        )
+        // TODO request Logs if follower
     };
 
     // TODO: check if I'm a leader and I receive a command from another leader:
@@ -220,7 +240,15 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, unsigned int command, bool
     cmd_msg.prev_term = cmd_msg.term_id - 1;
     cmd_msg.ack = ack;
     cmd_msg.apply = apply;
-    // TODO: index
+
+    this->rpcs_mutex_.lock();
+    cmd_msg.index = this->rpcs_vector_.size();
+    if (this->rpcs_vector_.size() > 0) {
+        auto last_stored_rpc = this->rpcs_vector_.back();
+        cmd_msg.prev_command = std::get<0>(last_stored_rpc);
+    } else
+        cmd_msg.prev_command = 0;
+    this->rpcs_mutex_.unlock();
 
     this->pub_to_dispatch_->publish(cmd_msg);
 }
@@ -255,7 +283,7 @@ bool Pelican::waitForAcks(unsigned int command, bool apply) {
 
     // A log entry is committed once the leader that created the entry has
     // replicated it on a majority of the servers
-    if (ack_received >= this->network_size_ / 2) { // +1 deleted: the leader is already "agreeing"
+    if (ack_received >= this->getNetworkSize() / 2) { // +1 deleted: this node is already considered
         this->sendLogInfo(
             "Enough acks received for command {}{}", command, apply ? " execution" : ""
         );

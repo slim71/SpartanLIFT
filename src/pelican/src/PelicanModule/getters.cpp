@@ -41,7 +41,7 @@ rclcpp::Time Pelican::getTime() const {
 
 int Pelican::getNetworkSize() const {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
-    auto s = this->discovery_vector_.size();
+    auto s = this->discovery_vector_.size() + 1;
     this->sendLogDebug("Discovered network has size {}", s);
     return s;
 }

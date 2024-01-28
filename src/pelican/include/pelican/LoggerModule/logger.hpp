@@ -5,7 +5,6 @@
 
 class Pelican;
 
-// TODO: add colors?
 // TODO: each agents logs in separate files?
 class LoggerModule {
     public:

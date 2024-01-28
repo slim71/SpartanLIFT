@@ -16,7 +16,6 @@ def drone_setup(context, *args, **kwargs):
     spawn_pitch = LaunchConfiguration('pitch', default='0.0').perform(context)
     spawn_yaw = LaunchConfiguration('yaw', default='0.0').perform(context)
 
-    # TODO: get models from PX4 instead of pelican?
     model_pkg_share = FindPackageShare('pelican')
     model_middleware = f'models/{model_name}/'
     sdf_model = 'model.sdf'
