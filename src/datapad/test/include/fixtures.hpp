@@ -25,6 +25,4 @@ class DatapadTest : public ::testing::Test {
 
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
-
-        rclcpp::Subscription<comms::msg::POI>::SharedPtr sub_to_channel;
 };

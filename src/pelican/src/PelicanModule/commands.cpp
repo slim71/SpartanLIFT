@@ -4,19 +4,24 @@ void Pelican::rogerWillCo(
     const std::shared_ptr<comms::srv::FleetInfoExchange::Request> request,
     const std::shared_ptr<comms::srv::FleetInfoExchange::Response> response
 ) {
+    // General all-purpose init
     response->leader_id = this->getID();
+    response->present = false;
+    response->taking_off = false;
+    response->landing = false;
+    response->retrieval = false;
+    response->dropoff = false;
+    response->success = false;
 
+    // Handling leader ID request
     if (request->presence) {
         this->sendLogDebug("Notifying I'm the leader to the user!");
         response->present = true;
-        response->taking_off = false;
-        response->landing = false;
         response->success = true;
     }
 
+    // Handling takeoff command
     if (request->takeoff) {
-        response->present = false;
-        response->landing = false;
         response->taking_off = true;
 
         if (!this->isFlying()) {
@@ -29,10 +34,10 @@ void Pelican::rogerWillCo(
             takeoff_thread.detach();
         } else {
             this->sendLogWarning("The fleet should already be flying!");
-            response->success = false;
         }
     }
 
+    // Handling landing command
     if (request->landing) {
         response->present = false;
         response->taking_off = false;
@@ -48,7 +53,23 @@ void Pelican::rogerWillCo(
             landing_thread.detach();
         } else {
             this->sendLogWarning("The fleet is not flying!");
-            response->success = false;
+        }
+    }
+
+    // Handling payload's initial position notification
+    if (request->retrieval) {
+        response->retrieval = true;
+
+        if (!this->isCarrying()) {
+            this->sendLogDebug("Notifying start of payload extraction operations!");
+            response->success = true;
+
+            this->payload_position_ = {request->x, request->y, request->z};
+
+            std::thread landing_thread(&Pelican::rendezvousFleet, this);
+            landing_thread.detach();
+        } else {
+            this->sendLogWarning("The payload is already carrying the payload!");
         }
     }
 }
@@ -60,8 +81,8 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
         return false;
     }
 
-    // Exclude case of leader-me sending messages
-    if ((msg.leader_id == this->getID()) && !msg.ack) {
+    // Exclude handling of my messages
+    if (((msg.leader_id == this->getID()) && !msg.ack) || (msg.agent == this->getID())) {
         this->sendLogDebug("Intercepted my own command{}", msg.apply ? " execution" : "");
         return false;
     };
@@ -90,31 +111,26 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
         return false;
     }
 
-    unsigned int last_stored_command;
     // Index in AppendEntryRPC vector
-    this->rpcs_mutex_.lock();
-    unsigned int size = this->rpcs_vector_.size();
-    if (size > 0)
-        last_stored_command = std::get<0>(this->rpcs_vector_.back());
-    else
-        last_stored_command = 0;
-    this->rpcs_mutex_.unlock();
+    this->last_command_mutex_.lock();
+    unsigned int expected_cmd = this->last_command_stored_;
+    unsigned int expected_index = this->last_occupied_index_;
+    this->last_command_mutex_.unlock();
 
     // Valid previous command
-    if (msg.prev_command != last_stored_command) {
+    if (msg.prev_command != expected_cmd) {
         this->sendLogWarning(
-            "The last command is not coherent-> msg:{} stored:{}", msg.prev_command,
-            last_stored_command
+            "The last command is not coherent-> msg:{} expected:{}", msg.prev_command, expected_cmd
         );
         return false;
     }
 
     // Valid index
-    if (msg.index > size) {
+    if (msg.index != expected_index) {
         this->sendLogWarning(
-            "Received command with index {} greater than the number of stored RPCs {}", msg.index,
-            size
-        )
+            "Received command with index {} greater than the number of stored RPCs (expected:{})",
+            msg.index, expected_index
+        );
         // TODO request Logs if follower
     };
 
@@ -191,13 +207,15 @@ void Pelican::handleCommandDispatch(unsigned int command) {
 }
 
 void Pelican::handleCommandReception(const comms::msg::Command msg) {
+    this->sendLogDebug(
+        "Handling command {}{}{} received from agent {} for term {} (prev_cmd:{}, prev_term:{}, "
+        "index:{})",
+        msg.command, msg.apply ? " execution" : "", msg.ack ? " ack" : "", msg.agent, msg.term_id,
+        msg.prev_command, msg.prev_term, msg.index
+    );
+
     if (!this->checkCommandMsgValidity(msg))
         return;
-
-    this->sendLogDebug(
-        "Handling command {}{}{} received from agent {} for term {}", msg.command,
-        msg.apply ? " execution" : "", msg.ack ? " ack" : "", msg.agent, msg.term_id
-    );
 
     // If this is reached, the command message can be considered
     if (this->role_ != leader) {
@@ -217,6 +235,7 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
                 this->appendEntry(msg.command, msg.term_id);
 
             } else { // Commit and execute command entry
+                this->updateLastCommand();
                 this->executeCommand(msg.command);
             }
         }
@@ -228,6 +247,8 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
             this->dispatch_vector_.push_back(msg);
             this->dispatch_mutex_.unlock();
         }
+        if (msg.apply)
+            this->updateLastCommand();
     }
 }
 
@@ -237,18 +258,15 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, unsigned int command, bool
     cmd_msg.leader_id = leader;
     cmd_msg.term_id = this->getCurrentTerm();
     cmd_msg.command = command;
+    // This could also be taken from the last stored command
     cmd_msg.prev_term = cmd_msg.term_id - 1;
     cmd_msg.ack = ack;
     cmd_msg.apply = apply;
 
-    this->rpcs_mutex_.lock();
-    cmd_msg.index = this->rpcs_vector_.size();
-    if (this->rpcs_vector_.size() > 0) {
-        auto last_stored_rpc = this->rpcs_vector_.back();
-        cmd_msg.prev_command = std::get<0>(last_stored_rpc);
-    } else
-        cmd_msg.prev_command = 0;
-    this->rpcs_mutex_.unlock();
+    this->last_command_mutex_.lock();
+    cmd_msg.prev_command = this->last_command_stored_;
+    cmd_msg.index = this->last_occupied_index_;
+    this->last_command_mutex_.unlock();
 
     this->pub_to_dispatch_->publish(cmd_msg);
 }
@@ -335,4 +353,18 @@ bool Pelican::executeCommand(unsigned int command) {
             this->sendLogWarning("Command received is not supported!");
             return false;
     }
+}
+
+void Pelican::rendezvousFleet() {
+    this->sendLogDebug(
+        "Point to rendezvous to: ({}, {}, {})", this->payload_position_[0],
+        this->payload_position_[1], this->payload_position_[2]
+    );
+}
+
+void Pelican::updateLastCommand() {
+    std::lock_guard<std::mutex> lock_cmd(this->last_command_mutex_);
+    std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
+    this->last_command_stored_ = std::get<0>(this->rpcs_vector_.back());
+    this->last_occupied_index_ = this->rpcs_vector_.size();
 }

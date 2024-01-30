@@ -26,10 +26,10 @@ class Datapad : public rclcpp::Node {
         void contactLeader();
         void unitSortie();
         void backToLZ();
-        void processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture);
-        void inspectAck(const comms::msg::POI);
-        void sendFleetInfo(bool, bool, bool);
-        void sendPointOfInterest(float, float, float, float);
+        void payloadExtraction();
+        void payloadDropoff();
+        void processLeaderResponse(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture);
+        void sendFleetInfo(bool, bool, bool, bool, bool);
 
     private:                                     // Attributes
         LoggerModule logger_;
@@ -38,11 +38,10 @@ class Datapad : public rclcpp::Node {
         int leader_ {0};
         bool leader_present_ {false};
         bool fleet_fying_ {false};
+        bool transport_wip_ {false};
 
         bool running_ {false};
         mutable std::mutex running_mutex_;
-
-        std::unique_ptr<comms::msg::POI> last_msg_;
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -56,10 +55,6 @@ class Datapad : public rclcpp::Node {
             ),
             rmw_qos_profile_sensor_data
         )};
-
-        std::string channel_topic_ {"/datapad/channel"};
-        rclcpp::Subscription<comms::msg::POI>::SharedPtr sub_to_channel;
-        rclcpp::Publisher<comms::msg::POI>::SharedPtr pub_to_channel;
 
         std::chrono::seconds setup_timeout_ {constants::SETUP_TIME_SECS};
         rclcpp::TimerBase::SharedPtr setup_timer_;

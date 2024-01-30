@@ -67,3 +67,8 @@ bool Pelican::isFlying() const {
     std::lock_guard<std::mutex> lock(this->flying_mutex_);
     return this->flying_;
 }
+
+bool Pelican::isCarrying() const {
+    std::lock_guard<std::mutex> lock(this->carrying_mutex_);
+    return this->carrying_;
+}

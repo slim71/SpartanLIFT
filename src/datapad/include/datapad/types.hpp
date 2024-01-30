@@ -20,6 +20,10 @@ namespace constants {
     static constexpr bool TAKEOFF_FLAG_OFF = false;
     static constexpr bool LANDING_FLAG_ON = true;
     static constexpr bool LANDING_FLAG_OFF = false;
+    static constexpr bool EXTRACTION_FLAG_ON = true;
+    static constexpr bool EXTRACTION_FLAG_OFF = false;
+    static constexpr bool DROPOFF_FLAG_ON = true;
+    static constexpr bool DROPOFF_FLAG_OFF = false;
     static constexpr unsigned int QOS_HISTORY_AMOUNT = 5;
     static constexpr unsigned int SETUP_TIME_SECS = 1;
 } // namespace constants

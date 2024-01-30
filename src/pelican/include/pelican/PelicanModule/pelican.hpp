@@ -43,6 +43,7 @@ class Pelican : public rclcpp::Node {
         bool isCandidate() const;
         bool isReady() const;
         bool isFlying() const;
+        bool isCarrying() const;
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
@@ -105,6 +106,8 @@ class Pelican : public rclcpp::Node {
         bool waitForAcks(unsigned int, bool = false);
         void appendEntry(unsigned int, unsigned int);
         bool executeCommand(unsigned int);
+        void rendezvousFleet();
+        void updateLastCommand();
 
     private: // Attributes
         LoggerModule logger_;
@@ -121,13 +124,19 @@ class Pelican : public rclcpp::Node {
         double mass_ {0.0};
         bool ready_ {false};
         bool flying_ {false};
+        bool carrying_ {false};
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
+        std::vector<double> payload_position_;
+        unsigned int last_command_stored_ {0};
+        unsigned int last_occupied_index_ {0};
 
-        mutable std::mutex id_mutex_;     // Used to access id_
-        mutable std::mutex term_mutex_;   // Used to access current_term_
-        mutable std::mutex flying_mutex_; // Used to access flying_
+        mutable std::mutex id_mutex_;           // Used to access id_
+        mutable std::mutex term_mutex_;         // Used to access current_term_
+        mutable std::mutex flying_mutex_;       // Used to access flying_
+        mutable std::mutex carrying_mutex_;     // Used to access carrying_
+        mutable std::mutex last_command_mutex_; // Used to access carrying_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
