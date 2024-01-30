@@ -30,6 +30,7 @@ set(MESSAGE_FILES
     msg/Proposal.msg
     msg/RequestVoteRPC.msg
     msg/Status.msg
+    msg/POI.msg
 )
 
 set(SERVICE_FILES

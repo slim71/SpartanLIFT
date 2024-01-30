@@ -46,8 +46,10 @@ void Datapad::landingPage() {
                     this->unitSortie();
                     break;
                 case 3:
+                    this->payloadExtraction();
                     break;
                 case 4:
+                    this->payloadDropoff();
                     break;
                 case 5:
                     this->backToLZ();
@@ -68,11 +70,14 @@ void Datapad::landingPage() {
 
 void Datapad::contactLeader() {
     this->sendFleetInfo(
-        constants::PRESENCE_FLAG_ON, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF
+        constants::PRESENCE_FLAG_ON, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
+        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
 }
 
-void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture future) {
+void Datapad::processLeaderResponse(
+    rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture future
+) {
     // Wait for 1s or until the result is available
     this->sendLogDebug("Getting response...");
     auto status = future.wait_for(std::chrono::seconds(1));
@@ -80,6 +85,7 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
     if (status == std::future_status::ready) {
         auto response = future.get();
 
+        // Verify if there's a new leader in the fleet
         if ((response->leader_id != this->leader_) && (this->leader_present_)) {
             this->sendLogWarning(
                 "Leader must have changed without proper notifications! New leader: {}",
@@ -88,12 +94,14 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
             this->leader_ = response->leader_id;
         }
 
+        // Leader notification
         if ((response->present) && (response->leader_id > 0)) {
             this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
             this->leader_present_ = true;
             this->leader_ = response->leader_id;
         }
 
+        // Fleet taking off
         if (response->taking_off) {
             if (response->success) {
                 this->sendLogInfo("Takeoff acknowledged");
@@ -103,12 +111,33 @@ void Datapad::processContact(rclcpp::Client<comms::srv::FleetInfoExchange>::Shar
             }
         }
 
+        // Fleet landing
         if (response->landing) {
             if (response->success) {
                 this->sendLogInfo("Land command acknowledged");
                 this->fleet_fying_ = false;
             } else {
                 this->sendLogWarning("Landing operations not successful");
+            }
+        }
+
+        // Sending payload initial position
+        if (response->retrieval) {
+            if (response->success) {
+                this->sendLogInfo("Payload position acquired");
+            } else {
+                this->sendLogWarning("Could not transmit payload position");
+            }
+        }
+
+        // Sending payload desired position
+        if (response->dropoff) {
+            if (response->success) {
+                this->sendLogInfo("Dropoff position acquired");
+                // CHECK: to be set here, or on notification of succesful engage?
+                this->transport_wip_ = true;
+            } else {
+                this->sendLogWarning("Could not transmit dropoff position");
             }
         }
 
@@ -133,7 +162,8 @@ void Datapad::unitSortie() {
     }
 
     this->sendFleetInfo(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_ON, constants::LANDING_FLAG_OFF
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_ON, constants::LANDING_FLAG_OFF,
+        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
 }
 
@@ -152,15 +182,86 @@ void Datapad::backToLZ() {
     }
 
     this->sendFleetInfo(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_ON
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_ON,
+        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
 }
 
-void Datapad::sendFleetInfo(bool presence, bool takeoff, bool landing) {
+void Datapad::payloadExtraction() {
+    // Check if the fleet has a leader, since everything goes through it
+    if (!this->leader_present_) {
+        this->sendLogWarning(
+            "No leader has been detected in the fleet! Please make sure it is present"
+        );
+        return;
+    }
+    // Check that the fleet is not already busy
+    if (this->transport_wip_) {
+        this->sendLogWarning("Payload is already engaged!");
+        return;
+    }
+
+    this->sendFleetInfo(
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
+        constants::EXTRACTION_FLAG_ON, constants::DROPOFF_FLAG_OFF
+    );
+}
+
+void Datapad::payloadDropoff() {
+    // Check if the fleet has a leader, since everything goes through it
+    if (!this->leader_present_) {
+        this->sendLogWarning(
+            "No leader has been detected in the fleet! Please make sure it is present"
+        );
+        return;
+    }
+    // Check that the payload is engaged
+    if (!this->transport_wip_) {
+        this->sendLogWarning("The fleet is not carrying anything!");
+        return;
+    }
+
+    this->sendFleetInfo(
+        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
+        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_ON
+    );
+}
+
+void Datapad::sendFleetInfo(
+    bool presence, bool takeoff, bool landing, bool retrieval, bool dropoff
+) {
     auto request = std::make_shared<comms::srv::FleetInfoExchange::Request>();
     request->presence = presence;
     request->takeoff = takeoff;
     request->landing = landing;
+    request->retrieval = retrieval;
+    request->dropoff = dropoff;
+
+    float coordinates[3];
+    char coord_names[] = {'x', 'y', 'z'};
+    // Add position if needed
+    if (retrieval || dropoff) {
+        this->sendLogDebug("Enter desired coordinates: ");
+        std::cout << "Enter desired coordinates" << std::endl;
+        int i = 0;
+        while (i < 3) {
+            std::cout << coord_names[i] << ": " << std::endl;
+            std::cin >> coordinates[i];
+            if (std::cin.fail()) {
+                std::cout << "Wrong input!" << std::endl << std::endl;
+                this->sendLogDebug("Wrong input!");
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            } else {
+                this->sendLogDebug("input: {}", coordinates[i]);
+                i++;
+            }
+        };
+
+        request->x = coordinates[0];
+        request->y = coordinates[1];
+        request->z = coordinates[2];
+    }
 
     // Search for a second, then log and search again
     int total_search_time = 0;
@@ -182,7 +283,7 @@ void Datapad::sendFleetInfo(bool presence, bool takeoff, bool landing) {
 
         // Send request
         auto result = this->fleetinfo_client_->async_send_request(
-            request, std::bind(&Datapad::processContact, this, std::placeholders::_1)
+            request, std::bind(&Datapad::processLeaderResponse, this, std::placeholders::_1)
         );
     } else {
         this->sendLogWarning("The server seems to be down. Please try again.");
