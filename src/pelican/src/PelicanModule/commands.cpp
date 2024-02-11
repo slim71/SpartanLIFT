@@ -357,9 +357,16 @@ bool Pelican::executeCommand(unsigned int command) {
 
 void Pelican::rendezvousFleet() {
     this->sendLogDebug(
-        "Point to rendezvous to: ({}, {}, {})", this->payload_position_[0],
+        "Point to rendezvous to: ({:.4f}, {:.4f}, {:.4f})", this->payload_position_[0],
         this->payload_position_[1], this->payload_position_[2]
     );
+
+    if (this->isLeader()) {
+        this->initiateOffboardMode(
+            this->payload_position_[0], this->payload_position_[1], this->payload_position_[2],
+            0 // TODO: yaw?
+        );
+    }
 }
 
 void Pelican::updateLastCommand() {

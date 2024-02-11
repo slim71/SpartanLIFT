@@ -32,7 +32,7 @@ class TacMapModule {
         std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
         std::optional<px4_msgs::msg::VehicleCommandAck> getAck();
         std::optional<px4_msgs::msg::VehicleStatus> getStatus();
-        bool getRunningStatus();
+        bool getRunningStatus() const;
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -50,24 +50,27 @@ class TacMapModule {
         void printData(const px4_msgs::msg::VehicleAttitude::SharedPtr) const;
         void printData(const px4_msgs::msg::VehicleControlMode::SharedPtr) const;
         void storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr);
-        void printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr) const;
         void storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
+        void storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr);
 
         // External communications
         unsigned int gatherAgentID() const;
+        std::string gatherAgentModel() const;
         possible_roles gatherAgentRole() const;
         int gatherCurrentTerm() const;
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
+        void signalSetInitialOffset(float, float, float);
 
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
         std::atomic<bool> running_ {true};
+        std::atomic<bool> initiated_ {false};
 
         int system_id_ {0};
         int component_id_ {0};
@@ -121,8 +124,11 @@ class TacMapModule {
         rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
             pub_to_offboard_control_topic_;
 
+        std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;
+
         // Only one ack memorized because messages from that topic should be sparse
-        std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_;
+        std::optional<px4_msgs::msg::VehicleCommandAck> last_ack_; // CHECK: used?
 
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {
             constants::GLOBALPOS_BUFFER_SIZE};

@@ -17,6 +17,7 @@
   <depend>comms</depend>
   <depend>px4_msgs</depend>
   <depend>tf2</depend>
+  <depend>nav_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

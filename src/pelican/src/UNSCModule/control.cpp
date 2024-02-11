@@ -9,6 +9,7 @@ bool UNSCModule::arm() {
 }
 
 bool UNSCModule::disarm() {
+    cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
         px4_msgs::msg::VehicleCommand::ARMING_ACTION_DISARM
@@ -17,6 +18,7 @@ bool UNSCModule::disarm() {
 
 // Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
 bool UNSCModule::takeoff(unsigned int height) {
+    // cancelTimer(this->offboard_timer_); // CHECK: here too?
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
         (height > 0) ? height : NAN
@@ -25,6 +27,7 @@ bool UNSCModule::takeoff(unsigned int height) {
 
 // Empty| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
 bool UNSCModule::land() {
+    cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
 }
 
@@ -37,11 +40,12 @@ bool UNSCModule::setHome() {
 
 // Empty| Empty| Empty| Empty| Empty| Empty| Empty|
 bool UNSCModule::returnToLaunchPosition() {
+    cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_RETURN_TO_LAUNCH
     );
 }
 
-bool UNSCModule::waitForAck(uint16_t cmd) {
+bool UNSCModule::waitForAck(uint16_t cmd) { // CHECK: move to TacMap?
     auto start_time =
         this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION; // [ms]
     this->sendLogDebug("ACK wait started at timestamp {}", start_time);
@@ -123,7 +127,46 @@ void UNSCModule::runPreChecks() {
     this->sendLogError("Errors in the simulation detected!");
 }
 
+void UNSCModule::activateOffboardMode(float x, float y, float z, float yaw) {
+    cancelTimer(this->offboard_timer_);
+
+    Eigen::Vector3f des_body_pos = this->convertLocalToBody({x, y, z}, yaw);
+
+    this->sendLogDebug(
+        "offboard: ({:.4f}, {:.4f}, {:.4f}) became ({:.4f}, {:.4f}, {:.4f})", x, y, z,
+        des_body_pos(0), des_body_pos(1), des_body_pos(2)
+    );
+
+    this->offboard_timer_ =
+        this->node_->create_wall_timer(this->offboard_period_, [this, des_body_pos, yaw] {
+            this->setAndMaintainOffboardMode(
+                des_body_pos(0), des_body_pos(1), des_body_pos(2), yaw
+            );
+        });
+}
+
+Eigen::Vector3f UNSCModule::convertLocalToBody(const Eigen::Vector3f& local_pos, float yaw) const {
+    // Current-axis composition: 1st_rotation * ... * nth_rotation
+    Eigen::Matrix3f rotENU2NED = rotZ(-90, true) * rotY(180, true);
+
+    Eigen::Vector3f offset(this->getInitialOffset().data());
+    Eigen::Vector4f hom_offset = offset.homogeneous();
+
+    Eigen::Matrix4f hom_matrix;
+    hom_matrix.block(0, 0, 3, 3) = rotENU2NED;
+    hom_matrix.block(3, 0, 1, 3) << 0, 0, 0;
+    hom_matrix.col(3) << hom_offset;
+
+    Eigen::Vector4f hom_local_pos = local_pos.homogeneous();
+
+    Eigen::Vector4f body_pos = hom_matrix * hom_local_pos;
+
+    return body_pos.head(3);
+}
+
 void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {
+    this->sendLogDebug("Offboard to ({:.4f},{:.4f},{:.4f}) yaw:{:.4f}", x, y, z, yaw);
+
     if (this->offboard_setpoint_counter_ == constants::OFFBOARD_SETPOINT_LIMIT) {
         // Change to Offboard mode after the needed amount of setpoints
         this->sendLogDebug("Changing to Offboard mode!");
@@ -131,10 +174,13 @@ void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw
             px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
             constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_OFFBOARD_MODE
         );
+
+        this->arm();
     }
 
     // offboard_control_mode needs to be paired with trajectory_setpoint
     this->signalPublishOffboardControlMode();
+    this->signalPublishTrajectorySetpoint(x, y, z, yaw);
 
     // stop the counter after reaching OFFBOARD_SETPOINT_LIMIT + 1
     if (this->offboard_setpoint_counter_ <= constants::OFFBOARD_SETPOINT_LIMIT) {

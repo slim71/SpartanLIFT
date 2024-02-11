@@ -19,13 +19,6 @@ class Pelican : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
-        // Actions initiated by the module
-        bool initiateSetHome();
-        bool initiateArm();
-        bool initiateTakeoff();
-        bool initiateLand();
-        bool initiateReturnToLaunchPosition();
-
         // Getters
         unsigned int getID() const;
         std::string getModel() const;
@@ -36,6 +29,14 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
         int getNetworkSize() const;
+
+        // Actions initiated by the module
+        bool initiateSetHome();
+        bool initiateArm();
+        bool initiateTakeoff();
+        bool initiateLand();
+        bool initiateReturnToLaunchPosition();
+        void initiateOffboardMode(float, float, float, float);
 
         // Status check
         bool isLeader() const;
@@ -66,7 +67,8 @@ class Pelican : public rclcpp::Node {
         void commenceSetElectionStatus(int);                                // Heartbeat module
         void commenceResetElectionTimer();                                  // Heartbeat module
         void commenceIncreaseCurrentTerm();                                 // Election module
-        void commenceSetTerm(uint64_t); // Election and Heartbeat modules
+        void commenceSetTerm(uint64_t);                     // Election and Heartbeat modules
+        void commenceSetInitialOffset(float, float, float); // TacMap module
 
         // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
@@ -128,7 +130,7 @@ class Pelican : public rclcpp::Node {
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
-        std::vector<double> payload_position_;
+        std::vector<double> payload_position_; // CHECK: mutex?
         unsigned int last_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
 

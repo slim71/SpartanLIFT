@@ -47,8 +47,16 @@ bool Pelican::initiateReturnToLaunchPosition() {
     return this->unsc_core_.returnToLaunchPosition();
 }
 
+void Pelican::initiateOffboardMode(float x, float y, float z, float yaw) {
+    this->unsc_core_.activateOffboardMode(x, y, z, yaw);
+}
+
 void Pelican::commenceStopUNSCService() {
     this->unsc_core_.stopService();
+}
+
+void Pelican::commenceSetInitialOffset(float x, float y, float z) {
+    this->unsc_core_.setInitialOffset(x, y, z);
 }
 
 /*************************** TacMap Module ****************************/

@@ -51,3 +51,5 @@ std::ostream& operator<<(std::ostream& os, const possible_modules& m) {
     os << modules_to_string(m);
     return os;
 }
+
+// TODO: names for datapad commands

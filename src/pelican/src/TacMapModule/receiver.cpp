@@ -91,13 +91,20 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr 
               << std::endl;
 }
 
-void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
-    // this->sendLogDebug(
-    //     "Received GlobalPosition data! timestamp:{} lat:{} long:{} alt:{} terrain_alt:{} "
-    //     "terr_valid:{}",
-    //     msg->timestamp, msg->lat, msg->lon, msg->alt, msg->terrain_alt, msg->terrain_alt_valid
-    // );
+void TacMapModule::storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    if (!this->initiated_) {
+        this->sendLogDebug(
+            "Storing initial offset ({:.4f},{:.4f},{:.4f})", msg->pose.pose.position.x,
+            msg->pose.pose.position.y, msg->pose.pose.position.y
+        );
+        this->initiated_ = true; // CHECK: mutex?
+        this->signalSetInitialOffset(
+            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.y
+        );
+    }
+}
 
+void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
     px4_msgs::msg::VehicleGlobalPosition globalpos_data;
     globalpos_data.timestamp = msg->timestamp;               // [us]
     globalpos_data.timestamp_sample = msg->timestamp_sample; // [us]
@@ -116,28 +123,6 @@ void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPositio
 
     std::lock_guard<std::mutex> lock(this->globalpos_mutex_);
     this->globalpos_buffer_.push_back(globalpos_data);
-}
-
-void TacMapModule::printData(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) const {
-    std::cout << "\n\n";
-    std::cout << "RECEIVED VehicleLocalPosition DATA" << std::endl;
-    std::cout << "=============================" << std::endl;
-    std::cout << "Time since start: " << msg->timestamp << std::endl;             // [us]
-    std::cout << "Timestamp of raw data: " << msg->timestamp_sample << std::endl; // [us]
-    std::cout << "x: " << msg->x << std::endl;                                    // [m]
-    std::cout << "y: " << msg->y << std::endl;                                    // [m]
-    std::cout << "z: " << msg->z << std::endl;                                    // [m]
-    std::cout << "vx: " << msg->vx << std::endl;                                  // [m/s]
-    std::cout << "vy: " << msg->vy << std::endl;                                  // [m/s]
-    std::cout << "vz: " << msg->vz << std::endl;                                  // [m/s]
-    std::cout << "xy_valid: " << msg->xy_valid << std::endl;   // true if x and y are valid
-    std::cout << "z_valid: " << msg->z_valid << std::endl;     // true if z is valid
-    std::cout << "v_xy_valid: " << msg->xy_valid << std::endl; // true if vx and vy are valid
-    std::cout << "v_z_valid: " << msg->z_valid << std::endl;   // true if vz is valid
-    std::cout << "ax: " << msg->ax << std::endl;               // [m/s^2]
-    std::cout << "ay: " << msg->ay << std::endl;               // [m/s^2]
-    std::cout << "az: " << msg->az << std::endl;               // [m/s^2]
-    std::cout << "heading: " << msg->heading << std::endl;     // [rad]
 }
 
 void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
