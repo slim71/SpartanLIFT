@@ -134,6 +134,9 @@ CHECK: gazebo topics, maybe from unused plugins
 TODO: add models to pelican from PX4, so both can be used to inspect them
 TODO: explictly say about `source /opt/ros/humble/setup.bash` and `~/Documents/git/ros_gz_workspace/install/setup.bash`
 TODO: what about ros_gz_workspace?
+TODO: explain the ros_gz_bridge addition
+
+To generate compile_commands.json, launch colcon build --cmake-args DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 ---
 ## Launch file notes
