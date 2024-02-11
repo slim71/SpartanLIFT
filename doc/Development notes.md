@@ -60,9 +60,9 @@ https://github.com/PX4/PX4-Autopilot/issues/21430#issuecomment-1497484098
 The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was taken directly from the PX4 commander.
 It checks whether the current nav_state of the agent is set or not.
 
-CHECK [this](https://github.com/PX4/PX4-Autopilot/issues/18983) in case you use sethome and there's instability
-
 PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
+
+TODO: delete useless couts from PX4
 
 ### Offboard control
 https://docs.px4.io/main/en/flight_modes/offboard.html
@@ -88,6 +88,10 @@ ros2 launch odst ros_agents.launch.py loglevel:=debug
 MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
+
+TODO: [here](https://docs.px4.io/main/en/sim_gazebo_gz/) it says:
+The environmental variable PX4_GZ_MODEL has been deprecated and its functionality merged into PX4_SIM_MODEL.
+--> change it.
 
 ---
 ## Mission useful stuff
@@ -121,6 +125,15 @@ Considering that external functionalities are not active if the main module is n
 
 TODO: add ros_gz_sim as package?
 TODO: create Micro-XRCE as own package
+
+'make' in PX4 folder before launch file after installation
+
+TODO: check eigen is in requirements
+TODO: change nodes name
+CHECK: gazebo topics, maybe from unused plugins
+TODO: add models to pelican from PX4, so both can be used to inspect them
+TODO: explictly say about `source /opt/ros/humble/setup.bash` and `~/Documents/git/ros_gz_workspace/install/setup.bash`
+TODO: what about ros_gz_workspace?
 
 ---
 ## Launch file notes

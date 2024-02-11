@@ -21,6 +21,9 @@ This will go through a pass-through method of the main module if the target data
 `commence[...]`
 The main module actually initiates operations triggered by another module.
 
+`initiate[...]`
+The main module itself activates a functionality carried on by another module.
+
 `is[...]`
 The main module computes and returns a flag to the requiring module.
 
@@ -40,3 +43,4 @@ The module owning the requested data returns it to the requiring module or to th
 | `request` |      `get`      |
 | `confirm` |      `is`       |
 | `gather`  | `request`/`get` |
+|   N/A     |    `initiate`   |
