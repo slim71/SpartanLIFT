@@ -124,6 +124,29 @@
     "typeindex": "cpp",
     "typeinfo": "cpp",
     "valarray": "cpp",
-    "variant": "cpp"
-  }
+    "variant": "cpp",
+    "core": "cpp"
+  },
+  "todo-tree.general.debug": true,
+  "todo-tree.tree.scanMode": "workspace only",
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "XXX",
+    "[ ]",
+    "[x]",
+    "CHECK"
+  ],
+  "todo-tree.filtering.excludeGlobs": [
+    "**/PX4-Autopilot/**",
+    "**/src/Micro-XRCE-DDS-Agent/**",
+    "**/src/px4_msgs/**",
+    "**/src/px4_ros_com/**",
+    "**/build/**",
+    "**/.vscode/**",
+    "**/.github/**",
+    "**/_output/**"
+  ]
 }

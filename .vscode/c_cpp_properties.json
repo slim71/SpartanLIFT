@@ -3,8 +3,18 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src/**",
-                "/home/slim71/Documents/git/pugixml"
+                "${workspaceFolder}/src/pelican/**",
+                "${workspaceFolder}/src/datapad/**",
+                "${workspaceFolder}/src/Micro-XRCE-DDS-Agent/include/uxr/agent/**",
+                "/opt/ros/humble/include/**",
+                "${workspaceFolder}/install/comms/include/**",
+                "${workspaceFolder}/install/px4_msgs/include/px4_msgs/**",
+                "${workspaceFolder}/install/px4_ros_com/include/px4_ros_com/**",
+                "/home/slim71/Documents/git/pugixml",
+                "/usr/include/**",
+                "/usr/include/",
+                "/usr/local/include/**",
+                "/usr/local/include/"
             ],
             "defines": [],
             "cStandard": "c11",
@@ -13,5 +23,6 @@
             "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
-    "version": 4
+    "version": 4,
+    "enableConfigurationSquiggles": true
 }
