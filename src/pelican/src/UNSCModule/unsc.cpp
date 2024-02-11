@@ -30,7 +30,7 @@ void UNSCModule::initSetup(LoggerModule* logger) {
     );
 }
 
-bool UNSCModule::getRunningStatus() {
+bool UNSCModule::getRunningStatus() const {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     return this->running_;
 }
@@ -38,4 +38,14 @@ bool UNSCModule::getRunningStatus() {
 void UNSCModule::stopService() {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     this->running_ = false;
+}
+
+Eigen::Vector3f UNSCModule::getInitialOffset() const {
+    std::lock_guard<std::mutex> lock(this->offset_mutex_);
+    return this->initial_offset_;
+}
+
+void UNSCModule::setInitialOffset(float x, float y, float z) {
+    std::lock_guard<std::mutex> lock(this->offset_mutex_);
+    this->initial_offset_ = {x, y, z};
 }

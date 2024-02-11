@@ -5,7 +5,7 @@ namespace constants {
     static constexpr unsigned int BRIEFING_TIME_SECS = 10;
     static constexpr unsigned int HB_REPETITION_PERIOD_MILLIS = 100;
     static constexpr unsigned int ACK_WAIT_MILLIS = 100;
-    static constexpr unsigned int OFFBOARD_PERIOD_MILLIS = 100;
+    static constexpr unsigned int OFFBOARD_PERIOD_MILLIS = 100; // CHECK: publish rate >= 2Hz
 
     // Standard heartbeat period is 100ms, so this would keep a log of 10s
     static constexpr unsigned int MAX_HB_NUM = 100;
@@ -29,4 +29,9 @@ namespace constants {
     static constexpr unsigned int TAKEOFF_COMMAND = 1;
     static constexpr unsigned int LANDING_COMMAND = 2;
     static constexpr unsigned int EMERGENCY_LANDING = 10;
+
+    // Up to and including C++17, pi is not a constant introduced into the language.
+    // It is present in C++20, but switching standard just for a constant seems a bit
+    // of an overkill. Have it hardcoded.
+    static constexpr double PI = 3.14159265358979323846;
 } // namespace constants

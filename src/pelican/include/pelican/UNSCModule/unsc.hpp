@@ -24,8 +24,12 @@ class UNSCModule {
         bool land();
         bool setHome();
         bool returnToLaunchPosition();
+        void activateOffboardMode(float, float, float, float);
 
-        bool getRunningStatus();
+        bool getRunningStatus() const;
+        Eigen::Vector3f getInitialOffset() const;
+
+        void setInitialOffset(float, float, float);
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -33,9 +37,8 @@ class UNSCModule {
         template<typename... Args> void sendLogWarning(std::string, Args...) const;
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
-        void setPositionMode();
-
         void runPreChecks();
+        void setPositionMode();
         void setAndMaintainOffboardMode(float, float, float, float);
 
         bool waitForAck(uint16_t);
@@ -43,6 +46,8 @@ class UNSCModule {
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         );
+
+        Eigen::Vector3f convertLocalToBody(const Eigen::Vector3f&, float) const;
 
         // External communications
         rclcpp::Time gatherTime() const;
@@ -63,6 +68,9 @@ class UNSCModule {
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
+
+        Eigen::Vector3f initial_offset_;
+        mutable std::mutex offset_mutex_; // to be used with initial_offset_
 
         std::atomic<bool> running_ {true};
         bool sitl_ready_ {false};

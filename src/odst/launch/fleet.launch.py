@@ -41,6 +41,9 @@ def generate_launch_description():
     world_name = config_params["world"]
     logger.print(f"Using world {world_name}")
 
+    # List of topics to bridge from Gazebo to ROS2
+    bridges = ""
+
     # Get the filepath to your config file
     script_file = os.path.join(get_package_share_directory(pkg), "temp", "terminal.sh")
     # Write every gnome-terminal in a temp file and use that to spawn
@@ -94,6 +97,18 @@ def generate_launch_description():
             logger.print(px4_cmd)
             tmp.write(px4_cmd)
             tmp.write("\n")
+
+            bridges += f"/model/{model}_{count+1}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry "
+
+        # Run ros_gz_bridge, as we need data from a Gazebo topic for the local position
+        bridge_cmd = (
+            "gnome-terminal --tab -t 'ROS2-Gazebo bridge' "
+            f"-- bash -c 'source {source_local_wos}; "
+            f"ros2 run ros_gz_bridge parameter_bridge {bridges}'"
+        )
+        logger.print(bridge_cmd)
+        tmp.write(bridge_cmd)
+        tmp.write("\n")
 
         # Manually execute launch file in order to get the logs in a standalone gnome terminal tab
         # Give an additional 10s to be sure everything has started correctly
