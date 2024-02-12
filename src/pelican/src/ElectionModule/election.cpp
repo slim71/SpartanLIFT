@@ -168,15 +168,27 @@ void ElectionModule::triggerVotes() {
 }
 
 void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
+    if (msg.solicitant_id == this->gatherAgentID()) {
+        this->sendLogDebug("Not serving my own vote request");
+        return;
+    }
+
     this->sendLogInfo(
         "Serving vote request from candidate {} for term {}", msg.solicitant_id, msg.term_id
     );
+    // This returns the second iterator used, which here it's '.end()' aka one past the
+    // end of the sequence/vector
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),
         [](comms::msg::Proposal::SharedPtr first, comms::msg::Proposal::SharedPtr second) {
             return first->candidate_mass > second->candidate_mass;
         }
     );
+    this->sendLogDebug("Decided to vote for {}", (*heavier)->proposed_leader);
+    if ((heavier == this->received_votes_.end()) || ((*heavier)->proposed_leader <= 0)) {
+        this->sendLogWarning("No valid ID to vote!");
+        return;
+    }
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
@@ -201,8 +213,8 @@ void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
 
 void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
     this->sendLogDebug(
-        "Received vote| agent {} voted for agent {} (mass {})", msg->voter_id, msg->proposed_leader,
-        msg->candidate_mass
+        "Received vote| agent {} voted for agent {} (mass {:.4f})", msg->voter_id,
+        msg->proposed_leader, msg->candidate_mass
     );
 
     auto term = this->gatherCurrentTerm();

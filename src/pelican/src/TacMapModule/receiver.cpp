@@ -92,14 +92,15 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr 
 }
 
 void TacMapModule::storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    if (!this->initiated_) {
+    if (!this->getInitiatedStatus()) {
         this->sendLogDebug(
-            "Storing initial offset ({:.4f},{:.4f},{:.4f})", msg->pose.pose.position.x,
-            msg->pose.pose.position.y, msg->pose.pose.position.y
+            "Storing initial offset ({:.4f},{:.4f},{:.4f}) ", msg->pose.pose.position.x,
+            msg->pose.pose.position.y, msg->pose.pose.position.z
         );
-        this->initiated_ = true; // CHECK: mutex?
+
+        this->setInitiatedStatus(true);
         this->signalSetInitialOffset(
-            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.y
+            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z
         );
     }
 }

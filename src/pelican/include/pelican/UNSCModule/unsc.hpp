@@ -41,7 +41,6 @@ class UNSCModule {
         void setPositionMode();
         void setAndMaintainOffboardMode(float, float, float, float);
 
-        bool waitForAck(uint16_t);
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
@@ -54,7 +53,6 @@ class UNSCModule {
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         std::optional<px4_msgs::msg::VehicleGlobalPosition> gatherGlobalPosition() const;
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
-        std::optional<px4_msgs::msg::VehicleCommandAck> gatherAck() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
 
         // command| param1| param2| param3| param4| param5| param6| param7|
@@ -64,6 +62,7 @@ class UNSCModule {
         ) const;
         void signalPublishTrajectorySetpoint(float, float, float, float) const;
         void signalPublishOffboardControlMode() const;
+        bool signalWaitForAck(uint16_t) const;
 
     private: // Attributes
         Pelican* node_;

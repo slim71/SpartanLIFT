@@ -34,14 +34,6 @@ std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const
     return this->node_->requestOdometry();
 }
 
-std::optional<px4_msgs::msg::VehicleCommandAck> UNSCModule::gatherAck() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->requestAck();
-}
-
 std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -78,4 +70,12 @@ void UNSCModule::signalPublishTrajectorySetpoint(float x, float y, float z, floa
     }
 
     this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw);
+}
+
+bool UNSCModule::signalWaitForAck(uint16_t command) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->commenceWaitForAck(command);
 }

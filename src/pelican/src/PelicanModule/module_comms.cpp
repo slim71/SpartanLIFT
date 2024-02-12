@@ -85,12 +85,12 @@ std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestOdometry() {
     return this->tac_core_.getOdometry();
 }
 
-std::optional<px4_msgs::msg::VehicleCommandAck> Pelican::requestAck() {
-    return this->tac_core_.getAck();
-}
-
 std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() {
     return this->tac_core_.getStatus();
+}
+
+bool Pelican::commenceWaitForAck(uint16_t command) {
+    return this->tac_core_.waitForAck(command);
 }
 
 void Pelican::commenceStopTacMapService() {

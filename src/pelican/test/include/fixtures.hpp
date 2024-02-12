@@ -21,7 +21,6 @@ class PelicanTest : public ::testing::Test {
         heartbeat RequestLastHbTester();
         std::optional<px4_msgs::msg::VehicleGlobalPosition> RequestGlobalPositionTester();
         std::optional<px4_msgs::msg::VehicleOdometry> RequestOdometryTester();
-        std::optional<px4_msgs::msg::VehicleCommandAck> RequestAckTester();
         std::optional<px4_msgs::msg::VehicleStatus> RequestStatusTester();
         void CommenceFollowerOperationsTester();
         void CommenceCandidateOperationsTester();

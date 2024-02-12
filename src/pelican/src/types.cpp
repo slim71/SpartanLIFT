@@ -4,6 +4,7 @@ heartbeat ERROR_HB = {0, -1, rclcpp::Time(0, 0)};
 
 const char* modules_names[] = {MODULES(AS_STR) nullptr};
 const char* roles_names[] = {ROLES(AS_STR) nullptr};
+const char* commands_names[] = {COMMANDS(AS_STR) nullptr};
 
 /**************************** heartbeat ****************************/
 std::ostream& operator<<(std::ostream& os, const heartbeat& m) {
@@ -52,4 +53,13 @@ std::ostream& operator<<(std::ostream& os, const possible_modules& m) {
     return os;
 }
 
-// TODO: names for datapad commands
+/*********************** supported_commands ************************/
+std::string commands_to_string(supported_commands command) {
+    return ((uint16_t) command < (uint16_t) NumSupportedCommands)
+               ? commands_names[(uint16_t) command]
+               : "";
+}
+
+std::string commands_to_string(uint16_t command) {
+    return (command < (uint16_t) NumSupportedCommands) ? commands_names[command] : "";
+}

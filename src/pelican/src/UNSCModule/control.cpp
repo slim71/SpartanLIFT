@@ -18,7 +18,7 @@ bool UNSCModule::disarm() {
 
 // Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
 bool UNSCModule::takeoff(unsigned int height) {
-    // cancelTimer(this->offboard_timer_); // CHECK: here too?
+    cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
         (height > 0) ? height : NAN
@@ -43,37 +43,6 @@ bool UNSCModule::returnToLaunchPosition() {
     cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_RETURN_TO_LAUNCH
     );
-}
-
-bool UNSCModule::waitForAck(uint16_t cmd) { // CHECK: move to TacMap?
-    auto start_time =
-        this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION; // [ms]
-    this->sendLogDebug("ACK wait started at timestamp {}", start_time);
-
-    // Check for a bit, in case the ACK has not been received yet
-    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION -
-               start_time <
-           constants::ACK_WAIT_MILLIS) {
-        std::optional<px4_msgs::msg::VehicleCommandAck> ack = this->gatherAck();
-
-        if (ack) { // at least one ACK received
-            this->sendLogDebug(
-                "Stored ACK found! cmd:{} timestamp:{} result: {}", ack->command, ack->timestamp,
-                ack->result
-            );
-            if ((ack->command == cmd)) {
-                auto result =
-                    ack->result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED;
-                return result;
-            }
-        }
-
-        // Wait for a bit before retrying
-        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-    }
-    this->sendLogDebug("ACK wait finished");
-
-    return false;
 }
 
 void UNSCModule::runPreChecks() {
@@ -199,7 +168,7 @@ bool UNSCModule::sendToCommanderUnit(
             command, param1, param2, param3, param4, param5, param6, param7
         );
         attempt++;
-    } while ((!this->waitForAck(command)) && attempt < constants::MAX_SEND_COMMAND_RETRIES);
+    } while ((!this->signalWaitForAck(command)) && attempt < constants::MAX_SEND_COMMAND_RETRIES);
 
     if (attempt >= constants::MAX_SEND_COMMAND_RETRIES) {
         this->sendLogWarning("No ack received from the commander unit for command {}", command);

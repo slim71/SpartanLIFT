@@ -114,10 +114,6 @@ std::optional<px4_msgs::msg::VehicleOdometry> PelicanTest::RequestOdometryTester
     return this->node_->requestOdometry();
 }
 
-std::optional<px4_msgs::msg::VehicleCommandAck> PelicanTest::RequestAckTester() {
-    return this->node_->requestAck();
-}
-
 std::optional<px4_msgs::msg::VehicleStatus> PelicanTest::RequestStatusTester() {
     return this->node_->requestStatus();
 }
