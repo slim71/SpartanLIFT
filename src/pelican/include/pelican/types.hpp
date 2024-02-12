@@ -97,4 +97,16 @@ possible_roles string_to_roles(const std::string&);
 std::ostream& operator<<(std::ostream&, const possible_modules&);
 std::ostream& operator<<(std::ostream&, const possible_roles&);
 
+/************************ Commands ***********************/
+#define COMMANDS(_)    \
+    _(NO_COMMAND)      \
+    _(TAKEOFF_COMMAND) \
+    _(LANDING_COMMAND) \
+    _(EMERGENCY_LANDING)
+
+enum supported_commands : uint16_t { COMMANDS(AS_BARE) NumSupportedCommands };
+
+std::string commands_to_string(supported_commands);
+std::string commands_to_string(uint16_t);
+
 #endif

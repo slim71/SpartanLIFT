@@ -4,6 +4,8 @@ project(datapad
         DESCRIPTION "Package simulating a tablet through which a human agent would interact with the fleet"
         LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 17) # Minimum
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

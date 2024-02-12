@@ -63,3 +63,34 @@ void TacMapModule::publishOffboardControlMode() {
 
     this->pub_to_offboard_control_topic_->publish(msg);
 }
+
+bool TacMapModule::waitForAck(uint16_t cmd) {
+    auto start_time =
+        this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION; // [ms]
+    this->sendLogDebug("ACK wait started at timestamp {}", start_time);
+
+    // Check for a bit, in case the ACK has not been received yet
+    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_ORDER_CONVERSION -
+               start_time <
+           constants::ACK_WAIT_MILLIS) {
+        std::optional<px4_msgs::msg::VehicleCommandAck> ack = this->getAck();
+
+        if (ack) { // at least one ACK received
+            this->sendLogDebug(
+                "Stored ACK found! cmd:{} timestamp:{} result: {}", ack->command, ack->timestamp,
+                ack->result
+            );
+            if ((ack->command == cmd)) {
+                auto result =
+                    ack->result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED;
+                return result;
+            }
+        }
+
+        // Wait for a bit before retrying
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+    }
+    this->sendLogDebug("ACK wait finished");
+
+    return false;
+}

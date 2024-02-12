@@ -51,7 +51,6 @@ class Pelican : public rclcpp::Node {
         int requestNumberOfHbs();
         std::optional<px4_msgs::msg::VehicleGlobalPosition> requestGlobalPosition();
         std::optional<px4_msgs::msg::VehicleOdometry> requestOdometry();
-        std::optional<px4_msgs::msg::VehicleCommandAck> requestAck();
         std::optional<px4_msgs::msg::VehicleStatus> requestStatus();
 
         // Actions initiated from outside the module
@@ -69,6 +68,7 @@ class Pelican : public rclcpp::Node {
         void commenceIncreaseCurrentTerm();                                 // Election module
         void commenceSetTerm(uint64_t);                     // Election and Heartbeat modules
         void commenceSetInitialOffset(float, float, float); // TacMap module
+        bool commenceWaitForAck(uint16_t);                  // TacMap module
 
         // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
@@ -100,14 +100,14 @@ class Pelican : public rclcpp::Node {
         void
         rogerWillCo(const std::shared_ptr<comms::srv::FleetInfoExchange::Request>, const std::shared_ptr<comms::srv::FleetInfoExchange::Response>);
         bool checkCommandMsgValidity(const comms::msg::Command);
-        void handleCommandDispatch(unsigned int);
+        void handleCommandDispatch(uint16_t);
         void handleCommandReception(const comms::msg::Command);
-        bool broadcastCommand(unsigned int);
-        void sendAppendEntryRPC(unsigned int, unsigned int, bool = false, bool = false);
-        void sendAck(unsigned int, unsigned int, bool = false);
-        bool waitForAcks(unsigned int, bool = false);
-        void appendEntry(unsigned int, unsigned int);
-        bool executeCommand(unsigned int);
+        bool broadcastCommand(uint16_t);
+        void sendAppendEntryRPC(unsigned int, uint16_t, bool = false, bool = false);
+        void sendAck(unsigned int, uint16_t, bool = false);
+        bool waitForAcks(uint16_t, bool = false);
+        void appendEntry(uint16_t, unsigned int);
+        bool executeCommand(uint16_t);
         void rendezvousFleet();
         void updateLastCommand();
 
@@ -130,7 +130,7 @@ class Pelican : public rclcpp::Node {
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
-        std::vector<double> payload_position_; // CHECK: mutex?
+        std::vector<double> payload_position_;
         unsigned int last_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
 
