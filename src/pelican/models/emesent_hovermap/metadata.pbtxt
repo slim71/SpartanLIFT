@@ -1,0 +1,12 @@
+model {
+  file: "model.sdf"
+  file_format {
+    version {
+      major: 1
+      minor: 6
+    }
+    name: "sdf"
+  }
+}
+name: "emesent_hovermap_sensor_config_1"
+description: "The standard Emesent Hovermap in DARPA SubT systems track configuration."

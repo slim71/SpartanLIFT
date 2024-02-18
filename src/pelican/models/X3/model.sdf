@@ -256,6 +256,7 @@
                 <material>
                     <diffuse>1 0 0 1</diffuse>
                     <script>
+                    <!-- TODO: colors -->
                         <name>Gazebo/Red</name>
                         <uri>file://media/materials/scripts/gazebo.material</uri>
                     </script>
@@ -469,6 +470,12 @@
             <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
             <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             <motorType>velocity</motorType>
+        </plugin>
+
+        <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+            <dimensions>3</dimensions>
+            <odom_frame>world</odom_frame>
         </plugin>
 
     </model>
