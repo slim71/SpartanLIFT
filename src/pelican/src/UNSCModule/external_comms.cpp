@@ -72,10 +72,10 @@ void UNSCModule::signalPublishTrajectorySetpoint(float x, float y, float z, floa
     this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw);
 }
 
-bool UNSCModule::signalWaitForAck(uint16_t command) const {
+bool UNSCModule::signalWaitForCommanderAck(uint16_t command) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->commenceWaitForAck(command);
+    return this->node_->commenceWaitForCommanderAck(command);
 }

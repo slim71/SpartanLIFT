@@ -66,8 +66,8 @@ class Pelican : public rclcpp::Node {
         void commenceSetElectionStatus(int);                                // Heartbeat module
         void commenceResetElectionTimer();                                  // Heartbeat module
         void commenceIncreaseCurrentTerm();                                 // Election module
-        void commenceSetTerm(uint64_t);    // Election and Heartbeat modules
-        bool commenceWaitForAck(uint16_t); // TacMap module
+        void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
+        bool commenceWaitForCommanderAck(uint16_t); // TacMap module
         // For possible future use
         // void commenceSetPoseInfo(float, float, float, float); // TacMap module
 

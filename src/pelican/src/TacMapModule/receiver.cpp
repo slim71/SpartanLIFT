@@ -189,20 +189,20 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
     //     msg->target_component
     // );
 
-    std::lock_guard<std::mutex> lock(this->ack_mutex_);
+    std::lock_guard<std::mutex> lock(this->commander_ack_mutex_);
 
-    if (this->last_ack_)
-        this->last_ack_.reset();
-    this->last_ack_ = px4_msgs::msg::VehicleCommandAck();
+    if (this->last_commander_ack_)
+        this->last_commander_ack_.reset();
+    this->last_commander_ack_ = px4_msgs::msg::VehicleCommandAck();
 
-    this->last_ack_->timestamp = msg->timestamp;
-    this->last_ack_->command = msg->command;
-    this->last_ack_->result = msg->result;
-    this->last_ack_->result_param1 = msg->result_param1;
-    this->last_ack_->result_param2 = msg->result_param2;
-    this->last_ack_->target_system = msg->target_system;
-    this->last_ack_->target_component = msg->target_component;
-    this->last_ack_->from_external = msg->from_external;
+    this->last_commander_ack_->timestamp = msg->timestamp;
+    this->last_commander_ack_->command = msg->command;
+    this->last_commander_ack_->result = msg->result;
+    this->last_commander_ack_->result_param1 = msg->result_param1;
+    this->last_commander_ack_->result_param2 = msg->result_param2;
+    this->last_commander_ack_->target_system = msg->target_system;
+    this->last_commander_ack_->target_component = msg->target_component;
+    this->last_commander_ack_->from_external = msg->from_external;
 }
 
 /*

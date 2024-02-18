@@ -60,12 +60,12 @@ https://github.com/PX4/PX4-Autopilot/issues/21430#issuecomment-1497484098
 The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was taken directly from the PX4 commander.
 It checks whether the current nav_state of the agent is set or not.
 
-PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
-
 ### Offboard control
 https://docs.px4.io/main/en/flight_modes/offboard.html
 PX4 requires that the external controller provides a continuous 2Hz "proof of life" signal, by streaming any of the supported MAVLink setpoint messages **or** the ROS 2 OffboardControlMode message.
 All values are interpreted in NED (Nord, East, Down); unit is [m].
+
+PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
 
 ---
 ## Commands

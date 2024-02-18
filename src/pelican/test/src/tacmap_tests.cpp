@@ -12,8 +12,8 @@ TEST_F(TacMapTest, TestGetOdometry) {
     ASSERT_EQ(typeid(ret), typeid(std::optional<px4_msgs::msg::VehicleOdometry>));
 }
 
-TEST_F(TacMapTest, TestGetAck) {
-    auto ret = this->core_.getAck();
+TEST_F(TacMapTest, TestGetCommanderAck) {
+    auto ret = this->core_.getCommanderAck();
     ASSERT_EQ(typeid(ret), typeid(std::optional<px4_msgs::msg::VehicleCommandAck>));
 }
 
