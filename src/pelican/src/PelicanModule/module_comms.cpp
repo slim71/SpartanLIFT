@@ -55,9 +55,10 @@ void Pelican::commenceStopUNSCService() {
     this->unsc_core_.stopService();
 }
 
-void Pelican::commenceSetInitialOffset(float x, float y, float z) {
-    this->unsc_core_.setInitialOffset(x, y, z);
-}
+// For possible future use
+// void Pelican::commenceSetPoseInfo(float x, float y, float z, float yaw) {
+//     this->unsc_core_.setPoseInfo(x, y, z, yaw);
+// }
 
 /*************************** TacMap Module ****************************/
 void Pelican::commencePublishVehicleCommand(

@@ -50,8 +50,3 @@ bool TacMapModule::getRunningStatus() const {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     return this->running_;
 }
-
-bool TacMapModule::getInitiatedStatus() const {
-    std::lock_guard<std::mutex> lock(this->initiated_mutex_);
-    return this->initiated_;
-}

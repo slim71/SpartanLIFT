@@ -40,12 +40,14 @@ void UNSCModule::stopService() {
     this->running_ = false;
 }
 
-Eigen::Vector3f UNSCModule::getInitialOffset() const {
+Eigen::Vector3f UNSCModule::getOffset() const {
     std::lock_guard<std::mutex> lock(this->offset_mutex_);
-    return this->initial_offset_;
+    return this->offset_;
 }
 
-void UNSCModule::setInitialOffset(float x, float y, float z) {
-    std::lock_guard<std::mutex> lock(this->offset_mutex_);
-    this->initial_offset_ = {x, y, z};
-}
+// For possible future use
+// void UNSCModule::setPoseInfo(float x, float y, float z, float yaw) {
+//     std::lock_guard<std::mutex> lock(this->offset_mutex_);
+//     this->offset_ = {x, y, z};
+//     this->yaw_ = yaw;
+// }

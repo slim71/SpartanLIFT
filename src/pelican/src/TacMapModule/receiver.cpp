@@ -91,20 +91,6 @@ void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr 
               << std::endl;
 }
 
-void TacMapModule::storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    if (!this->getInitiatedStatus()) {
-        this->sendLogDebug(
-            "Storing initial offset ({:.4f},{:.4f},{:.4f}) ", msg->pose.pose.position.x,
-            msg->pose.pose.position.y, msg->pose.pose.position.z
-        );
-
-        this->setInitiatedStatus(true);
-        this->signalSetInitialOffset(
-            msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z
-        );
-    }
-}
-
 void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
     px4_msgs::msg::VehicleGlobalPosition globalpos_data;
     globalpos_data.timestamp = msg->timestamp;               // [us]
@@ -197,11 +183,11 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
 }
 
 void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr msg) {
-    this->sendLogDebug(
-        "Received ACK! command:{} result:{} param1:{} param2:{} system:{} component:{}",
-        msg->command, msg->result, msg->result_param1, msg->result_param2, msg->target_system,
-        msg->target_component
-    );
+    // this->sendLogDebug(
+    //     "Received ACK! command:{} result:{} param1:{} param2:{} system:{} component:{}",
+    //     msg->command, msg->result, msg->result_param1, msg->result_param2, msg->target_system,
+    //     msg->target_component
+    // );
 
     std::lock_guard<std::mutex> lock(this->ack_mutex_);
 
@@ -218,3 +204,35 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
     this->last_ack_->target_component = msg->target_component;
     this->last_ack_->from_external = msg->from_external;
 }
+
+/*
+    // For possible future use
+    void TacMapModule::storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr msg) {
+
+        if(!this->initiated_) {
+            this->initiated_ = true;
+            this->sendLogDebug(
+                "Storing offset ({:.4f},{:.4f},{:.4f}) ", msg->pose.pose.position.x,
+                msg->pose.pose.position.y, msg->pose.pose.position.z
+            );
+
+            Eigen::Vector3f euler_angles = quat2RPY(msg->pose.pose.orientation);
+            this->sendLogDebug("quat: ({:.4f},{:.4f},{:.4f},{:.4f}) \t rpy: ({:.4f},{:.4f},{:.4f})",
+                                msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+   msg->pose.pose.orientation.z, msg->pose.pose.orientation.w, euler_angles(0), euler_angles(1),
+   euler_angles(2)); float yaw = euler_angles(2);
+
+            this->signalSetPoseInfo(
+                msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z,
+                yaw
+            );
+        }
+    }
+
+    // For possible future use
+    void TacMapModule::storeLocalPosition(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg)
+   {
+        // this->sendLogDebug("Local position: ({:.4f},{:.4f},{:.4f})",
+        //                    msg->x, msg->y, msg->z);
+    }
+*/
