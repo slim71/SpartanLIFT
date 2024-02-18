@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='ASCII'?>
 <sdf version='1.7'>
-  <world name='world_demo'>
+  <world name='tugbot_warehouse'>
     <gravity>0 0 -9.8</gravity>
     <physics type='ode'>
       <max_step_size>0.01</max_step_size>
