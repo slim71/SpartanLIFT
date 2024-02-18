@@ -58,7 +58,8 @@ rclcpp::SubscriptionOptions TacMapModule::gatherReentrantOptions() const {
     return this->node_->getReentrantOptions();
 }
 
-/*************************** Get methods ***************************/
-void TacMapModule::signalSetInitialOffset(float x, float y, float z) {
-    this->node_->commenceSetInitialOffset(x, y, z);
-}
+/*************************** Set methods ***************************/
+// For possible future use
+// void TacMapModule::signalSetPoseInfo(float x, float y, float z, float yaw) {
+//     this->node_->commenceSetPoseInfo(x, y, z, yaw);
+// }

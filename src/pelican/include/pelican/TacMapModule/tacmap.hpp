@@ -58,6 +58,8 @@ class TacMapModule {
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
         void storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr);
+        // For possible future use
+        // void storeLocalPosition(const px4_msgs::msg::VehicleLocalPosition::SharedPtr);
 
         // External communications
         unsigned int gatherAgentID() const;
@@ -67,14 +69,14 @@ class TacMapModule {
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
-        void signalSetInitialOffset(float, float, float);
+        // For possible future use
+        // void signalSetPoseInfo(float, float, float, float);
 
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
         std::atomic<bool> running_ {true};
-        std::atomic<bool> initiated_ {false};
 
         int system_id_ {0};
         int component_id_ {0};
@@ -104,10 +106,6 @@ class TacMapModule {
         rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr
             sub_to_global_pos_topic_;
 
-        std::string local_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_local_position";
-        rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
-            sub_to_local_pos_topic_;
-
         std::string odometry_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_odometry";
         rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr sub_to_odometry_topic_;
 
@@ -128,9 +126,6 @@ class TacMapModule {
         rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
             pub_to_offboard_control_topic_;
 
-        std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
-        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;
-
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck>
             last_ack_; // CHECK: not currenty used... delete?
@@ -149,7 +144,16 @@ class TacMapModule {
         mutable std::mutex status_mutex_;       // to be used with status_buffer_
         mutable std::mutex system_id_mutex_;    // to be used with system_id_
         mutable std::mutex component_id_mutex_; // to be used with component_id_
-        mutable std::mutex initiated_mutex_;    // to be used with initiate_
+
+                                                // For possible future use
+        /*
+            std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;
+
+            std::string local_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_local_position";
+            rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr
+                sub_to_local_pos_topic_;
+        */
 };
 
 #include "tacmap_template.tpp"
