@@ -7,7 +7,7 @@
             "label": "deps",
             "detail": "Discover dependencies",
             "type": "shell",
-            "command": ".vscode/discover_dependencies.sh ${input:executable}"
+            "command": "./discover_dependencies.sh ${input:executable}"
         },
         // Build tasks
         {

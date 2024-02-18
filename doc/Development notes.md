@@ -23,11 +23,11 @@ All messages are already defined in PX4.
 List:
 /px4_{id}/fmu/in
     /obstacle_distance
-    /offboard_control_mode
+        /offboard_control_mode
     /onboard_computer_status
     /sensor_optical_flow
     /telemetry_status
-    /trajectory_setpoint
+        /trajectory_setpoint
     /vehicle_attitude_setpoint
         /vehicle_command
     /vehicle_mocap_odometry
@@ -37,15 +37,15 @@ List:
     /vehicle_visual_odometry
 
 /px4_{id}/fmu/out
-            /failsafe_flags
+    /failsafe_flags
     /position_setpoint_triplet
     /sensor_combined
     /timesync_status
-            /vehicle_attitude
+        /vehicle_attitude
         /vehicle_control_mode
-        /vehicle_global_position
-            /vehicle_gps_position
-        /vehicle_local_position
+    /vehicle_global_position
+    /vehicle_gps_position
+    /vehicle_local_position
         /vehicle_odometry
         /vehicle_status
 
@@ -61,8 +61,6 @@ The check ((1u << status->nav_state) != 0) into UNSCModule::runPreChecks() was t
 It checks whether the current nav_state of the agent is set or not.
 
 PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
-
-TODO: delete useless couts from PX4
 
 ### Offboard control
 https://docs.px4.io/main/en/flight_modes/offboard.html
@@ -89,10 +87,6 @@ MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
 
-TODO: [here](https://docs.px4.io/main/en/sim_gazebo_gz/) it says:
-The environmental variable PX4_GZ_MODEL has been deprecated and its functionality merged into PX4_SIM_MODEL.
---> change it.
-
 ---
 ## Mission useful stuff
 If set, a multi-rotor vehicle will yaw to face the Heading value specified in the target waypoint (corresponding to MAV_CMD_NAV_WAYPOINT.param4).
@@ -118,25 +112,15 @@ EXPECT_THAT(
 ```
 because in **ament_cmake_gmock** at the 'humble' tag `ThrowsMessage` (as other functions) is not defined
 
-
-CHECK: ROI as fleet radius?
-
-Considering that external functionalities are not active if the main module is not present, everything can throw an error if node_ is not set
-
-TODO: add ros_gz_sim as package?
-TODO: create Micro-XRCE as own package
+Considering that external functionalities are not active if the main module is not present, everything can throw an error if node_ is not set.
 
 'make' in PX4 folder before launch file after installation
 
-TODO: check eigen is in requirements
-TODO: change nodes name
-CHECK: gazebo topics, maybe from unused plugins
-TODO: add models to pelican from PX4, so both can be used to inspect them
-TODO: explictly say about `source /opt/ros/humble/setup.bash` and `~/Documents/git/ros_gz_workspace/install/setup.bash`
-TODO: what about ros_gz_workspace?
-TODO: explain the ros_gz_bridge addition
+PX4 and mavlink support global setpoints, but only with GPS coordinates. Since we're set inside a warehouse, the application would most probably use some sort of inside positioning system instead. The conversion from this to the vehicles' body frames will have to be made manually then.
 
-To generate compile_commands.json, launch colcon build --cmake-args DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+Seems like the EKF2 is initialized in {0,0,0} even when using
+`PX4_SYS_AUTOSTART={code} PX4_GZ_MODEL_POSE='{x},{y}' PX4_SIM_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}`
+so for now the global position is not used
 
 ---
 ## Launch file notes
@@ -144,20 +128,16 @@ The optional dictionary `launch_arguments` for `IncludeLaunchDescription` is onl
 
 For node executables, use a list `arguments`, depending on the executable's source.
 
----
 To correctly spawn everything in the same window with `gnome-terminal`, I had to use a temporary file. That's because, even when the `--tab` option is used, launching it from another application always opens a new window instead of a tab.
 
 As reference, see [this comment](https://github.com/GNS3/gns3-gui/issues/3449#issuecomment-1532133451) on GitHub.
 
----
 The empty file in the temp folder is needed because it will be copied over to the share folder of the package and used to structure a bash script.
 
----
 The overall launch with all applications is mostly done via Bash to have more flexibility. \
 As an example, starting Gazebo as done in other files (including the launch description of the `ros_gz_sim` package) is equally valid,
 but this prevented me from changing the content of the `GZ_SIM_RESOURCE_PATH` environment variable to allow the simulator to find all PX4 models/worlds. Instead of doing it in the `.bashrc` file of the local machine, I opted to highlight this need in the project itself.
 
----
 When launching Gazebo, an error usually appears on screen
 ```shell
 libEGL warning: egl: failed to create dri2 screen
@@ -165,3 +145,16 @@ libEGL warning: egl: failed to create dri2 screen
 ```
 This is only a warning and does not affect Gazebo's behavior.\
 More info [here](https://github.com/gazebosim/gz-rendering/issues/587).
+
+---
+## TODOs
+
+CHECK: ROI as fleet radius? already used by PX4 when a setpoint is given?
+TODO: add ros_gz_sim as package?
+TODO: create Micro-XRCE as own package
+TODO: differentiate each node's name?
+CHECK: clean gazebo topics, maybe from unused plugins
+TODO: explictly say about `source /opt/ros/humble/setup.bash` and `~/Documents/git/ros_gz_workspace/install/setup.bash`
+TODO: what about ros_gz_workspace?
+TODO: explain the ros_gz_bridge addition
+TODO: clean unused comments
