@@ -8,6 +8,12 @@ from launch.actions import ExecuteProcess
 
 
 def generate_launch_description():
+    """
+    Prepare everything that needs to be launched for the overall application.
+
+    Returns:
+        LaunchDescription: the object comprised of the needed actions to launch
+    """
     level = "info"
     pkg = "odst"
     launchfile = "ros_agents.launch.py"
@@ -84,7 +90,7 @@ def generate_launch_description():
             # Add the command to start the PX4 simulation for the model
             px4_cmd = (
                 f"PX4_SYS_AUTOSTART={code} PX4_GZ_MODEL_POSE='{x},{y}' "
-                f"PX4_GZ_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}"
+                f"PX4_SIM_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}"
             )
             # Add some wait time for subsequent spawns
             if count > 0:
