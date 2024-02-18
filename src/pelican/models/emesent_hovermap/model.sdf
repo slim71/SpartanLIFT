@@ -1,0 +1,632 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.6">
+    <!-- box based on model://emesent_hovermap/meshes/ST-LIDAR-hipoly.dae,
+    that could not be loaded by Gazebo Garden as a mesh apparently: maybe too big? -->
+
+    <model name="emesent_hovermap">
+        <pose>0 0 0.2 0 0 0</pose>
+
+        <link name="base_link">
+            <pose>0 0 0 0 0 0</pose>
+
+            <inertial>
+                <pose>0 0 0 0 0 0</pose>
+                <mass>5.281</mass>
+                <inertia>
+                    <ixx>0.105225</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.11353</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.133861</izz>
+                </inertia>
+            </inertial>
+
+            <collision name="base_link_fixed_joint_lump__body_collision">
+                <pose>0.11 0 0 0 0 1.5708</pose>
+                <geometry>
+                    <!-- box based on model://emesent_hovermap/meshes/navi-drone-hipoly.dae,
+                    that could not be loaded by Gazebo Garden as a mesh apparently: maybe too big?-->
+                    <box>
+                        <size>0.55 0.55 0.40</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="base_link_fixed_joint_lump__body_collision_1">
+                <pose>0.11 0 0 0 0 1.5708</pose>
+                <geometry>
+                    <!-- box based on model://emesent_hovermap/meshes/navi-guard.dae,
+                    that could not be loaded by Gazebo Garden as a mesh apparently: maybe too big? -->
+                    <box>
+                        <size>0.90 0.90 0.08</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="base_link_fixed_joint_lump__hovermap_base_collision_2">
+                <pose>0.1195 0 -0.0115 0 0 1.5708</pose>
+                <geometry>
+                    <!-- box based on model://emesent_hovermap/meshes/ST-LIDAR-case-2.dae,
+                    that could not be loaded by Gazebo Garden as a mesh apparently: maybe too big? -->
+                    <box>
+                        <size>0.90 0.13 0.05</size>
+                    </box>
+                </geometry>
+            </collision>
+
+            <visual name="base_link_fixed_joint_lump__body_visual">
+                <pose>0.11 0 0 0 0 1.5708</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-drone-hipoly-mount.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="base_link_fixed_joint_lump__body_visual_1">
+                <pose>0.11 0 0 0 0 1.5708</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-guard.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="base_link_fixed_joint_lump__hovermap_base_visual_2">
+                <pose>0.1195 0 -0.0115 0 0 1.5708</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/ST-LIDAR-case-2.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+
+            <velocity_decay />
+            <gravity>1</gravity>
+            <velocity_decay />
+
+            <sensor name="imu" type="imu">
+                <always_on>1</always_on>
+                <update_rate>100</update_rate>
+                <imu>
+                    <enable_orientation>0</enable_orientation>
+                    <angular_velocity>
+                        <x>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </x>
+                        <y>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </y>
+                        <z>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </z>
+                    </angular_velocity>
+                    <linear_acceleration>
+                        <x>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </x>
+                        <y>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </y>
+                        <z>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </z>
+                    </linear_acceleration>
+                </imu>
+            </sensor>
+            <sensor name="air_pressure" type="air_pressure">
+                <always_on>1</always_on>
+                <update_rate>20</update_rate>
+                <air_pressure>
+                    <reference_altitude>0</reference_altitude>
+                    <pressure>
+                        <noise type="gaussian">
+                            <mean>0.00000008</mean>
+                        </noise>
+                    </pressure>
+                </air_pressure>
+            </sensor>
+
+            <sensor name="imu_sensor" type="imu">
+                <always_on>1</always_on>
+                <update_rate>250</update_rate>
+                <imu>
+                    <enable_orientation>0</enable_orientation>
+                    <angular_velocity>
+                        <x>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </x>
+                        <y>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </y>
+                        <z>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.009</stddev>
+                                <bias_mean>0.00075</bias_mean>
+                                <bias_stddev>0.005</bias_stddev>
+                                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                                <precision>0.00025</precision>
+                            </noise>
+                        </z>
+                    </angular_velocity>
+                    <linear_acceleration>
+                        <x>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </x>
+                        <y>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </y>
+                        <z>
+                            <noise type="gaussian">
+                                <mean>0</mean>
+                                <stddev>0.021</stddev>
+                                <bias_mean>0.05</bias_mean>
+                                <bias_stddev>0.0075</bias_stddev>
+                                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                                <precision>0.005</precision>
+                            </noise>
+                        </z>
+                    </linear_acceleration>
+                </imu>
+            </sensor>
+            <sensor name="air_pressure_sensor" type="air_pressure">
+                <always_on>1</always_on>
+                <update_rate>50</update_rate>
+                <air_pressure>
+                    <pressure>
+                        <noise type="gaussian">
+                            <mean>0</mean>
+                            <stddev>0.01</stddev>
+                        </noise>
+                    </pressure>
+                </air_pressure>
+            </sensor>
+        </link>
+
+        <link name="rotor_0">
+            <pose>0.24 -0.24 0.035 0 0 0</pose>
+
+            <inertial>
+                <pose>0 0 0 0 0 1.5708</pose>
+                <mass>0.02</mass>
+                <inertia>
+                    <ixx>2.32667e-06</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>6.03333e-05</iyy>
+                    <iyz>0</iyz>
+                    <izz>6.23266e-05</izz>
+                </inertia>
+            </inertial>
+
+            <collision name="rotor_0_collision_collision">
+                <pose>0 0 0.04 0 0 1.01342</pose>
+                <geometry>
+                    <box>
+                        <size>0.38 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="rotor_0_collision_collision_1">
+                <pose>0 0 -0.0375 0 0 -0.604152</pose>
+                <geometry>
+                    <box>
+                        <size>0.35492 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+
+            <visual name="rotor_0_visual_visual">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-15in-CCW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="rotor_0_visual_visual_1">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-14in-CCW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+
+            <gravity>1</gravity>
+            <velocity_decay />
+        </link>
+        <joint name="rotor_0_joint" type="revolute">
+            <child>rotor_0</child>
+            <parent>base_link</parent>
+            <axis>
+                <xyz>0 0 1</xyz>
+                <limit>
+                    <lower>-1e+16</lower>
+                    <upper>1e+16</upper>
+                </limit>
+                <dynamics>
+                    <spring_reference>0</spring_reference>
+                    <spring_stiffness>0</spring_stiffness>
+                </dynamics>
+                <use_parent_model_frame>1</use_parent_model_frame>
+            </axis>
+        </joint>
+        <plugin filename="gz-sim-multicopter-motor-model-system"
+            name="gz::sim::systems::MulticopterMotorModel">
+            <jointName>rotor_0_joint</jointName>
+            <linkName>rotor_0</linkName>
+            <turningDirection>ccw</turningDirection>
+            <timeConstantUp>0.0125</timeConstantUp>
+            <timeConstantDown>0.025</timeConstantDown>
+            <maxRotVelocity>1000.0</maxRotVelocity>
+            <motorConstant>8.54858e-05</motorConstant>
+            <momentConstant>0.016</momentConstant>
+            <commandSubTopic>command/motor_speed</commandSubTopic>
+            <motorNumber>0</motorNumber>
+            <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+            <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+            <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            <motorType>velocity</motorType>
+        </plugin>
+
+        <link name="rotor_1">
+            <pose>-0.24 0.24 0.035 0 0 0</pose>
+
+            <inertial>
+                <pose>0 0 0 0 0 1.5708</pose>
+                <mass>0.02</mass>
+                <inertia>
+                    <ixx>2.32667e-06</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>6.03333e-05</iyy>
+                    <iyz>0</iyz>
+                    <izz>6.23266e-05</izz>
+                </inertia>
+            </inertial>
+
+            <collision name="rotor_1_collision_collision">
+                <pose>0 0 0.04 0 0 1.01342</pose>
+                <geometry>
+                    <box>
+                        <size>0.38 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="rotor_1_collision_collision_1">
+                <pose>0 0 -0.0375 0 0 -0.604152</pose>
+                <geometry>
+                    <box>
+                        <size>0.35492 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+
+            <visual name="rotor_1_visual_visual">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-15in-CCW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="rotor_1_visual_visual_1">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-14in-CCW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+
+            <gravity>1</gravity>
+            <velocity_decay />
+        </link>
+        <joint name="rotor_1_joint" type="revolute">
+            <child>rotor_1</child>
+            <parent>base_link</parent>
+            <axis>
+                <xyz>0 0 1</xyz>
+                <limit>
+                    <lower>-1e+16</lower>
+                    <upper>1e+16</upper>
+                </limit>
+                <dynamics>
+                    <spring_reference>0</spring_reference>
+                    <spring_stiffness>0</spring_stiffness>
+                </dynamics>
+                <use_parent_model_frame>1</use_parent_model_frame>
+            </axis>
+        </joint>
+        <plugin filename="gz-sim-multicopter-motor-model-system"
+            name="gz::sim::systems::MulticopterMotorModel">
+            <jointName>rotor_1_joint</jointName>
+            <linkName>rotor_1</linkName>
+            <turningDirection>ccw</turningDirection>
+            <timeConstantUp>0.0125</timeConstantUp>
+            <timeConstantDown>0.025</timeConstantDown>
+            <maxRotVelocity>1000.0</maxRotVelocity>
+            <motorConstant>8.54858e-05</motorConstant>
+            <momentConstant>0.016</momentConstant>
+            <commandSubTopic>command/motor_speed</commandSubTopic>
+            <motorNumber>1</motorNumber>
+            <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+            <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+            <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            <motorType>velocity</motorType>
+        </plugin>
+
+        <link name="rotor_2">
+            <pose>0.24 0.24 0.035 0 0 0</pose>
+
+            <inertial>
+                <pose>0 0 0 0 0 1.5708</pose>
+                <mass>0.02</mass>
+                <inertia>
+                    <ixx>2.32667e-06</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>6.03333e-05</iyy>
+                    <iyz>0</iyz>
+                    <izz>6.23266e-05</izz>
+                </inertia>
+            </inertial>
+
+            <collision name="rotor_2_collision_collision">
+                <pose>0 0 0.04 0 0 -1.01342</pose>
+                <geometry>
+                    <box>
+                        <size>0.38 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="rotor_2_collision_collision_1">
+                <pose>0 0 -0.0375 0 0 0.604152</pose>
+                <geometry>
+                    <box>
+                        <size>0.35492 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+
+            <visual name="rotor_2_visual_visual">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-15in-CW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="rotor_2_visual_visual_1">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-14in-CW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+
+            <gravity>1</gravity>
+            <velocity_decay />
+        </link>
+        <joint name="rotor_2_joint" type="revolute">
+            <child>rotor_2</child>
+            <parent>base_link</parent>
+            <axis>
+                <xyz>0 0 1</xyz>
+                <limit>
+                    <lower>-1e+16</lower>
+                    <upper>1e+16</upper>
+                </limit>
+                <dynamics>
+                    <spring_reference>0</spring_reference>
+                    <spring_stiffness>0</spring_stiffness>
+                </dynamics>
+                <use_parent_model_frame>1</use_parent_model_frame>
+            </axis>
+        </joint>
+        <plugin filename="gz-sim-multicopter-motor-model-system"
+            name="gz::sim::systems::MulticopterMotorModel">
+            <jointName>rotor_2_joint</jointName>
+            <linkName>rotor_2</linkName>
+            <turningDirection>cw</turningDirection>
+            <timeConstantUp>0.0125</timeConstantUp>
+            <timeConstantDown>0.025</timeConstantDown>
+            <maxRotVelocity>1000.0</maxRotVelocity>
+            <motorConstant>8.54858e-05</motorConstant>
+            <momentConstant>0.016</momentConstant>
+            <commandSubTopic>command/motor_speed</commandSubTopic>
+            <motorNumber>2</motorNumber>
+            <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+            <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+            <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            <motorType>velocity</motorType>
+        </plugin>
+
+        <link name="rotor_3">
+            <pose>-0.24 -0.24 0.035 0 0 0</pose>
+
+            <inertial>
+                <pose>0 0 0 0 0 1.5708</pose>
+                <mass>0.02</mass>
+                <inertia>
+                    <ixx>2.32667e-06</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>6.03333e-05</iyy>
+                    <iyz>0</iyz>
+                    <izz>6.23266e-05</izz>
+                </inertia>
+            </inertial>
+
+            <collision name="rotor_3_collision_collision">
+                <pose>0 0 0.04 0 0 -1.01342</pose>
+                <geometry>
+                    <box>
+                        <size>0.38 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+            <collision name="rotor_3_collision_collision_1">
+                <pose>0 0 -0.0375 0 0 0.604152</pose>
+                <geometry>
+                    <box>
+                        <size>0.35492 0.036 0.01</size>
+                    </box>
+                </geometry>
+            </collision>
+
+            <visual name="rotor_3_visual_visual">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-15in-CW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+            <visual name="rotor_3_visual_visual_1">
+                <pose>0 0 0 0 0 0</pose>
+                <geometry>
+                    <mesh>
+                        <scale>1 1 1</scale>
+                        <uri>model://emesent_hovermap/meshes/navi-14in-CW-tex.dae</uri>
+                    </mesh>
+                </geometry>
+            </visual>
+
+            <gravity>1</gravity>
+            <velocity_decay />
+        </link>
+        <joint name="rotor_3_joint" type="revolute">
+            <child>rotor_3</child>
+            <parent>base_link</parent>
+            <axis>
+                <xyz>0 0 1</xyz>
+                <limit>
+                    <lower>-1e+16</lower>
+                    <upper>1e+16</upper>
+                </limit>
+                <dynamics>
+                    <spring_reference>0</spring_reference>
+                    <spring_stiffness>0</spring_stiffness>
+                </dynamics>
+                <use_parent_model_frame>1</use_parent_model_frame>
+            </axis>
+        </joint>
+        <plugin filename="gz-sim-multicopter-motor-model-system"
+            name="gz::sim::systems::MulticopterMotorModel">
+            <jointName>rotor_3_joint</jointName>
+            <linkName>rotor_3</linkName>
+            <turningDirection>cw</turningDirection>
+            <timeConstantUp>0.0125</timeConstantUp>
+            <timeConstantDown>0.025</timeConstantDown>
+            <maxRotVelocity>1000.0</maxRotVelocity>
+            <motorConstant>8.54858e-05</motorConstant>
+            <momentConstant>0.016</momentConstant>
+            <commandSubTopic>command/motor_speed</commandSubTopic>
+            <motorNumber>3</motorNumber>
+            <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+            <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+            <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            <motorType>velocity</motorType>
+        </plugin>
+
+        <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+            <dimensions>3</dimensions>
+            <odom_frame>world</odom_frame>
+        </plugin>
+
+    </model>
+</sdf>
