@@ -27,11 +27,11 @@ class TacMapModule {
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         );
-        bool waitForAck(uint16_t);
+        bool waitForCommanderAck(uint16_t);
 
         std::optional<px4_msgs::msg::VehicleGlobalPosition> getGlobalPosition();
         std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
-        std::optional<px4_msgs::msg::VehicleCommandAck> getAck();
+        std::optional<px4_msgs::msg::VehicleCommandAck> getCommanderAck();
         std::optional<px4_msgs::msg::VehicleStatus> getStatus();
         bool getRunningStatus() const;
         bool getInitiatedStatus() const;
@@ -127,8 +127,7 @@ class TacMapModule {
             pub_to_offboard_control_topic_;
 
         // Only one ack memorized because messages from that topic should be sparse
-        std::optional<px4_msgs::msg::VehicleCommandAck>
-            last_ack_; // CHECK: not currenty used... delete?
+        std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
 
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {
             constants::GLOBALPOS_BUFFER_SIZE};
@@ -137,15 +136,15 @@ class TacMapModule {
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
             constants::STATUS_BUFFER_SIZE};
 
-        mutable std::mutex running_mutex_;      // to be used with running_
-        mutable std::mutex ack_mutex_;          // to be used with last_ack_
-        mutable std::mutex globalpos_mutex_;    // to be used with gps_buffer_
-        mutable std::mutex odometry_mutex_;     // to be used with odometry_buffer_
-        mutable std::mutex status_mutex_;       // to be used with status_buffer_
-        mutable std::mutex system_id_mutex_;    // to be used with system_id_
-        mutable std::mutex component_id_mutex_; // to be used with component_id_
+        mutable std::mutex running_mutex_;       // to be used with running_
+        mutable std::mutex commander_ack_mutex_; // to be used with last_commander_ack_
+        mutable std::mutex globalpos_mutex_;     // to be used with gps_buffer_
+        mutable std::mutex odometry_mutex_;      // to be used with odometry_buffer_
+        mutable std::mutex status_mutex_;        // to be used with status_buffer_
+        mutable std::mutex system_id_mutex_;     // to be used with system_id_
+        mutable std::mutex component_id_mutex_;  // to be used with component_id_
 
-                                                // For possible future use
+                                                 // For possible future use
         /*
             std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;

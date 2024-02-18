@@ -41,9 +41,9 @@ std::optional<px4_msgs::msg::VehicleStatus> TacMapModule::getStatus() {
     return this->status_buffer_.back();
 }
 
-std::optional<px4_msgs::msg::VehicleCommandAck> TacMapModule::getAck() {
-    std::lock_guard<std::mutex> lock(this->ack_mutex_);
-    return this->last_ack_;
+std::optional<px4_msgs::msg::VehicleCommandAck> TacMapModule::getCommanderAck() {
+    std::lock_guard<std::mutex> lock(this->commander_ack_mutex_);
+    return this->last_commander_ack_;
 }
 
 bool TacMapModule::getRunningStatus() const {

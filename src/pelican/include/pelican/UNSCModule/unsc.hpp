@@ -63,7 +63,7 @@ class UNSCModule {
         ) const;
         void signalPublishTrajectorySetpoint(float, float, float, float) const;
         void signalPublishOffboardControlMode() const;
-        bool signalWaitForAck(uint16_t) const;
+        bool signalWaitForCommanderAck(uint16_t) const;
 
     private: // Attributes
         Pelican* node_;

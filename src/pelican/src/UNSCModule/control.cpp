@@ -159,7 +159,6 @@ void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw
 
     // stop the counter after reaching OFFBOARD_SETPOINT_LIMIT + 1
     if (this->offboard_setpoint_counter_ <= constants::OFFBOARD_SETPOINT_LIMIT) {
-        // CHECK: can be done better checking for VehicleStatus.NAVIGATION_STATE_OFFBOARD
         this->offboard_setpoint_counter_++;
     }
 }
@@ -175,7 +174,8 @@ bool UNSCModule::sendToCommanderUnit(
             command, param1, param2, param3, param4, param5, param6, param7
         );
         attempt++;
-    } while ((!this->signalWaitForAck(command)) && attempt < constants::MAX_SEND_COMMAND_RETRIES);
+    } while ((!this->signalWaitForCommanderAck(command)) &&
+             attempt < constants::MAX_SEND_COMMAND_RETRIES);
 
     if (attempt >= constants::MAX_SEND_COMMAND_RETRIES) {
         this->sendLogWarning("No ack received from the commander unit for command {}", command);
