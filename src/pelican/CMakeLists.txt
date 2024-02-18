@@ -4,6 +4,7 @@ project(pelican
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
+#To generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 17) # Minimum
@@ -79,7 +80,6 @@ set(TACMAP_SOURCES
     src/TacMapModule/receiver.cpp
     src/TacMapModule/transmitter.cpp
     src/TacMapModule/getters.cpp
-    src/TacMapModule/setters.cpp
 )
 
 set(UNSC_SOURCES

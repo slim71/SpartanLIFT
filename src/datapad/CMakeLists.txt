@@ -4,6 +4,7 @@ project(datapad
         DESCRIPTION "Package simulating a tablet through which a human agent would interact with the fleet"
         LANGUAGES CXX)
 
+#To generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 17) # Minimum

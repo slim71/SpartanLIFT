@@ -3,6 +3,7 @@ project(comms
         VERSION 0.1.0
         DESCRIPTION "Package for custom ROS2 messages and services")
 
+#To generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

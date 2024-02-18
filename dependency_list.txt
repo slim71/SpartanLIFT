@@ -1,6 +1,5 @@
  *  Executing task: .vscode/discover_dependencies.sh build/pelican/pelican
 
-source /home/slim71/Documents/git/SpartanLIFT/.env/bin/activate
 dpkg-query: no path found matching pattern *linux-vdso.so.1*
 ros-humble-rclcpp: /opt/ros/humble/lib/librclcpp.so
 ros-humble-libstatistics-collector: /opt/ros/humble/lib/liblibstatistics_collector.so
@@ -8,8 +7,8 @@ ros-humble-rcl: /opt/ros/humble/lib/librcl.so
 ros-humble-statistics-msgs: /opt/ros/humble/lib/libstatistics_msgs__rosidl_typesupport_cpp.so
 ros-humble-tracetools: /opt/ros/humble/lib/libtracetools.so
 dpkg-query: no path found matching pattern *libpx4_msgs__rosidl_typesupport_cpp.so*
-ros-humble-rmw: /opt/ros/humble/lib/librmw.so
 dpkg-query: no path found matching pattern *libcomms__rosidl_typesupport_cpp.so*
+ros-humble-rmw: /opt/ros/humble/lib/librmw.so
 ros-humble-rcutils: /opt/ros/humble/lib/librcutils.so
 libstdc++6:i386: /usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libstdc++.so.6.0.30-gdb.py
 lib32stdc++6: /usr/share/gdb/auto-load/usr/lib32/libstdc++.so.6.0.30-gdb.py
