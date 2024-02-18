@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='ASCII'?>
 <sdf version='1.7'>
-  <world name='world_demo'>
+  <world name='tugbot_depot'>
     <physics name='1ms' type='ignored'>
       <max_step_size>0.01</max_step_size>
       <real_time_factor>1</real_time_factor>
@@ -45,12 +45,12 @@
       <uri>
         https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Depot
       </uri>
-      <pose>7.19009 1.09982 0 0 0 0</pose>
+      <!-- <pose>7.19009 1.09982 0 0 0 0</pose> -->
     </include>
 
     <model name='depot_collision'>
       <static>1</static>
-      <pose>7.19009 1.09982 0 0 0 0</pose>
+      <!-- <pose>7.19009 1.09982 0 0 0 0</pose> -->
       <link name='collision_link'>
         <pose>0 0 0 0 0 0</pose>
         <collision name='wall1'>
