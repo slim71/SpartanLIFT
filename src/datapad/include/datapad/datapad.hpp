@@ -28,8 +28,8 @@ class Datapad : public rclcpp::Node {
         void backToLZ();
         void payloadExtraction();
         void payloadDropoff();
-        void processLeaderResponse(rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture);
-        void sendFleetInfo(bool, bool, bool, bool, bool);
+        void processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::SharedFuture);
+        void sendTeleopData(bool, bool, bool, bool, bool);
 
     private:                                     // Attributes
         LoggerModule logger_;
@@ -59,7 +59,7 @@ class Datapad : public rclcpp::Node {
         std::chrono::seconds setup_timeout_ {constants::SETUP_TIME_SECS};
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
-        rclcpp::Client<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_client_;
+        rclcpp::Client<comms::srv::TeleopData>::SharedPtr teleopdata_client_;
 };
 
 // Including templates definitions
