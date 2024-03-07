@@ -26,6 +26,10 @@ void Pelican::commenceStopElectionService() {
     this->el_core_.stopService();
 }
 
+unsigned int Pelican::initiateGetLeaderID() {
+    return this->el_core_.getLeaderID();
+}
+
 /**************************** UNSC Module *****************************/
 bool Pelican::initiateArm() {
     return this->unsc_core_.arm();
@@ -54,11 +58,6 @@ void Pelican::initiateOffboardMode(float x, float y, float z, float yaw) {
 void Pelican::commenceStopUNSCService() {
     this->unsc_core_.stopService();
 }
-
-// For possible future use
-// void Pelican::commenceSetPoseInfo(float x, float y, float z, float yaw) {
-//     this->unsc_core_.setPoseInfo(x, y, z, yaw);
-// }
 
 /*************************** TacMap Module ****************************/
 void Pelican::commencePublishVehicleCommand(

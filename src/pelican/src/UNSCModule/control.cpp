@@ -97,6 +97,7 @@ void UNSCModule::runPreChecks() {
 }
 
 void UNSCModule::activateOffboardMode(float x, float y, float z, float yaw) {
+    // Deactivate existing offboard setpoints
     cancelTimer(this->offboard_timer_);
 
     Eigen::Vector3f des_body_pos = this->convertLocalToBody({x, y, z});
@@ -112,31 +113,6 @@ void UNSCModule::activateOffboardMode(float x, float y, float z, float yaw) {
                 des_body_pos(0), des_body_pos(1), des_body_pos(2), yaw
             );
         });
-}
-
-Eigen::Vector3f UNSCModule::convertLocalToBody(const Eigen::Vector3f& enu_pos) const {
-    // Current-axis composition: 1st_rotation * ... * nth_rotation
-    Eigen::Matrix3f rot_ENU2NED = rotZ(-90, true) * rotY(180, true);
-
-    Eigen::Vector3f pos_offset_ENU(this->getOffset().data());
-
-    // p_NED = - R_ENU2NED * p_ENU
-    Eigen::Vector3f pos_offset_NED = -rot_ENU2NED.transpose() * pos_offset_ENU;
-    Eigen::Vector4f hom_offset_NED = pos_offset_NED.homogeneous();
-
-    Eigen::Vector4f hom_enu_pos = enu_pos.homogeneous();
-
-    Eigen::Matrix4f hom_ENU2NED;
-    hom_ENU2NED.block(0, 0, 3, 3) = rot_ENU2NED;
-    hom_ENU2NED.block(3, 0, 1, 3) << 0, 0, 0;
-    hom_ENU2NED.col(3) << hom_offset_NED;
-
-    // The yaw rotation is thought to be along the Z_ENU axis
-    // Fixed-axis composition: nth_rotation * ... * 1st_rotation
-    // Here the first rotation is the one re-aligning the rotated vehicle to the ENU frame
-    Eigen::Vector4f body_pos = hom_ENU2NED * hom_enu_pos;
-
-    return body_pos.head(3);
 }
 
 void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {

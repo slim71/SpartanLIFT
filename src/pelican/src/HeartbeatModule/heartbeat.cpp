@@ -138,7 +138,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     this->hbs_mutex_.lock();
     this->received_hbs_.push_back(hb);
-    // Sort such that older hb is first, to be sure
+    // Sort such that the older hb is first, to be sure
     std::sort(
         this->received_hbs_.begin(), this->received_hbs_.end(),
         [](const heartbeat& a, const heartbeat& b) {
@@ -149,10 +149,11 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     this->sendLogDebug("Received heartbeat from agent {}", msg.leader_id);
 
+    if (msg.term_id > term)
+        this->signalSetTerm(msg.term_id);
+
     switch (this->gatherAgentRole()) {
         case follower:
-            if (msg.term_id > term)
-                this->signalSetTerm(msg.term_id);
             this->signalSetElectionStatus(msg.leader_id);
             this->sendLogInfo("Heartbeat received! Resetting election timer");
             this->signalResetElectionTimer();

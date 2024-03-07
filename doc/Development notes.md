@@ -15,6 +15,8 @@ Raft uses randomized election timeouts to ensure that split votes are rare and t
 Following the [official guide about the migration from Gazebo classic](https://github.com/gazebosim/gz-sim/blob/gz-sim7/tutorials/migration_sdf.md#path-relative-to-an-environment-variable), I've noticed I had the wrong environmental variable setup for the models loading. I've fixed that and now, *after sourcing the local overlay,* Gazebo can successfully load each model's meshes with no problems.
 As of this note creation, the correct variable used by Gazebo is `GZ_SIM_RESOURCE_PATH`.
 
+I also need some topics published by Gazebo plugins, so I have introduced `ros_gz_bridge` in the launch file. This allows the porting of messages and services from Gazebo to ROS2 and viceversa.
+
 ---
 ## PX4 topics
 
@@ -49,9 +51,7 @@ List:
         /vehicle_odometry
         /vehicle_status
 
-PX4 accepts VehicleCommand messages only if their target_system field is zero (broadcast
-communication) or coincides with MAV_SYS_ID. In all other situations, the messages are
-ignored. For example, if you want to send a command to your third vehicle, which has
+PX4 accepts VehicleCommand messages only if their target_system field is zero (broadcast communication) or coincides with MAV_SYS_ID. In all other situations, the messages are ignored. For example, if you want to send a command to your third vehicle, which has
 px4_instance=2, you need to set target_system=3 in all your VehicleCommand messages.
 
 Note about the VehicleCommandAck:
@@ -65,7 +65,13 @@ https://docs.px4.io/main/en/flight_modes/offboard.html
 PX4 requires that the external controller provides a continuous 2Hz "proof of life" signal, by streaming any of the supported MAVLink setpoint messages **or** the ROS 2 OffboardControlMode message.
 All values are interpreted in NED (Nord, East, Down); unit is [m].
 
+The OffboardControlMode is required in order to inform PX4 of the type of offboard control behing used. Here we're only using position control, so the position field is set to true and all the other fields are set to false.
+
 PX4 requires that the vehicle is already receiving OffboardControlMode messages before it will arm in offboard mode, or before it will switch to offboard mode when flying. In addition, PX4 will switch out of offboard mode if the stream rate of OffboardControlMode messages drops below approximately 2Hz.
+
+### Sensors
+Best result for an isolated run with emesent_hovermap: no simulated baro (`SENS_EN_BAROSIM=0`) and air pressure sensor coded in the sdf model file, with `update_rate=50, <noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise>`
+Best result for multi-vehicle: only simulated barometer.
 
 ---
 ## Commands
@@ -149,12 +155,4 @@ More info [here](https://github.com/gazebosim/gz-rendering/issues/587).
 ---
 ## TODOs
 
-CHECK: ROI as fleet radius? already used by PX4 when a setpoint is given?
-TODO: add ros_gz_sim as package?
-TODO: create Micro-XRCE as own package
-TODO: differentiate each node's name?
-CHECK: clean gazebo topics, maybe from unused plugins
-TODO: explictly say about `source /opt/ros/humble/setup.bash` and `~/Documents/git/ros_gz_workspace/install/setup.bash`
-TODO: what about ros_gz_workspace?
-TODO: explain the ros_gz_bridge addition
-TODO: clean unused comments
+TODO: ros_gz_workspace as a package, since it's from source?

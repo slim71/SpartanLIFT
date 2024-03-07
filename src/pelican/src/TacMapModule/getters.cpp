@@ -1,9 +1,5 @@
 #include "TacMapModule/tacmap.hpp"
 
-// Considering that external functionalities are not active
-// if the main module is not present, everything can throw an error if
-// node_ is not set
-
 /*************************** Get methods ***************************/
 std::optional<px4_msgs::msg::VehicleGlobalPosition> TacMapModule::getGlobalPosition() {
     this->globalpos_mutex_.lock();

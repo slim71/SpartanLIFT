@@ -173,10 +173,21 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) cons
         return;
     }
 
+    if (msg.term_id > this->gatherCurrentTerm()) {
+        this->sendLogDebug("Aligning my term to the vote request");
+        this->signalSetTerm(msg.term_id);
+    }
+
+    if (this->gatherAgentRole() == leader) {
+        this->sendLogInfo("External vote request arrived; transitioning to follower...");
+        this->signalSetTerm(msg.term_id);
+        this->signalTransitionToFollower();
+    }
+
     this->sendLogInfo(
         "Serving vote request from candidate {} for term {}", msg.solicitant_id, msg.term_id
     );
-    // This returns the second iterator used, which here it's '.end()' aka one past the
+    // This returns the second iterator used, which here is '.end()' aka one past the
     // end of the sequence/vector
     auto heavier = std::max_element(
         this->received_votes_.begin(), this->received_votes_.end(),

@@ -71,7 +71,7 @@ class HeartbeatModule {
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
         )};
 
-        // Not random, it has to be lower than the election_timeout_
+        // Not completely random: it has to be lower than the election_timeout_
         std::chrono::milliseconds heartbeat_period_ {constants::HB_REPETITION_PERIOD_MILLIS};
         rclcpp::TimerBase::SharedPtr hb_transmission_timer_;
 
