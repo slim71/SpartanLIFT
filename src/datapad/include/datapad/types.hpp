@@ -11,6 +11,30 @@
 #include <signal.h>
 #include <string>
 
+class Flags {
+    public:
+        explicit Flags();
+
+        Flags& SetPresence();
+        Flags& SetTakeoff();
+        Flags& SetLanding();
+        Flags& SetRetrieval();
+        Flags& SetDropoff();
+
+        bool GetPresence() const;
+        bool GetTakeoff() const;
+        bool GetLanding() const;
+        bool GetRetrieval() const;
+        bool GetDropoff() const;
+
+    private:
+        bool presence = false;
+        bool takeoff = false;
+        bool landing = false;
+        bool retrieval = false;
+        bool dropoff = false;
+};
+
 namespace constants {
     static constexpr unsigned int SEARCH_LEADER_STEP_SECS = 1;
     static constexpr unsigned int MAX_SEARCH_TIME_SECS = 10;
@@ -18,17 +42,6 @@ namespace constants {
     static constexpr unsigned int QOS_HISTORY_AMOUNT = 5;
     static constexpr unsigned int SERVICE_FUTURE_WAIT_SECS = 1;
     static constexpr unsigned int HOMEPAGE_LOOP_WAIT_SECS = 10;
-    // TODO: use aggregates
-    static constexpr bool PRESENCE_FLAG_ON = true;
-    static constexpr bool PRESENCE_FLAG_OFF = false;
-    static constexpr bool TAKEOFF_FLAG_ON = true;
-    static constexpr bool TAKEOFF_FLAG_OFF = false;
-    static constexpr bool LANDING_FLAG_ON = true;
-    static constexpr bool LANDING_FLAG_OFF = false;
-    static constexpr bool EXTRACTION_FLAG_ON = true;
-    static constexpr bool EXTRACTION_FLAG_OFF = false;
-    static constexpr bool DROPOFF_FLAG_ON = true;
-    static constexpr bool DROPOFF_FLAG_OFF = false;
 } // namespace constants
 
 #endif
