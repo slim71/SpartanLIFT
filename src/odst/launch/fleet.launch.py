@@ -90,7 +90,7 @@ def generate_launch_description():
             # Add the command to start the PX4 simulation for the model
             px4_cmd = (
                 f"PX4_SYS_AUTOSTART={code} PX4_GZ_MODEL_POSE='{x},{y}' "
-                f"PX4_SIM_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}"
+                f"PX4_GZ_MODEL={model} ./build/px4_sitl_default/bin/px4 -i {count+1}"
             )
             # Add some wait time for subsequent spawns
             if count > 0:
@@ -109,7 +109,7 @@ def generate_launch_description():
         # Run ros_gz_bridge, as we need data from a Gazebo topic for the local position
         bridge_cmd = (
             "gnome-terminal --tab -t 'ROS2-Gazebo bridge' "
-            f"-- bash -c 'source {source_local_wos}; "
+            f"-- bash -c '{source_local_wos}; "
             f"ros2 run ros_gz_bridge parameter_bridge {bridges}'"
         )
         logger.print(bridge_cmd)
