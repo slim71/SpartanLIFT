@@ -1,4 +1,4 @@
-Pelican:
+pelican_4:
   ros__parameters:
     model: "PX4-Autopilot/Tools/simulation/gz/models/emesent_hovermap/model.sdf"
     id: 4
