@@ -46,6 +46,15 @@ int Pelican::getNetworkSize() const {
     return s;
 }
 
+std::optional<std::vector<double>> Pelican::getTargetPosition() const {
+    std::lock_guard<std::mutex> lock(this->target_position_mutex_);
+    if (this->target_position_.size() > 0) {
+        return this->target_position_;
+    }
+
+    return std::nullopt;
+}
+
 /*************************** Status flags *****************************/
 bool Pelican::isLeader() const {
     return (this->getRole() == leader);

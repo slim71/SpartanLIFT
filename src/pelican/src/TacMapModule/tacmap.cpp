@@ -175,3 +175,15 @@ void TacMapModule::stopService() {
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     this->running_ = false;
 }
+
+bool TacMapModule::checkOffboardEngagement() {
+    auto last_status = this->getStatus();
+
+    if (last_status &&
+        (last_status->arming_state == px4_msgs::msg::VehicleStatus::ARMING_STATE_ARMED) &&
+        (last_status->nav_state == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD)) {
+        return true;
+    }
+
+    return false;
+}
