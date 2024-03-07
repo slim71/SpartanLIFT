@@ -470,8 +470,8 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
         unsigned int own_id = this->getID();
         int multiplier = own_id < this->initiateGetLeaderID() ? own_id : own_id - 1;
         float alpha = 2 * constants::PI / (this->getNetworkSize() - 1) * multiplier;
-        float x = response->target_x + cos(alpha);
-        float y = response->target_y + sin(alpha);
+        float x = response->target_x + this->getROI() * cos(alpha);
+        float y = response->target_y + this->getROI() * sin(alpha);
         this->sendLogDebug(
             "multiplier: {}, x: {:.4f}, y:{:.4f}, alpha: {:.4f}", multiplier, x, y, alpha
         );

@@ -14,10 +14,12 @@ Pelican::Pelican()
     // Declare parameters
     declare_parameter("model", ""); // default to ""
     declare_parameter("id", 0);     // default to 0
+    declare_parameter("roi", 1.0);  // default to 1
 
     // Get parameters values and store them
     get_parameter("model", this->model_);
     get_parameter("id", this->id_);
+    get_parameter("roi", this->roi_);
 
     // Setting up the Reentrant group
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
@@ -120,16 +122,20 @@ void Pelican::rollCall() {
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
 
-    // Exclude this node's own ID, since he doesn't make sense
-    if (std::find_if_not(
-            this->discovery_vector_.begin(), this->discovery_vector_.end(),
-            [msg, this](const comms::msg::Status& obj) {
-                return (msg->agent_id != obj.agent_id) && (msg->agent_id != this->getID());
-            }
-        ) == this->discovery_vector_.end()) {
-        this->sendLogDebug("Storing discovery msg with id {}", msg->agent_id);
-        this->discovery_vector_.push_back(*msg);
+    // Exclude this node's own ID, since it doesn't make sense
+    if (msg->agent_id != this->getID()) {
+        if (std::find_if_not(
+                this->discovery_vector_.begin(), this->discovery_vector_.end(),
+                [msg, this](const comms::msg::Status& obj) {
+                    return (msg->agent_id != obj.agent_id);
+                }
+            ) == this->discovery_vector_.end()) {
+            this->sendLogDebug("Storing discovery msg with id {}", msg->agent_id);
+            this->discovery_vector_.push_back(*msg);
+        } else {
+            this->sendLogDebug("Agent {} already discovered", msg->agent_id);
+        }
     } else {
-        this->sendLogDebug("Agent {} already discovered", msg->agent_id);
+        this->sendLogDebug("Excluding own agent_id from the discovery");
     }
 }

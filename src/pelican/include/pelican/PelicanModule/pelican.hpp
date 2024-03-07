@@ -24,6 +24,7 @@ class Pelican : public rclcpp::Node {
         std::string getModel() const;
         double getMass() const;
         possible_roles getRole() const;
+        float getROI() const;
         unsigned int getCurrentTerm() const;
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
@@ -134,6 +135,7 @@ class Pelican : public rclcpp::Node {
         unsigned int id_;
         unsigned int current_term_ {0};
         double mass_ {0.0};
+        float roi_;
         bool ready_ {false};
         bool flying_ {false};
         bool carrying_ {false};
