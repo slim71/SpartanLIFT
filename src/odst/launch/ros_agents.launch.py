@@ -51,10 +51,11 @@ def generate_launch_description():
 
     # Actually populate launch actions with nodes
     logger.print(f"Starting {agent_num} agents...")
-    for config_file in files:
+    for file_index, config_file in enumerate(files):
         pelican_node = Node(
             package="pelican",
             executable="pelican",
+            name=f'pelican_{file_index+1}',
             # Using `ros_arguments` is equivalent to using `arguments` with
             # a prepended '--ros-args' item.
             ros_arguments=[
@@ -62,8 +63,8 @@ def generate_launch_description():
                 PathJoinSubstitution(
                     [config_pkg_share, config_middleware, config_file]
                 ),
-                "--log-level",
-                log_level,
+                # f"-r pelican:=pelican_{file_index+1}",
+                "--log-level", log_level,
             ],
         )
         launch_description.add_action(pelican_node)
