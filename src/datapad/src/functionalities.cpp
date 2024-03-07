@@ -61,7 +61,7 @@ void Datapad::landingPage() {
         }
 
         // Simulate some wait between loop iterations
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::HOMEPAGE_LOOP_WAIT_SECS));
     };
 
     std::cout << "Ending..." << std::endl;
@@ -69,18 +69,16 @@ void Datapad::landingPage() {
 }
 
 void Datapad::contactLeader() {
-    this->sendFleetInfo(
+    this->sendTeleopData(
         constants::PRESENCE_FLAG_ON, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
         constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
 }
 
-void Datapad::processLeaderResponse(
-    rclcpp::Client<comms::srv::FleetInfoExchange>::SharedFuture future
-) {
-    // Wait for 1s or until the result is available
+void Datapad::processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::SharedFuture future) {
+    // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
-    auto status = future.wait_for(std::chrono::seconds(1));
+    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
 
     if (status == std::future_status::ready) {
         auto response = future.get();
@@ -161,7 +159,7 @@ void Datapad::unitSortie() {
         return;
     }
 
-    this->sendFleetInfo(
+    this->sendTeleopData(
         constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_ON, constants::LANDING_FLAG_OFF,
         constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
@@ -181,7 +179,7 @@ void Datapad::backToLZ() {
         return;
     }
 
-    this->sendFleetInfo(
+    this->sendTeleopData(
         constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_ON,
         constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
     );
@@ -201,7 +199,7 @@ void Datapad::payloadExtraction() {
         return;
     }
 
-    this->sendFleetInfo(
+    this->sendTeleopData(
         constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
         constants::EXTRACTION_FLAG_ON, constants::DROPOFF_FLAG_OFF
     );
@@ -221,16 +219,16 @@ void Datapad::payloadDropoff() {
         return;
     }
 
-    this->sendFleetInfo(
+    this->sendTeleopData(
         constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
         constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_ON
     );
 }
 
-void Datapad::sendFleetInfo(
+void Datapad::sendTeleopData(
     bool presence, bool takeoff, bool landing, bool retrieval, bool dropoff
 ) {
-    auto request = std::make_shared<comms::srv::FleetInfoExchange::Request>();
+    auto request = std::make_shared<comms::srv::TeleopData::Request>();
     request->presence = presence;
     request->takeoff = takeoff;
     request->landing = landing;
@@ -265,26 +263,37 @@ void Datapad::sendFleetInfo(
 
     // Search for a second, then log and search again
     int total_search_time = 0;
-    while (!this->fleetinfo_client_->wait_for_service(
-               std::chrono::seconds(constants::SEARCH_LEADER_STEP)
+    while (!this->teleopdata_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
            ) &&
-           total_search_time < constants::MAX_SEARCH_TIME) {
+           total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
             this->sendLogError("Client interrupted while waiting for service. Terminating...");
             return;
         }
 
         this->sendLogDebug("Service not available; waiting some more...");
-        total_search_time += constants::SEARCH_LEADER_STEP;
+        total_search_time += constants::SEARCH_LEADER_STEP_SECS;
     };
 
-    if (total_search_time < constants::MAX_SEARCH_TIME) {
+    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogDebug("Server available");
 
         // Send request
-        auto result = this->fleetinfo_client_->async_send_request(
+        auto result = this->teleopdata_client_->async_send_request(
             request, std::bind(&Datapad::processLeaderResponse, this, std::placeholders::_1)
         );
+
+        // If the callback is never called, because we never got a reply for the service server,
+        // clean up pending requests to use less memory
+        auto future_status =
+            result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+        if (!result.valid() || (future_status != std::future_status::ready)) {
+            this->sendLogWarning("Async request to the fleet leader could not be completed!");
+            this->teleopdata_client_->prune_pending_requests();
+            return;
+        }
+
     } else {
         this->sendLogWarning("The server seems to be down. Please try again.");
     }

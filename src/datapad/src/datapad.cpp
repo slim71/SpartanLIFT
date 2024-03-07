@@ -15,8 +15,7 @@ Datapad::Datapad() : Node("Datapad"), logger_() {
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
     // Own setup
-    this->fleetinfo_client_ =
-        this->create_client<comms::srv::FleetInfoExchange>("contactLeader_service");
+    this->teleopdata_client_ = this->create_client<comms::srv::TeleopData>("contactLeader_service");
 
     this->setup_timer_ = this->create_wall_timer(
         this->setup_timeout_,
