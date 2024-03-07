@@ -1,0 +1,7 @@
+            # request is a blank line
+---
+bool rendezvous
+bool formation
+float64 target_x
+float64 target_y
+float64 target_z
