@@ -37,7 +37,8 @@ set(MESSAGE_FILES
 )
 
 set(SERVICE_FILES
-    srv/FleetInfoExchange.srv
+    srv/TeleopData.srv
+    srv/FleetInfo.srv
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
