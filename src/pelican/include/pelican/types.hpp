@@ -6,7 +6,8 @@
 #include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"
-#include "comms/srv/fleet_info_exchange.hpp"
+#include "comms/srv/fleet_info.hpp"
+#include "comms/srv/teleop_data.hpp"
 #include "constants.hpp"
 #include "pugixml.hpp"
 #include "px4_msgs/msg/failsafe_flags.hpp"
@@ -98,11 +99,13 @@ std::ostream& operator<<(std::ostream&, const possible_modules&);
 std::ostream& operator<<(std::ostream&, const possible_roles&);
 
 /************************ Commands ***********************/
-#define COMMANDS(_)    \
-    _(NO_COMMAND)      \
-    _(TAKEOFF_COMMAND) \
-    _(LANDING_COMMAND) \
-    _(EMERGENCY_LANDING)
+#define COMMANDS(_)      \
+    _(NO_COMMAND)        \
+    _(TAKEOFF_COMMAND)   \
+    _(LANDING_COMMAND)   \
+    _(EMERGENCY_LANDING) \
+    _(RENDEZVOUS)        \
+    _(FORMATION)
 
 enum supported_commands : uint16_t { COMMANDS(AS_BARE) NumSupportedCommands };
 

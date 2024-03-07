@@ -35,3 +35,18 @@ void Pelican::unsetFlyingStatus() {
     std::lock_guard<std::mutex> lock(this->flying_mutex_);
     this->flying_ = false;
 }
+
+void Pelican::setCarryingStatus() {
+    std::lock_guard<std::mutex> lock(this->carrying_mutex_);
+    this->carrying_ = true;
+}
+
+void Pelican::unsetCarryingStatus() {
+    std::lock_guard<std::mutex> lock(this->carrying_mutex_);
+    this->carrying_ = false;
+}
+
+void Pelican::setTargetPosition(float x, float y, float z) {
+    std::lock_guard<std::mutex> lock(this->target_position_mutex_);
+    this->target_position_ = {x, y, z};
+}

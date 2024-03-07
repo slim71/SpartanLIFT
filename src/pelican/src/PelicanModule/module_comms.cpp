@@ -98,6 +98,10 @@ void Pelican::commenceStopTacMapService() {
     this->tac_core_.stopService();
 }
 
+bool Pelican::initiateCheckOffboardEngagement() {
+    return this->tac_core_.checkOffboardEngagement();
+}
+
 /************** From external modules, concluding here *************/
 void Pelican::commenceFollowerOperations() {
     this->sendLogDebug("Received signal for transitioning to Follower");

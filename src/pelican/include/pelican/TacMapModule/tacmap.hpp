@@ -38,6 +38,8 @@ class TacMapModule {
 
         void setInitiatedStatus(bool);
 
+        bool checkOffboardEngagement();
+
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;

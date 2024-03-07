@@ -29,6 +29,7 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
         int getNetworkSize() const;
+        std::optional<std::vector<double>> getTargetPosition() const;
 
         // Actions initiated by the module
         bool initiateSetHome();
@@ -68,8 +69,6 @@ class Pelican : public rclcpp::Node {
         void commenceIncreaseCurrentTerm();                                 // Election module
         void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
         bool commenceWaitForCommanderAck(uint16_t); // TacMap module
-        // For possible future use
-        // void commenceSetPoseInfo(float, float, float, float); // TacMap module
 
         // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
@@ -95,22 +94,32 @@ class Pelican : public rclcpp::Node {
         void setMass(double);
         void setRole(possible_roles);
         void setTerm(unsigned int);
+        void setTargetPosition(float, float, float);
         void setFlyingStatus();
         void unsetFlyingStatus();
+        void setCarryingStatus();
+        void unsetCarryingStatus();
 
         void
-        rogerWillCo(const std::shared_ptr<comms::srv::FleetInfoExchange::Request>, const std::shared_ptr<comms::srv::FleetInfoExchange::Response>);
+        rogerWillCo(const std::shared_ptr<comms::srv::TeleopData::Request>, const std::shared_ptr<comms::srv::TeleopData::Response>);
         bool checkCommandMsgValidity(const comms::msg::Command);
         void handleCommandDispatch(uint16_t);
         void handleCommandReception(const comms::msg::Command);
         bool broadcastCommand(uint16_t);
         void sendAppendEntryRPC(unsigned int, uint16_t, bool = false, bool = false);
-        void sendAck(unsigned int, uint16_t, bool = false);
-        bool waitForAcks(uint16_t, bool = false);
+        void sendRPCAck(unsigned int, uint16_t, bool = false);
+        bool waitForRPCsAcks(uint16_t, bool = false);
         void appendEntry(uint16_t, unsigned int);
-        bool executeCommand(uint16_t);
+        bool executeRPCCommand(uint16_t);
         void rendezvousFleet();
-        void updateLastCommand();
+        void updateLastRPCCommandReceived();
+
+        bool initiateCheckOffboardEngagement();
+        unsigned int initiateGetLeaderID();
+
+        void
+        targetConvergence(const std::shared_ptr<comms::srv::FleetInfo::Request>, const std::shared_ptr<comms::srv::FleetInfo::Response>);
+        void processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
 
     private: // Attributes
         LoggerModule logger_;
@@ -131,15 +140,16 @@ class Pelican : public rclcpp::Node {
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
-        std::vector<double> payload_position_;
-        unsigned int last_command_stored_ {0};
+        std::vector<double> target_position_;
+        unsigned int last_rpc_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
 
-        mutable std::mutex id_mutex_;           // Used to access id_
-        mutable std::mutex term_mutex_;         // Used to access current_term_
-        mutable std::mutex flying_mutex_;       // Used to access flying_
-        mutable std::mutex carrying_mutex_;     // Used to access carrying_
-        mutable std::mutex last_command_mutex_; // Used to access carrying_
+        mutable std::mutex id_mutex_;               // Used to access id_
+        mutable std::mutex term_mutex_;             // Used to access current_term_
+        mutable std::mutex flying_mutex_;           // Used to access flying_
+        mutable std::mutex carrying_mutex_;         // Used to access carrying_
+        mutable std::mutex last_rpc_command_mutex_; // Used to access carrying_
+        mutable std::mutex target_position_mutex_;  // Used to access target_position_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -154,7 +164,9 @@ class Pelican : public rclcpp::Node {
             rmw_qos_profile_sensor_data
         )};
 
-        rclcpp::Service<comms::srv::FleetInfoExchange>::SharedPtr fleetinfo_server_;
+        rclcpp::Service<comms::srv::TeleopData>::SharedPtr teleopdata_server_;
+        rclcpp::Service<comms::srv::FleetInfo>::SharedPtr fleetinfo_server_;
+        rclcpp::Client<comms::srv::FleetInfo>::SharedPtr fleetinfo_client_;
 
         std::string discovery_topic_ {"/fleet/network"};
         rclcpp::Subscription<comms::msg::Status>::SharedPtr sub_to_discovery_;
@@ -176,7 +188,7 @@ class Pelican : public rclcpp::Node {
         std::chrono::seconds rollcall_timeout_ {constants::ROLLCALL_TIME_SECS};
         rclcpp::TimerBase::SharedPtr rollcall_timer_;
 
-        std::chrono::seconds ack_timeout_ {constants::ACK_TIME_SECS};
+        std::chrono::seconds rpcs_ack_timeout_ {constants::ACK_TIME_SECS};
 };
 
 // Including templates definitions

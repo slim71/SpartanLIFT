@@ -1,8 +1,10 @@
 #include "PelicanModule/pelican.hpp"
 
+// TODO: make this work as a unique handling of whatever command, rendezvous and formation included
+// This is only executed by the leader
 void Pelican::rogerWillCo(
-    const std::shared_ptr<comms::srv::FleetInfoExchange::Request> request,
-    const std::shared_ptr<comms::srv::FleetInfoExchange::Response> response
+    const std::shared_ptr<comms::srv::TeleopData::Request> request,
+    const std::shared_ptr<comms::srv::TeleopData::Response> response
 ) {
     // General all-purpose init
     response->leader_id = this->getID();
@@ -60,13 +62,30 @@ void Pelican::rogerWillCo(
             this->sendLogDebug("Notifying start of payload extraction operations!");
             response->success = true;
 
-            this->payload_position_ = {request->x, request->y, request->z};
+            this->setTargetPosition(request->x, request->y, request->z);
 
-            std::thread landing_thread(&Pelican::rendezvousFleet, this);
+            std::thread landing_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
             landing_thread.detach();
         } else {
             this->sendLogWarning("The payload is already carrying the payload!");
         }
+    }
+}
+
+void Pelican::targetConvergence(
+    const std::shared_ptr<comms::srv::FleetInfo::Request> request,
+    const std::shared_ptr<comms::srv::FleetInfo::Response> response
+) {
+    auto pos = this->getTargetPosition();
+    if (pos) {
+        std::vector<double> v = pos.value();
+        response->target_x = v[0];
+        response->target_y = v[1];
+        response->target_z = v[2];
+
+    } else { // CHECK: needed? the follower should be able to know what the target refers to
+        response->formation = false;
+        response->rendezvous = false;
     }
 }
 
@@ -108,10 +127,10 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     }
 
     // Index in AppendEntryRPC vector
-    this->last_command_mutex_.lock();
-    unsigned int expected_cmd = this->last_command_stored_;
+    this->last_rpc_command_mutex_.lock();
+    unsigned int expected_cmd = this->last_rpc_command_stored_;
     unsigned int expected_index = this->last_occupied_index_;
-    this->last_command_mutex_.unlock();
+    this->last_rpc_command_mutex_.unlock();
 
     // Valid previous command
     if (msg.prev_command != expected_cmd) {
@@ -150,7 +169,7 @@ bool Pelican::broadcastCommand(uint16_t command) {
 
         this->sendLogInfo("Sending command {}", commands_to_string(command));
         this->sendAppendEntryRPC(this->getID(), command);
-        command_successful = this->waitForAcks(command);
+        command_successful = this->waitForRPCsAcks(command);
 
         attempt++;
     }
@@ -173,7 +192,7 @@ bool Pelican::broadcastCommand(uint16_t command) {
             "Sending confirmation to execute command {}", commands_to_string(command)
         );
         this->sendAppendEntryRPC(this->getID(), command, false, true);
-        ack_successful = this->waitForAcks(command, true);
+        ack_successful = this->waitForRPCsAcks(command, true);
 
         attempt++;
     }
@@ -190,7 +209,7 @@ bool Pelican::broadcastCommand(uint16_t command) {
 }
 
 void Pelican::handleCommandDispatch(uint16_t command) {
-    if (this->broadcastCommand(command) && this->executeCommand(command)) {
+    if (this->broadcastCommand(command) && this->executeRPCCommand(command)) {
         this->sendLogInfo("Fleet is executing command {}", commands_to_string(command));
         switch (command) {
             case TAKEOFF_COMMAND:
@@ -198,6 +217,9 @@ void Pelican::handleCommandDispatch(uint16_t command) {
                 break;
             case LANDING_COMMAND:
                 this->unsetFlyingStatus();
+                break;
+            case RENDEZVOUS:
+                this->setCarryingStatus();
                 break;
             default:
                 this->sendLogDebug("Handling operations for command {} unknown", command);
@@ -228,15 +250,15 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
                 return;
             }
 
-            this->sendAck(msg.leader_id, msg.command, msg.apply);
+            this->sendRPCAck(msg.leader_id, msg.command, msg.apply);
 
             // Append Entry RPC
             if (!msg.apply) {
                 this->appendEntry(msg.command, msg.term_id);
 
             } else { // Commit and execute command entry
-                this->updateLastCommand();
-                this->executeCommand(msg.command);
+                this->updateLastRPCCommandReceived();
+                this->executeRPCCommand(msg.command);
             }
         }
 
@@ -248,7 +270,7 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
             this->dispatch_mutex_.unlock();
         }
         if (msg.apply)
-            this->updateLastCommand();
+            this->updateLastRPCCommandReceived();
     }
 }
 
@@ -263,15 +285,15 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, uint16_t command, bool ack
     cmd_msg.ack = ack;
     cmd_msg.apply = apply;
 
-    this->last_command_mutex_.lock();
-    cmd_msg.prev_command = this->last_command_stored_;
+    this->last_rpc_command_mutex_.lock();
+    cmd_msg.prev_command = this->last_rpc_command_stored_;
     cmd_msg.index = this->last_occupied_index_;
-    this->last_command_mutex_.unlock();
+    this->last_rpc_command_mutex_.unlock();
 
     this->pub_to_dispatch_->publish(cmd_msg);
 }
 
-void Pelican::sendAck(unsigned int leader, uint16_t command, bool apply) {
+void Pelican::sendRPCAck(unsigned int leader, uint16_t command, bool apply) {
     this->sendLogInfo(
         "Sending ack for command {}{} to the Leader", commands_to_string(command),
         apply ? " execution" : ""
@@ -279,9 +301,9 @@ void Pelican::sendAck(unsigned int leader, uint16_t command, bool apply) {
     this->sendAppendEntryRPC(leader, command, true, apply);
 }
 
-bool Pelican::waitForAcks(uint16_t command, bool apply) {
+bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
     rclcpp::Time start = this->now();
-    std::this_thread::sleep_for(this->ack_timeout_);
+    std::this_thread::sleep_for(this->rpcs_ack_timeout_);
 
     this->dispatch_mutex_.lock();
     auto app_vector = this->dispatch_vector_;
@@ -325,7 +347,14 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
-bool Pelican::executeCommand(uint16_t command) {
+void Pelican::updateLastRPCCommandReceived() {
+    std::lock_guard<std::mutex> lock_cmd(this->last_rpc_command_mutex_);
+    std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
+    this->last_rpc_command_stored_ = std::get<0>(this->rpcs_vector_.back());
+    this->last_occupied_index_ = this->rpcs_vector_.size();
+}
+
+bool Pelican::executeRPCCommand(uint16_t command) {
     // TODO: signal to datapad in case of operation failed
     switch (command) {
         case TAKEOFF_COMMAND:
@@ -355,6 +384,18 @@ bool Pelican::executeCommand(uint16_t command) {
                 return false;
             }
             break;
+        case RENDEZVOUS:
+            this->rendezvousFleet();
+
+            // Give the mode switch some time to activate // CHECK wait value; maybe another way?
+            std::this_thread::sleep_for(std::chrono::seconds(constants::RENDEZVOUS_WAIT_TIME_SECS));
+            if (!this->initiateCheckOffboardEngagement()) {
+                this->sendLogWarning("Rendezvous operations could not be accomplished!");
+            } else {
+                this->sendLogInfo(("Rendezvous initiated"));
+            }
+
+            break;
         default:
             this->sendLogWarning("Command received is not supported!");
             return false;
@@ -362,22 +403,81 @@ bool Pelican::executeCommand(uint16_t command) {
 }
 
 void Pelican::rendezvousFleet() {
-    this->sendLogDebug(
-        "Point to rendezvous to: ({:.4f}, {:.4f}, {:.4f})", this->payload_position_[0],
-        this->payload_position_[1], this->payload_position_[2]
-    );
+    // The leader has already set the target position before calling this
+    if (!this->isLeader()) {
+        // Search for a second, then log and search again if needed
+        unsigned int total_search_time = 0;
+        while (!this->fleetinfo_client_->wait_for_service(
+                   std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
+               ) &&
+               total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+            if (!rclcpp::ok()) {
+                this->sendLogError("Client interrupted while waiting for service. Terminating...");
+                return;
+            }
 
-    if (this->isLeader()) {
-        this->initiateOffboardMode(
-            this->payload_position_[0], this->payload_position_[1], this->payload_position_[2],
-            0 // TODO: yaw?
-        );
+            this->sendLogDebug("Service not available; waiting some more...");
+            total_search_time += constants::SEARCH_LEADER_STEP_SECS;
+        };
+
+        if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+            this->sendLogDebug("Rendezvous server available");
+
+            auto request = std::make_shared<comms::srv::FleetInfo::Request>();
+            // Send request
+            auto async_request_result = this->fleetinfo_client_->async_send_request(
+                request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
+            );
+
+            auto future_status = async_request_result.wait_for(
+                std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
+            );
+            if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+                this->sendLogWarning("Failed to receive a target position from the leader!");
+                this->fleetinfo_client_->prune_pending_requests();
+                return;
+            }
+        } else {
+            this->sendLogWarning("The server seems to be down. Please try again.");
+        }
     }
+
+    auto pos_opt = this->getTargetPosition();
+    if (!pos_opt) {
+        this->sendLogWarning("Trying to rendezvous to an unspecified location!");
+        return;
+    }
+
+    std::vector<double> position = pos_opt.value();
+    this->sendLogDebug(
+        "Point to rendezvous to: ({:.4f}, {:.4f}, {:.4f})", position[0], position[1], position[2]
+    );
+    this->initiateOffboardMode(
+        position[0], position[1], position[2],
+        0 // TODO: yaw?
+    );
 }
 
-void Pelican::updateLastCommand() {
-    std::lock_guard<std::mutex> lock_cmd(this->last_command_mutex_);
-    std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
-    this->last_command_stored_ = std::get<0>(this->rpcs_vector_.back());
-    this->last_occupied_index_ = this->rpcs_vector_.size();
+// This is only executed by non-leaders
+void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
+    // Wait for the specified amount or until the result is available
+    this->sendLogDebug("Getting response...");
+    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+
+    if (status == std::future_status::ready) {
+        auto response = future.get();
+
+        unsigned int own_id = this->getID();
+        int multiplier = own_id < this->initiateGetLeaderID() ? own_id : own_id - 1;
+        float alpha = 2 * constants::PI / (this->getNetworkSize() - 1) * multiplier;
+        float x = response->target_x + cos(alpha);
+        float y = response->target_y + sin(alpha);
+        this->sendLogDebug(
+            "multiplier: {}, x: {:.4f}, y:{:.4f}, alpha: {:.4f}", multiplier, x, y, alpha
+        );
+
+        this->setTargetPosition(x, y, response->target_z);
+    } else {
+        this->sendLogDebug("Service not ready yet...");
+    }
 }
