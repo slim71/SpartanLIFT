@@ -32,6 +32,14 @@ Codename:	jammy
 $ echo $ROS_DISTRO
 humble
 ```
+The general **ROS2 underlay** is automatically sourced during each terminal startup in my configuration. I've achieved so simply by
+adding `source /opt/ros/humble/setup.bash` to the `~/.bashrc` file. If you don't want to do so, *always remember to manually source it*.
+
+Additionally, at the time of this project's creation, to correctly use **ROS2** and **Gazebo Garden** we need to configure `ros_gz` in the local machine from source: this contains all additional packages needed for the *ROS2-Gazebo integration*.
+We can simply clone the repository in a workspace as a ROS2 package. Precise instructions can be found in the [GitHub repository](https://github.com/gazebosim/ros_gz/tree/humble).
+Once configured, be sure to also source that **overlay** before using this project.
+
+***Note***: if you don't want to configure `ros_gz`, check if pre-compiled packages are available.
 
 ### Gazebo Garden
 ```shell
