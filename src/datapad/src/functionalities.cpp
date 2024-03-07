@@ -69,10 +69,7 @@ void Datapad::landingPage() {
 }
 
 void Datapad::contactLeader() {
-    this->sendTeleopData(
-        constants::PRESENCE_FLAG_ON, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
-        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
-    );
+    this->sendTeleopData(Flags().SetPresence());
 }
 
 void Datapad::processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::SharedFuture future) {
@@ -159,10 +156,7 @@ void Datapad::unitSortie() {
         return;
     }
 
-    this->sendTeleopData(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_ON, constants::LANDING_FLAG_OFF,
-        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
-    );
+    this->sendTeleopData(Flags().SetTakeoff());
 }
 
 void Datapad::backToLZ() {
@@ -179,10 +173,7 @@ void Datapad::backToLZ() {
         return;
     }
 
-    this->sendTeleopData(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_ON,
-        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_OFF
-    );
+    this->sendTeleopData(Flags().SetLanding());
 }
 
 void Datapad::payloadExtraction() {
@@ -199,10 +190,7 @@ void Datapad::payloadExtraction() {
         return;
     }
 
-    this->sendTeleopData(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
-        constants::EXTRACTION_FLAG_ON, constants::DROPOFF_FLAG_OFF
-    );
+    this->sendTeleopData(Flags().SetRetrieval());
 }
 
 void Datapad::payloadDropoff() {
@@ -219,26 +207,21 @@ void Datapad::payloadDropoff() {
         return;
     }
 
-    this->sendTeleopData(
-        constants::PRESENCE_FLAG_OFF, constants::TAKEOFF_FLAG_OFF, constants::LANDING_FLAG_OFF,
-        constants::EXTRACTION_FLAG_OFF, constants::DROPOFF_FLAG_ON
-    );
+    this->sendTeleopData(Flags().SetDropoff());
 }
 
-void Datapad::sendTeleopData(
-    bool presence, bool takeoff, bool landing, bool retrieval, bool dropoff
-) {
+void Datapad::sendTeleopData(Flags flags) {
     auto request = std::make_shared<comms::srv::TeleopData::Request>();
-    request->presence = presence;
-    request->takeoff = takeoff;
-    request->landing = landing;
-    request->retrieval = retrieval;
-    request->dropoff = dropoff;
+    request->presence = flags.GetPresence();
+    request->takeoff = flags.GetTakeoff();
+    request->landing = flags.GetLanding();
+    request->retrieval = flags.GetRetrieval();
+    request->dropoff = flags.GetDropoff();
 
     float coordinates[3];
     char coord_names[] = {'x', 'y', 'z'};
     // Add position if needed
-    if (retrieval || dropoff) {
+    if (flags.GetRetrieval() || flags.GetDropoff()) {
         this->sendLogDebug("Enter desired coordinates: ");
         std::cout << "Enter desired coordinates" << std::endl;
         int i = 0;
@@ -262,7 +245,7 @@ void Datapad::sendTeleopData(
     }
 
     // Search for a second, then log and search again
-    int total_search_time = 0;
+    unsigned int total_search_time = 0;
     while (!this->teleopdata_client_->wait_for_service(
                std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
            ) &&
