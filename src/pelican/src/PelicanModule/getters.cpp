@@ -39,6 +39,10 @@ rclcpp::Time Pelican::getTime() const {
     return this->now();
 }
 
+float Pelican::getROI() const {
+    return this->roi_;
+}
+
 int Pelican::getNetworkSize() const {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
     auto s = this->discovery_vector_.size() + 1;
