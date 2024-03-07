@@ -18,9 +18,6 @@ TacMapModule::~TacMapModule() {
     resetSharedPointer(this->sub_to_odometry_topic_);
     resetSharedPointer(this->sub_to_status_topic_);
 
-    // for possible future use
-    // resetSharedPointer(this->sub_to_local_pos_topic_);
-
     this->node_ = nullptr;
     this->logger_ = nullptr;
 }
@@ -47,74 +44,12 @@ void TacMapModule::initTopics() {
     this->command_topic_ = px4_header + "/fmu/in/vehicle_command"s;
     this->trajectory_setpoint_topic_ = px4_header + "/fmu/in/trajectory_setpoint"s;
     this->offboard_control_topic_ = px4_header + "/fmu/in/offboard_control_mode"s;
-
-    /* for possible future use
-        this->local_pos_topic_ = px4_header + "/fmu/out/vehicle_local_position"s;
-        std::string model = this->gatherAgentModel();
-        unsigned int last_slash = model.find_last_of("/");
-        std::string model_folder = model.substr(0, last_slash);
-        unsigned int second_last_slash = model_folder.find_last_of("/");
-        std::string model_name =
-            model.substr(second_last_slash + 1, last_slash - second_last_slash - 1);
-        this->model_pose_topic_ =
-            "/model/" + model_name + "_" + std::to_string(this->gatherAgentID()) + "/odometry";
-        */
 }
 
 void TacMapModule::initSubscribers() {
     if (!this->node_) {
         throw MissingExternModule();
     }
-
-    /*
-        this->sub_to_flags_topic_ = this->node_->create_subscription<px4_msgs::msg::FailsafeFlags>(
-            this->flags_topic_, this->px4_qos_,
-            std::bind(
-                static_cast<void (TacMapModule::*)(const px4_msgs::msg::FailsafeFlags::SharedPtr)
-                                const>(&TacMapModule::printData),
-                this, std::placeholders::_1
-            ),
-            this->gatherReentrantOptions()
-        );
-
-        this->sub_to_attitude_topic_ =
-        this->node_->create_subscription<px4_msgs::msg::VehicleAttitude>(
-            this->attitude_topic_, this->px4_qos_,
-            std::bind(
-                static_cast<void (TacMapModule::*)(const px4_msgs::msg::VehicleAttitude::SharedPtr)
-                                const>(&TacMapModule::printData),
-                this, std::placeholders::_1
-            ),
-            this->gatherReentrantOptions()
-        );
-
-        this->sub_to_control_mode_topic_ = this->node_->create_subscription<
-            px4_msgs::msg::VehicleControlMode>(
-            this->control_mode_topic_, this->px4_qos_,
-            std::bind(
-                static_cast<void (TacMapModule::*)(const
-                px4_msgs::msg::VehicleControlMode::SharedPtr)
-                                const>(&TacMapModule::printData),
-                this, std::placeholders::_1
-            ),
-            this->gatherReentrantOptions()
-        );
-
-        // For possible future use
-        this->sub_to_model_pose_topic_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
-            this->model_pose_topic_, this->standard_qos_,
-            std::bind(&TacMapModule::storeInitialOffset, this, std::placeholders::_1),
-            this->gatherReentrantOptions()
-        );
-
-        // For possible future use
-        this->sub_to_local_pos_topic_ =
-            this->node_->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-                this->local_pos_topic_, this->px4_qos_,
-                std::bind(&TacMapModule::storeLocalPosition, this, std::placeholders::_1),
-                this->gatherReentrantOptions()
-        );
-    */
 
     this->sub_to_global_pos_topic_ =
         this->node_->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(

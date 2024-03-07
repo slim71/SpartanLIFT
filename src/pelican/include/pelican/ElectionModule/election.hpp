@@ -29,7 +29,7 @@ class ElectionModule {
         void stopService();
         void flushVotes();
 
-        int getLeaderID();
+        unsigned int getLeaderID();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -86,7 +86,7 @@ class ElectionModule {
         Pelican* node_;
         LoggerModule* logger_;
 
-        int leader_id_ {0};
+        unsigned int leader_id_ {0};
 
         rclcpp::QoS standard_qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default

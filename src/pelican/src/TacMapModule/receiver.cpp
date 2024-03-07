@@ -1,96 +1,5 @@
 #include "TacMapModule/tacmap.hpp"
 
-void TacMapModule::printData(const px4_msgs::msg::FailsafeFlags::SharedPtr msg) const {
-    std::cout << "\n\n";
-    std::cout << "RECEIVED FailsafeFlags DATA" << std::endl;
-    std::cout << "=============================" << std::endl;
-    std::cout << "Time since start: " << msg->timestamp << std::endl; // [us]
-    std::cout << "mode_req_angular_velocity: " << msg->mode_req_angular_velocity << std::endl;
-    std::cout << "mode_req_attitude: " << msg->mode_req_attitude << std::endl;
-    std::cout << "mode_req_local_alt: " << msg->mode_req_local_alt << std::endl;
-    std::cout << "mode_req_local_position: " << msg->mode_req_local_position << std::endl;
-    std::cout << "mode_req_local_position_relaxed: " << msg->mode_req_local_position_relaxed
-              << std::endl;
-    std::cout << "mode_req_global_position: " << msg->mode_req_global_position << std::endl;
-    std::cout << "mode_req_mission: " << msg->mode_req_mission << std::endl;
-    std::cout << "mode_req_offboard_signal: " << msg->mode_req_offboard_signal << std::endl;
-    std::cout << "mode_req_home_position: " << msg->mode_req_home_position << std::endl;
-    std::cout << "mode_req_wind_and_flight_time_compliance: "
-              << msg->mode_req_wind_and_flight_time_compliance << std::endl;
-    std::cout << "mode_req_prevent_arming: " << msg->mode_req_prevent_arming << std::endl;
-    std::cout << "mode_req_manual_control: " << msg->mode_req_manual_control << std::endl;
-    std::cout << "mode_req_other: " << msg->mode_req_other << std::endl;
-    std::cout << "angular_velocity_invalid: " << msg->angular_velocity_invalid << std::endl;
-    std::cout << "attitude_invalid: " << msg->attitude_invalid << std::endl;
-    std::cout << "local_altitude_invalid: " << msg->local_altitude_invalid << std::endl;
-    std::cout << "local_position_invalid: " << msg->local_position_invalid << std::endl;
-    std::cout << "local_position_invalid_relaxed: " << msg->local_position_invalid_relaxed
-              << std::endl;
-    std::cout << "local_velocity_invalid: " << msg->local_velocity_invalid << std::endl;
-    std::cout << "global_position_invalid: " << msg->global_position_invalid << std::endl;
-    std::cout << "auto_mission_missing: " << msg->auto_mission_missing << std::endl;
-    std::cout << "offboard_control_signal_lost: " << msg->offboard_control_signal_lost << std::endl;
-    std::cout << "home_position_invalid: " << msg->home_position_invalid << std::endl;
-    std::cout << "manual_control_signal_lost: " << msg->manual_control_signal_lost << std::endl;
-    std::cout << "gcs_connection_lost: " << msg->gcs_connection_lost << std::endl;
-    std::cout << "battery_warning: " << msg->battery_warning << std::endl;
-    std::cout << "battery_low_remaining_time: " << msg->battery_low_remaining_time << std::endl;
-    std::cout << "battery_unhealthy: " << msg->battery_unhealthy << std::endl;
-    std::cout << "primary_geofence_breached: " << msg->primary_geofence_breached << std::endl;
-    std::cout << "mission_failure: " << msg->mission_failure << std::endl;
-    std::cout << "vtol_fixed_wing_system_failure: " << msg->vtol_fixed_wing_system_failure
-              << std::endl;
-    std::cout << "wind_limit_exceeded: " << msg->wind_limit_exceeded << std::endl;
-    std::cout << "flight_time_limit_exceeded: " << msg->flight_time_limit_exceeded << std::endl;
-    std::cout << "local_position_accuracy_low: " << msg->local_position_accuracy_low << std::endl;
-    std::cout << "fd_critical_failure: " << msg->fd_critical_failure << std::endl;
-    std::cout << "fd_esc_arming_failure: " << msg->fd_esc_arming_failure << std::endl;
-    std::cout << "fd_imbalanced_prop: " << msg->fd_imbalanced_prop << std::endl;
-    std::cout << "fd_motor_failure: " << msg->fd_motor_failure << std::endl;
-}
-
-void TacMapModule::printData(const px4_msgs::msg::VehicleAttitude::SharedPtr msg) const {
-    std::cout << "\n\n";
-    std::cout << "RECEIVED VehicleAttitude DATA" << std::endl;
-    std::cout << "=============================" << std::endl;
-    std::cout << "Time since start: " << msg->timestamp << std::endl;             // [us]
-    std::cout << "Timestamp of raw data: " << msg->timestamp_sample << std::endl; // [us]
-    std::cout << "q: " << msg->q[0] << " " << msg->q[1] << " " << msg->q[2] << " " << msg->q[3]
-              << std::endl;
-    std::cout << "delta_q_reset: " << msg->delta_q_reset[0] << " " << msg->delta_q_reset[1] << " "
-              << msg->delta_q_reset[2] << " " << msg->delta_q_reset[3] << std::endl;
-    std::cout << "quat_reset_counter: " << msg->quat_reset_counter << std::endl;
-}
-
-void TacMapModule::printData(const px4_msgs::msg::VehicleControlMode::SharedPtr msg) const {
-    std::cout << "\n\n";
-    std::cout << "RECEIVED VehicleControlMode DATA" << std::endl;
-    std::cout << "=============================" << std::endl;
-    std::cout << "Time since start: " << msg->timestamp << std::endl; // [us]
-    std::cout << "flag_armed: " << msg->flag_armed << std::endl;
-    std::cout << "flag_multicopter_position_control_enabled: "
-              << msg->flag_multicopter_position_control_enabled << std::endl;
-    std::cout << "flag_control_manual_enabled: " << msg->flag_control_manual_enabled << std::endl;
-    std::cout << "flag_control_auto_enabled: " << msg->flag_control_auto_enabled << std::endl;
-    std::cout << "flag_control_offboard_enabled: " << msg->flag_control_offboard_enabled
-              << std::endl;
-    std::cout << "flag_control_rates_enabled: " << msg->flag_control_rates_enabled << std::endl;
-    std::cout << "flag_control_attitude_enabled: " << msg->flag_control_attitude_enabled
-              << std::endl;
-    std::cout << "flag_control_acceleration_enabled: " << msg->flag_control_acceleration_enabled
-              << std::endl;
-    std::cout << "flag_control_velocity_enabled: " << msg->flag_control_velocity_enabled
-              << std::endl;
-    std::cout << "flag_control_position_enabled: " << msg->flag_control_position_enabled
-              << std::endl;
-    std::cout << "flag_control_altitude_enabled: " << msg->flag_control_altitude_enabled
-              << std::endl;
-    std::cout << "flag_control_climb_rate_enabled: " << msg->flag_control_climb_rate_enabled
-              << std::endl;
-    std::cout << "flag_control_termination_enabled: " << msg->flag_control_termination_enabled
-              << std::endl;
-}
-
 void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
     px4_msgs::msg::VehicleGlobalPosition globalpos_data;
     globalpos_data.timestamp = msg->timestamp;               // [us]
@@ -113,12 +22,6 @@ void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPositio
 }
 
 void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
-    // this->sendLogDebug(
-    //     "Received Odometry data! timestamp:{} position:[{}, {}, {}] q:[{}, {}, {}, {}]",
-    //     msg->timestamp, msg->position[0], msg->position[1], msg->position[2], msg->q[0],
-    //     msg->q[1], msg->q[2], msg->q[3]
-    // );Trying to send
-
     px4_msgs::msg::VehicleOdometry odometry_data;
     odometry_data.timestamp = msg->timestamp;
     odometry_data.position = msg->position;
@@ -130,11 +33,6 @@ void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr
 }
 
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
-    // this->sendLogDebug(
-    //     "Received status data! timestamp:{} system_id:{} component_id:{}", msg->timestamp,
-    //     msg->system_id, msg->component_id
-    // );
-
     px4_msgs::msg::VehicleStatus status_data;
     status_data.timestamp = msg->timestamp;       // [us]
     status_data.armed_time = msg->armed_time;     // [us]
@@ -183,12 +81,6 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
 }
 
 void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr msg) {
-    // this->sendLogDebug(
-    //     "Received ACK! command:{} result:{} param1:{} param2:{} system:{} component:{}",
-    //     msg->command, msg->result, msg->result_param1, msg->result_param2, msg->target_system,
-    //     msg->target_component
-    // );
-
     std::lock_guard<std::mutex> lock(this->commander_ack_mutex_);
 
     if (this->last_commander_ack_)
@@ -204,35 +96,3 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
     this->last_commander_ack_->target_component = msg->target_component;
     this->last_commander_ack_->from_external = msg->from_external;
 }
-
-/*
-    // For possible future use
-    void TacMapModule::storeInitialOffset(const nav_msgs::msg::Odometry::SharedPtr msg) {
-
-        if(!this->initiated_) {
-            this->initiated_ = true;
-            this->sendLogDebug(
-                "Storing offset ({:.4f},{:.4f},{:.4f}) ", msg->pose.pose.position.x,
-                msg->pose.pose.position.y, msg->pose.pose.position.z
-            );
-
-            Eigen::Vector3f euler_angles = quat2RPY(msg->pose.pose.orientation);
-            this->sendLogDebug("quat: ({:.4f},{:.4f},{:.4f},{:.4f}) \t rpy: ({:.4f},{:.4f},{:.4f})",
-                                msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
-   msg->pose.pose.orientation.z, msg->pose.pose.orientation.w, euler_angles(0), euler_angles(1),
-   euler_angles(2)); float yaw = euler_angles(2);
-
-            this->signalSetPoseInfo(
-                msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z,
-                yaw
-            );
-        }
-    }
-
-    // For possible future use
-    void TacMapModule::storeLocalPosition(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg)
-   {
-        // this->sendLogDebug("Local position: ({:.4f},{:.4f},{:.4f})",
-        //                    msg->x, msg->y, msg->z);
-    }
-*/

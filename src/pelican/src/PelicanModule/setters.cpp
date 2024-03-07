@@ -4,6 +4,7 @@
 void Pelican::setRole(possible_roles r) {
     this->sendLogDebug("Setting role to {}", roles_to_string(r));
     this->role_ = r;
+    this->logger_.cacheRole(r);
 }
 
 void Pelican::setMass(double m) {

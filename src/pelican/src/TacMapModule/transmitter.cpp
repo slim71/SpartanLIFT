@@ -31,14 +31,15 @@ void TacMapModule::publishVehicleCommand(
     msg.target_system = this->system_id_; // System which should execute the command
     this->system_id_mutex_.unlock();
     this->component_id_mutex_.lock();
-    msg.target_component =
-        this->component_id_; // Component which should execute the command, 0 for all components
+    // Component which should execute the command (0 for all components)
+    msg.target_component = this->component_id_;
     this->component_id_mutex_.unlock();
     // msg.source_system = sys_id;    // System sending the command
     // msg.source_component = 1; // Component sending the command
 
-    // msg.confirmation = 0; // 0: First transmission of this command. 1-255: Confirmation
-    // transmissions (e.g. for kill command)
+    // 0: First transmission of this command
+    // 1-255: Confirmation transmissions (e.g. for kill command)
+    // msg.confirmation = 0;
 
     msg.from_external = true; // Indicates if the command came from an external source
 
@@ -50,9 +51,6 @@ void TacMapModule::publishVehicleCommand(
 void TacMapModule::publishOffboardControlMode() {
     px4_msgs::msg::OffboardControlMode msg {};
 
-    // The OffboardControlMode is required in order to inform PX4 of the type of offboard
-    // control behing used. Here we're only using position control, so the position field
-    // is set to true and all the other fields are set to false.
     msg.position = true;
     msg.velocity = false;
     msg.acceleration = false;

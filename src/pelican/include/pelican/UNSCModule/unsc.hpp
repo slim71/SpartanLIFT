@@ -29,9 +29,6 @@ class UNSCModule {
         bool getRunningStatus() const;
         Eigen::Vector3f getOffset() const;
 
-        // For possible future use
-        // void setPoseInfo(float, float, float, float);
-
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
         template<typename... Args> void sendLogDebug(std::string, Args...) const;

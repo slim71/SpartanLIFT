@@ -2,18 +2,11 @@
 
 /************************** Public methods *************************/
 void ElectionModule::resetElectionTimer() {
-    // Reset the election_timer_, used to be sure there's a leader, to election_timeout
     resetTimer(this->election_timer_);
-    if (this->election_timer_)
-        this->sendLogDebug(
-            "After resetting, election_timer_ is {} ms",
-            this->election_timer_->time_until_trigger().count() / 1000000
-        );
 }
 
 void ElectionModule::resetSubscriptions() {
     resetSharedPointer(this->sub_to_leader_election_topic_);
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
 }
 
 void ElectionModule::setElectionStatus(int id) {
