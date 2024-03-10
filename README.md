@@ -10,7 +10,7 @@ MSc thesis regarding the application of a teleoperated multi-UAV system for coop
     - [ROS](#ros)
     - [Gazebo Garden](#gazebo-garden)
   - [Controller library](#controller-library)
-    - [Models](#models)
+  - [Models](#models)
   - [Installation](#installation)
     - [Requirements](#requirements)
     - [Warnings during setup](#warnings-during-setup)
@@ -44,7 +44,7 @@ Once configured, be sure to also source that **overlay** before using this proje
 ### Gazebo Garden
 ```shell
 $ gz sim --version
-Gazebo Sim, version 7.5.0
+Gazebo Sim, version 7.7.0
 Copyright (C) 2018 Open Source Robotics Foundation.
 Released under the Apache 2.0 License.
 ```
@@ -56,7 +56,7 @@ I initially started with [Ardupilot](https://ardupilot.org/), but I soon had to 
 because the former was not yet ready to be used in ROS2 projects when I started out.
 Among many things, this meant migrating from Gazebo 6 (Ignition) to Gazebo (Garden).
 
-### Models
+## Models
 Drone models and world files downloaded from the [Fuel models page](https://app.gazebosim.org/fuel/models):
 - [X3 drone](https://app.gazebosim.org/OpenRobotics/fuel/models/X3%20UAV%20Config%201) by **OpenRobotics**
 - [X4 drone](https://app.gazebosim.org/OpenRobotics/fuel/models/X4%20UAV%20Config%201) by **OpenRobotics**
