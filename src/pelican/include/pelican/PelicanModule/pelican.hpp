@@ -30,7 +30,8 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
         int getNetworkSize() const;
-        std::optional<std::vector<double>> getTargetPosition() const;
+        std::optional<std::vector<float>> getTargetPosition() const;
+        float getActualTargetHeight() const;
 
         // Actions initiated by the module
         bool initiateSetHome();
@@ -38,7 +39,7 @@ class Pelican : public rclcpp::Node {
         bool initiateTakeoff();
         bool initiateLand();
         bool initiateReturnToLaunchPosition();
-        void initiateOffboardMode(float, float, float, float);
+        void initiateOffboardMode();
 
         // Status check
         bool isLeader() const;
@@ -76,6 +77,7 @@ class Pelican : public rclcpp::Node {
         void commenceStopElectionService();
         void commenceStopTacMapService();
         void commenceStopUNSCService();
+        void commenceHeightCompensation(float);
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -96,6 +98,7 @@ class Pelican : public rclcpp::Node {
         void setRole(possible_roles);
         void setTerm(unsigned int);
         void setTargetPosition(float, float, float);
+        void setReferenceHeight(float);
         void setFlyingStatus();
         void unsetFlyingStatus();
         void setCarryingStatus();
@@ -142,7 +145,8 @@ class Pelican : public rclcpp::Node {
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
-        std::vector<double> target_position_;
+        float actual_target_height_ {0}; // needed in order to stabilize height tracking?
+        std::vector<float> target_position_;
         unsigned int last_rpc_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
 
@@ -152,6 +156,7 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex carrying_mutex_;         // Used to access carrying_
         mutable std::mutex last_rpc_command_mutex_; // Used to access carrying_
         mutable std::mutex target_position_mutex_;  // Used to access target_position_
+        mutable std::mutex height_mutex_;           // Used to access actual_target_height_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;

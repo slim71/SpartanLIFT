@@ -44,6 +44,15 @@ void TacMapModule::initTopics() {
     this->command_topic_ = px4_header + "/fmu/in/vehicle_command"s;
     this->trajectory_setpoint_topic_ = px4_header + "/fmu/in/trajectory_setpoint"s;
     this->offboard_control_topic_ = px4_header + "/fmu/in/offboard_control_mode"s;
+
+    std::string model = this->gatherAgentModel();
+    unsigned int last_slash = model.find_last_of("/");
+    std::string model_folder = model.substr(0, last_slash);
+    unsigned int second_last_slash = model_folder.find_last_of("/");
+    std::string model_name =
+        model.substr(second_last_slash + 1, last_slash - second_last_slash - 1);
+    this->model_pose_topic_ =
+        "/model/" + model_name + "_" + std::to_string(this->gatherAgentID()) + "/odometry";
 }
 
 void TacMapModule::initSubscribers() {
@@ -76,6 +85,12 @@ void TacMapModule::initSubscribers() {
             std::bind(&TacMapModule::storeAck, this, std::placeholders::_1),
             this->gatherReentrantOptions()
         );
+
+    this->sub_to_model_pose_topic_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
+        this->model_pose_topic_, this->standard_qos_,
+        std::bind(&TacMapModule::checkGlobalOdometry, this, std::placeholders::_1),
+        this->gatherReentrantOptions()
+    );
 }
 
 void TacMapModule::initPublishers() {

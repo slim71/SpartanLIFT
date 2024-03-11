@@ -96,3 +96,14 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
     this->last_commander_ack_->target_component = msg->target_component;
     this->last_commander_ack_->from_external = msg->from_external;
 }
+
+void TacMapModule::checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    // Only compensate once each second
+    if (this->odometry_buffer_.empty() ||
+        ((unsigned int) (msg->header.stamp.sec - this->last_compensated_) >=
+         constants::COMPENSATION_GAP_SECS)) {
+        this->sendLogDebug("Height from global odometry: {}", msg->pose.pose.position.z);
+        this->last_compensated_ = msg->header.stamp.sec;
+        this->signalHeightCompensation(msg->pose.pose.position.z);
+    }
+}

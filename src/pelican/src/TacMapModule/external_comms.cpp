@@ -57,3 +57,12 @@ rclcpp::SubscriptionOptions TacMapModule::gatherReentrantOptions() const {
 
     return this->node_->getReentrantOptions();
 }
+
+/************* To make other modules carry on an action ************/
+void TacMapModule::signalHeightCompensation(float odom_height) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceHeightCompensation(odom_height);
+}

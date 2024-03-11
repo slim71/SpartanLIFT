@@ -96,9 +96,25 @@ void UNSCModule::runPreChecks() {
     this->sendLogError("Errors in the simulation detected!");
 }
 
-void UNSCModule::activateOffboardMode(float x, float y, float z, float yaw) {
-    // Deactivate existing offboard setpoints
-    cancelTimer(this->offboard_timer_);
+void UNSCModule::activateOffboardMode() {
+    this->offboard_timer_ = this->node_->create_wall_timer(this->offboard_period_, [this] {
+        this->setAndMaintainOffboardMode();
+    });
+}
+
+void UNSCModule::setAndMaintainOffboardMode() { // TODO: not with itself
+    auto opt_target = this->gatherTargetPose();
+    float x, y, z, yaw;
+    if (opt_target) {
+        auto target = opt_target.value();
+        x = target[0];
+        y = target[1];
+        z = target[2];
+        yaw = 0;
+    } else {
+        this->sendLogDebug("No target pose found");
+        return;
+    }
 
     Eigen::Vector3f des_body_pos = this->convertLocalToBody({x, y, z});
 
@@ -106,17 +122,6 @@ void UNSCModule::activateOffboardMode(float x, float y, float z, float yaw) {
         "offboard: ({:.4f}, {:.4f}, {:.4f}) became ({:.4f}, {:.4f}, {:.4f})", x, y, z,
         des_body_pos(0), des_body_pos(1), des_body_pos(2)
     );
-
-    this->offboard_timer_ =
-        this->node_->create_wall_timer(this->offboard_period_, [this, des_body_pos, yaw] {
-            this->setAndMaintainOffboardMode(
-                des_body_pos(0), des_body_pos(1), des_body_pos(2), yaw
-            );
-        });
-}
-
-void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw) {
-    this->sendLogDebug("Offboard to ({:.4f},{:.4f},{:.4f}) yaw:{:.4f}", x, y, z, yaw);
 
     if (this->offboard_setpoint_counter_ == constants::OFFBOARD_SETPOINT_LIMIT) {
         // Change to Offboard mode after the needed amount of setpoints
@@ -131,7 +136,7 @@ void UNSCModule::setAndMaintainOffboardMode(float x, float y, float z, float yaw
 
     // offboard_control_mode needs to be paired with trajectory_setpoint
     this->signalPublishOffboardControlMode();
-    this->signalPublishTrajectorySetpoint(x, y, z, yaw);
+    this->signalPublishTrajectorySetpoint(des_body_pos(0), des_body_pos(1), des_body_pos(2), yaw);
 
     // stop the counter after reaching OFFBOARD_SETPOINT_LIMIT + 1
     if (this->offboard_setpoint_counter_ <= constants::OFFBOARD_SETPOINT_LIMIT) {
