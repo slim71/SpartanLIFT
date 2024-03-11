@@ -51,8 +51,8 @@ bool Pelican::initiateReturnToLaunchPosition() {
     return this->unsc_core_.returnToLaunchPosition();
 }
 
-void Pelican::initiateOffboardMode(float x, float y, float z, float yaw) {
-    this->unsc_core_.activateOffboardMode(x, y, z, yaw);
+void Pelican::initiateOffboardMode() {
+    this->unsc_core_.activateOffboardMode();
 }
 
 void Pelican::commenceStopUNSCService() {
@@ -123,4 +123,24 @@ void Pelican::commenceIncreaseCurrentTerm() {
 
 void Pelican::commenceSetTerm(uint64_t term) {
     this->setTerm(term);
+}
+
+void Pelican::commenceHeightCompensation(float odom_height) {
+    auto maybe_target = this->getTargetPosition();
+    float target_height = this->getActualTargetHeight();
+
+    if ((maybe_target) && (target_height != 0)) { // CHECK: second condition
+        auto current_target = maybe_target.value();
+        this->sendLogDebug(
+            "current: {}, target: {}, diff: {}", current_target[2], target_height,
+            abs(target_height - current_target[2])
+        );
+
+        auto compensated_height = current_target[2] + (target_height - odom_height);
+        this->sendLogDebug(
+            "current: {}, target: {}, compensated:{}", current_target[2], target_height,
+            compensated_height
+        );
+        this->setTargetPosition(current_target[0], current_target[1], compensated_height);
+    }
 }

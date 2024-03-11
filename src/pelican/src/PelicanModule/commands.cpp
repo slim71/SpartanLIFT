@@ -60,12 +60,16 @@ void Pelican::rogerWillCo(
 
         if (!this->isCarrying()) {
             this->sendLogDebug("Notifying start of payload extraction operations!");
+            this->sendLogInfo(
+                "Payload is at ({:.4f},{:.4f},{:.4f})", request->x, request->y, request->z
+            );
             response->success = true;
 
+            this->setReferenceHeight(request->z);
             this->setTargetPosition(request->x, request->y, request->z);
 
-            std::thread landing_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
-            landing_thread.detach();
+            std::thread retrieval_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
+            retrieval_thread.detach();
         } else {
             this->sendLogWarning("The payload is already carrying the payload!");
         }
@@ -77,11 +81,12 @@ void Pelican::targetConvergence(
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
 ) {
     auto pos = this->getTargetPosition();
+    float target_height = this->getActualTargetHeight();
     if (pos) {
-        std::vector<double> v = pos.value();
+        std::vector<float> v = pos.value();
         response->target_x = v[0];
         response->target_y = v[1];
-        response->target_z = v[2];
+        response->target_z = target_height;
 
     } else { // CHECK: needed? the follower should be able to know what the target refers to
         response->formation = false;
@@ -393,8 +398,10 @@ bool Pelican::executeRPCCommand(uint16_t command) {
                 this->sendLogWarning("Rendezvous operations could not be accomplished!");
             } else {
                 this->sendLogInfo(("Rendezvous initiated"));
+                return true;
             }
 
+            return false;
             break;
         default:
             this->sendLogWarning("Command received is not supported!");
@@ -439,23 +446,11 @@ void Pelican::rendezvousFleet() {
             }
         } else {
             this->sendLogWarning("The server seems to be down. Please try again.");
+            return;
         }
     }
 
-    auto pos_opt = this->getTargetPosition();
-    if (!pos_opt) {
-        this->sendLogWarning("Trying to rendezvous to an unspecified location!");
-        return;
-    }
-
-    std::vector<double> position = pos_opt.value();
-    this->sendLogDebug(
-        "Point to rendezvous to: ({:.4f}, {:.4f}, {:.4f})", position[0], position[1], position[2]
-    );
-    this->initiateOffboardMode(
-        position[0], position[1], position[2],
-        0 // TODO: yaw?
-    );
+    this->initiateOffboardMode();
 }
 
 // This is only executed by non-leaders
@@ -476,6 +471,7 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
             "multiplier: {}, x: {:.4f}, y:{:.4f}, alpha: {:.4f}", multiplier, x, y, alpha
         );
 
+        this->setReferenceHeight(response->target_z);
         this->setTargetPosition(x, y, response->target_z);
     } else {
         this->sendLogDebug("Service not ready yet...");

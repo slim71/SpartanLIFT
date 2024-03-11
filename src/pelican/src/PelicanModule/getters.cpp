@@ -46,17 +46,24 @@ float Pelican::getROI() const {
 int Pelican::getNetworkSize() const {
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
     auto s = this->discovery_vector_.size() + 1;
-    this->sendLogDebug("Discovered network has size {}", s);
+    this->sendLogDebug(
+        "Discovered network has size {}", s
+    ); // TODO: move somewhere else to log only once
     return s;
 }
 
-std::optional<std::vector<double>> Pelican::getTargetPosition() const {
+std::optional<std::vector<float>> Pelican::getTargetPosition() const {
     std::lock_guard<std::mutex> lock(this->target_position_mutex_);
     if (this->target_position_.size() > 0) {
         return this->target_position_;
     }
 
     return std::nullopt;
+}
+
+float Pelican::getActualTargetHeight() const {
+    std::lock_guard<std::mutex> lock(this->height_mutex_);
+    return this->actual_target_height_;
 }
 
 /*************************** Status flags *****************************/

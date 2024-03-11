@@ -10,6 +10,7 @@ namespace constants {
     static constexpr unsigned int SEARCH_LEADER_STEP_SECS = 1;
     static constexpr unsigned int MAX_SEARCH_TIME_SECS = 10;
     static constexpr unsigned int SERVICE_FUTURE_WAIT_SECS = 1;
+    static constexpr unsigned int COMPENSATION_GAP_SECS = 1;
 
     // Standard heartbeat period is 100ms, so this would keep a log of 10s
     static constexpr unsigned int MAX_HB_NUM = 100;

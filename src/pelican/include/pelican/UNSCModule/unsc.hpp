@@ -24,7 +24,7 @@ class UNSCModule {
         bool land();
         bool setHome();
         bool returnToLaunchPosition();
-        void activateOffboardMode(float, float, float, float);
+        void activateOffboardMode();
 
         bool getRunningStatus() const;
         Eigen::Vector3f getOffset() const;
@@ -37,7 +37,7 @@ class UNSCModule {
 
         void runPreChecks();
         void setPositionMode();
-        void setAndMaintainOffboardMode(float, float, float, float);
+        void setAndMaintainOffboardMode();
 
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -52,6 +52,7 @@ class UNSCModule {
         std::optional<px4_msgs::msg::VehicleGlobalPosition> gatherGlobalPosition() const;
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
+        std::optional<std::vector<float>> gatherTargetPose() const;
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
@@ -68,7 +69,7 @@ class UNSCModule {
 
         // For possible future use
         Eigen::Vector3f offset_ {0, 0, 0}; // [m, m, m]
-        float yaw_;                        // [rad]
+        float yaw_ {0};                    // [rad]
         mutable std::mutex offset_mutex_;  // to be used with offset_ and yaw_
 
         std::atomic<bool> running_ {true};

@@ -42,6 +42,14 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     return this->node_->requestStatus();
 }
 
+std::optional<std::vector<float>> UNSCModule::gatherTargetPose() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getTargetPosition(); // TODO: include yaw or change name?
+}
+
 /************* To make other modules carry on an action ************/
 void UNSCModule::signalPublishVehicleCommand(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,

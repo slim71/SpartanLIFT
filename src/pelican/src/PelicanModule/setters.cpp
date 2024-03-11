@@ -51,3 +51,8 @@ void Pelican::setTargetPosition(float x, float y, float z) {
     std::lock_guard<std::mutex> lock(this->target_position_mutex_);
     this->target_position_ = {x, y, z};
 }
+
+void Pelican::setReferenceHeight(float height) {
+    std::lock_guard<std::mutex> lock(this->height_mutex_);
+    this->actual_target_height_ = height;
+}

@@ -56,6 +56,7 @@ class TacMapModule {
         void storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
+        void checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr);
 
         // External communications
         unsigned int gatherAgentID() const;
@@ -65,6 +66,7 @@ class TacMapModule {
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
+        void signalHeightCompensation(float) const;
 
     private: // Attributes
         Pelican* node_;
@@ -74,6 +76,8 @@ class TacMapModule {
 
         int system_id_ {0};
         int component_id_ {0};
+
+        int32_t last_compensated_ {0};
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is
@@ -119,6 +123,9 @@ class TacMapModule {
         std::string offboard_control_topic_; // i.e. "/px4_{id}/fmu/in/offboard_control_mode";
         rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
             pub_to_offboard_control_topic_;
+
+        std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
