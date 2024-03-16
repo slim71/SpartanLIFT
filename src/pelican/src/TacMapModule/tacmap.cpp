@@ -37,7 +37,7 @@ void TacMapModule::initTopics() {
     this->attitude_topic_ = px4_header + "/fmu/out/vehicle_attitude"s;
     this->control_mode_topic_ = px4_header + "/fmu/out/vehicle_control_mode"s;
     this->global_pos_topic_ = px4_header + "/fmu/out/vehicle_global_position"s;
-    this->odometry_topic_ = px4_header + "/fmu/out/vehicle_odometry"s;
+    this->ned_odometry_topic_ = px4_header + "/fmu/out/vehicle_odometry"s;
     this->command_ack_topic_ = px4_header + "/fmu/out/vehicle_command_ack"s;
     this->status_topic_ = px4_header + "/fmu/out/vehicle_status"s;
 
@@ -51,7 +51,7 @@ void TacMapModule::initTopics() {
     unsigned int second_last_slash = model_folder.find_last_of("/");
     std::string model_name =
         model.substr(second_last_slash + 1, last_slash - second_last_slash - 1);
-    this->model_pose_topic_ =
+    this->enu_odometry_topic_ =
         "/model/" + model_name + "_" + std::to_string(this->gatherAgentID()) + "/odometry";
 }
 
@@ -68,7 +68,7 @@ void TacMapModule::initSubscribers() {
         );
 
     this->sub_to_odometry_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
-        this->odometry_topic_, this->px4_qos_,
+        this->ned_odometry_topic_, this->px4_qos_,
         std::bind(&TacMapModule::storeOdometry, this, std::placeholders::_1),
         this->gatherReentrantOptions()
     );
@@ -86,8 +86,8 @@ void TacMapModule::initSubscribers() {
             this->gatherReentrantOptions()
         );
 
-    this->sub_to_model_pose_topic_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
-        this->model_pose_topic_, this->standard_qos_,
+    this->sub_to_enu_odometry_topic_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
+        this->enu_odometry_topic_, this->standard_qos_,
         std::bind(&TacMapModule::checkGlobalOdometry, this, std::placeholders::_1),
         this->gatherReentrantOptions()
     );

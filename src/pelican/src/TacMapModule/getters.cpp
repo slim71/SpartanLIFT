@@ -14,15 +14,15 @@ std::optional<px4_msgs::msg::VehicleGlobalPosition> TacMapModule::getGlobalPosit
 }
 
 std::optional<px4_msgs::msg::VehicleOdometry> TacMapModule::getOdometry() {
-    this->odometry_mutex_.lock();
-    int o_length = this->odometry_buffer_.size();
-    this->odometry_mutex_.unlock();
+    this->ned_odometry_mutex_.lock();
+    int o_length = this->ned_odometry_buffer_.size();
+    this->ned_odometry_mutex_.unlock();
 
     if (o_length <= 0)
         return std::nullopt;
 
-    std::lock_guard<std::mutex> lock(this->odometry_mutex_);
-    return odometry_buffer_.back();
+    std::lock_guard<std::mutex> lock(this->ned_odometry_mutex_);
+    return ned_odometry_buffer_.back();
 }
 
 std::optional<px4_msgs::msg::VehicleStatus> TacMapModule::getStatus() {

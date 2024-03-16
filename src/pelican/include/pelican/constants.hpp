@@ -21,7 +21,8 @@ namespace constants {
     static constexpr unsigned int QOS_HISTORY_AMOUNT = 5;
 
     static constexpr unsigned int GLOBALPOS_BUFFER_SIZE = 10;
-    static constexpr unsigned int ODOMETRY_BUFFER_SIZE = 10;
+    static constexpr unsigned int NED_ODOMETRY_BUFFER_SIZE = 10;
+    static constexpr unsigned int ENU_ODOMETRY_BUFFER_SIZE = 10;
     static constexpr unsigned int STATUS_BUFFER_SIZE = 10;
 
     static constexpr unsigned int NANO_TO_MILLI_ORDER_CONVERSION = 1000000;
