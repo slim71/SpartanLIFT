@@ -104,7 +104,7 @@ class TacMapModule {
         rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr
             sub_to_global_pos_topic_;
 
-        std::string odometry_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_odometry";
+        std::string ned_odometry_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_odometry";
         rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr sub_to_odometry_topic_;
 
         std::string status_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_status";
@@ -124,23 +124,26 @@ class TacMapModule {
         rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr
             pub_to_offboard_control_topic_;
 
-        std::string model_pose_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
-        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_model_pose_topic_;
+        std::string enu_odometry_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_enu_odometry_topic_;
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
 
         boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {
             constants::GLOBALPOS_BUFFER_SIZE};
-        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> odometry_buffer_ {
-            constants::ODOMETRY_BUFFER_SIZE};
+        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> ned_odometry_buffer_ {
+            constants::NED_ODOMETRY_BUFFER_SIZE};
+        boost::circular_buffer<nav_msgs::msg::Odometry> enu_odometry_buffer_ {
+            constants::ENU_ODOMETRY_BUFFER_SIZE};
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
             constants::STATUS_BUFFER_SIZE};
 
         mutable std::mutex running_mutex_;       // to be used with running_
         mutable std::mutex commander_ack_mutex_; // to be used with last_commander_ack_
         mutable std::mutex globalpos_mutex_;     // to be used with gps_buffer_
-        mutable std::mutex odometry_mutex_;      // to be used with odometry_buffer_
+        mutable std::mutex ned_odometry_mutex_;  // to be used with ned_odometry_buffer_
+        mutable std::mutex enu_odometry_mutex_;  // to be used with enu_odometry_buffer_
         mutable std::mutex status_mutex_;        // to be used with status_buffer_
         mutable std::mutex system_id_mutex_;     // to be used with system_id_
         mutable std::mutex component_id_mutex_;  // to be used with component_id_

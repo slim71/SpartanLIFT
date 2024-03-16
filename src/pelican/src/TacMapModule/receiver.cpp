@@ -22,14 +22,14 @@ void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPositio
 }
 
 void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
-    px4_msgs::msg::VehicleOdometry odometry_data;
-    odometry_data.timestamp = msg->timestamp;
-    odometry_data.position = msg->position;
-    odometry_data.q = msg->q;
+    px4_msgs::msg::VehicleOdometry ned_odometry_data;
+    ned_odometry_data.timestamp = msg->timestamp;
+    ned_odometry_data.position = msg->position;
+    ned_odometry_data.q = msg->q;
     // Other fields not needed
 
-    std::lock_guard<std::mutex> lock(this->odometry_mutex_);
-    this->odometry_buffer_.push_back(odometry_data);
+    std::lock_guard<std::mutex> lock(this->ned_odometry_mutex_);
+    this->ned_odometry_buffer_.push_back(ned_odometry_data);
 }
 
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
@@ -98,10 +98,18 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
 }
 
 void TacMapModule::checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    nav_msgs::msg::Odometry enu_odometry_data;
+    enu_odometry_data.header = msg->header;
+    enu_odometry_data.pose = msg->pose;
+    enu_odometry_data.twist = msg->twist;
+
+    this->enu_odometry_mutex_.lock();
+    this->enu_odometry_buffer_.push_back(enu_odometry_data);
+    this->enu_odometry_mutex_.unlock();
+
     // Only compensate once each second
-    if (this->odometry_buffer_.empty() ||
-        ((unsigned int) (msg->header.stamp.sec - this->last_compensated_) >=
-         constants::COMPENSATION_GAP_SECS)) {
+    if ((unsigned int) (msg->header.stamp.sec - this->last_compensated_) >=
+        constants::COMPENSATION_GAP_SECS) {
         this->sendLogDebug("Height from global odometry: {}", msg->pose.pose.position.z);
         this->last_compensated_ = msg->header.stamp.sec;
         this->signalHeightCompensation(msg->pose.pose.position.z);
