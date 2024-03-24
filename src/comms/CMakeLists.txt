@@ -14,6 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -33,7 +34,7 @@ set(MESSAGE_FILES
     msg/Proposal.msg
     msg/RequestVoteRPC.msg
     msg/Status.msg
-    msg/POI.msg
+    msg/NetworkVertex.msg
 )
 
 set(SERVICE_FILES
@@ -44,7 +45,7 @@ set(SERVICE_FILES
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${MESSAGE_FILES}
   ${SERVICE_FILES}
-  DEPENDENCIES builtin_interfaces
+  DEPENDENCIES builtin_interfaces geometry_msgs
 )
 
 ament_package()
