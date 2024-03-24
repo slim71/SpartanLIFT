@@ -3,6 +3,7 @@
 
 #include "comms/msg/command.hpp"
 #include "comms/msg/heartbeat.hpp"
+#include "comms/msg/network_vertex.hpp"
 #include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"

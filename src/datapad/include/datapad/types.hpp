@@ -1,7 +1,6 @@
 #ifndef _TYPES_HPP_
 #define _TYPES_HPP_
 
-#include "comms/msg/poi.hpp"
 #include "comms/srv/teleop_data.hpp"
 #include <chrono>
 #include <fmt/core.h>
