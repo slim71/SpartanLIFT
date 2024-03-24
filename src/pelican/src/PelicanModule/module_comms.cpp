@@ -129,7 +129,7 @@ void Pelican::commenceHeightCompensation(float odom_height) {
     auto maybe_target = this->getTargetPosition();
     float target_height = this->getActualTargetHeight();
 
-    if ((maybe_target) && (target_height != 0)) { // CHECK: second condition
+    if (this->initiateCheckOffboardEngagement() && maybe_target) {
         auto current_target = maybe_target.value();
         this->sendLogDebug(
             "current: {}, target: {}, diff: {}", current_target[2], target_height,
@@ -143,4 +143,8 @@ void Pelican::commenceHeightCompensation(float odom_height) {
         );
         this->setTargetPosition(current_target[0], current_target[1], compensated_height);
     }
+}
+
+void Pelican::commenceShareNewPosition(geometry_msgs::msg::Point pos) {
+    this->shareNewPosition(pos);
 }

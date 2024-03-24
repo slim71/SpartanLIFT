@@ -35,10 +35,16 @@ Pelican::Pelican()
         std::bind(&Pelican::handleCommandReception, this, std::placeholders::_1),
         this->reentrant_opt_
     );
+    this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
+        this->locator_topic_, this->qos_,
+        std::bind(&Pelican::recordCopterPosition, this, std::placeholders::_1), this->reentrant_opt_
+    );
     this->pub_to_discovery_ =
         this->create_publisher<comms::msg::Status>(this->discovery_topic_, this->data_qos_);
     this->pub_to_dispatch_ =
         this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
+    this->pub_to_locator_ =
+        this->create_publisher<comms::msg::NetworkVertex>(this->locator_topic_, this->qos_);
 
     // Other modules' setup
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
@@ -120,6 +126,8 @@ void Pelican::rollCall() {
 }
 
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
+    cancelTimer(this->rollcall_timer_);
+
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
 
     // Exclude this node's own ID, since it doesn't make sense
@@ -137,5 +145,64 @@ void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
         }
     } else {
         this->sendLogDebug("Excluding own agent_id from the discovery");
+    }
+
+    // TODO: change timer/timeout names
+    this->rollcall_timer_ = this->create_wall_timer(
+        this->rollcall_timeout_,
+        [this]() {
+            this->sendLogDebug("timer activated");
+            cancelTimer(this->rollcall_timer_); // Execute this only once
+            auto s = this->getNetworkSize();
+            this->resizePositionVector(s);
+        },
+        this->getReentrantGroup()
+    );
+}
+
+// TODO: storePosition function on its own?
+
+void Pelican::shareNewPosition(geometry_msgs::msg::Point pos) { // TODO: check for NAN? change name?
+    this->sendLogDebug("Storing pos: ({:.4f},{:.4f},{:.4f})", pos.x, pos.y, pos.z);
+    auto own_id = this->getID();
+
+    this->positions_mutex_.lock();
+    // this->copters_positions_[own_id-1] = pos;
+    this->positions_mutex_.unlock();
+
+    comms::msg::NetworkVertex msg;
+    msg.id = own_id;
+    msg.position = pos;
+
+    this->pub_to_locator_->publish(msg);
+}
+
+void Pelican::recordCopterPosition(const comms::msg::NetworkVertex msg) {
+    // TODO: check for nan
+    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+    this->sendLogDebug(
+        "received position: ({:.4f},{:.4f},{:.4f}) from copter {}", msg.position.x, msg.position.y,
+        msg.position.z, msg.id
+    );
+    if (this->copters_positions_.size() > 0) {
+        this->copters_positions_[msg.id - 1] = msg.position;
+    } else {
+        this->sendLogDebug("Ignoring because I don't know the fleet size, yet");
+    }
+}
+
+// CHECK: add how to delete? or use another function?
+void Pelican::resizePositionVector(unsigned int new_size) {
+    this->sendLogDebug("Resizing vector to size {}", new_size);
+    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+
+    int size_diff = this->copters_positions_.size() - new_size;
+    // Incrementing vector
+    if (size_diff < 0) {
+        for (int i = 0; i < size_diff; i++) {
+            this->copters_positions_.push_back(NAN_point);
+        }
+    } else {
+        this->sendLogDebug("Downsizing position vector!");
     }
 }

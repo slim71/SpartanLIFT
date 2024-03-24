@@ -43,9 +43,11 @@ float Pelican::getROI() const {
     return this->roi_;
 }
 
-int Pelican::getNetworkSize() const {
-    std::lock_guard<std::mutex> lock(this->discovery_mutex_);
-    auto s = this->discovery_vector_.size() + 1;
+unsigned int Pelican::getNetworkSize() const {
+    this->discovery_mutex_.lock();
+    int s = this->discovery_vector_.size() + 1;
+    this->discovery_mutex_.unlock();
+
     this->sendLogDebug(
         "Discovered network has size {}", s
     ); // TODO: move somewhere else to log only once
@@ -64,6 +66,17 @@ std::optional<std::vector<float>> Pelican::getTargetPosition() const {
 float Pelican::getActualTargetHeight() const {
     std::lock_guard<std::mutex> lock(this->height_mutex_);
     return this->actual_target_height_;
+}
+
+geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
+    this->discovery_mutex_.lock();
+    auto len = this->discovery_vector_.size();
+    this->discovery_mutex_.unlock();
+
+    if (len < id)
+        return NAN_point;
+
+    return this->copters_positions_[id - 1];
 }
 
 /*************************** Status flags *****************************/

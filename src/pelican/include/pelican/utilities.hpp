@@ -10,6 +10,9 @@ Eigen::Matrix3f rotX(const float, bool = false);
 Eigen::Matrix3f rotY(const float, bool = false);
 Eigen::Matrix3f rotZ(const float, bool = false);
 Eigen::Vector3f quat2RPY(geometry_msgs::msg::Quaternion);
+geometry_msgs::msg::Point
+operator-(const geometry_msgs::msg::Point, const geometry_msgs::msg::Point);
+geometry_msgs::msg::Point Point(float, float, float);
 
 #include "templates.tpp"
 

@@ -86,3 +86,21 @@ Eigen::Vector3f quat2RPY(geometry_msgs::msg::Quaternion quat) {
     Eigen::Vector3f result({roll, pitch, yaw});
     return result;
 }
+
+geometry_msgs::msg::Point
+operator-(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point second) {
+    geometry_msgs::msg::Point diff;
+    diff.x = first.x - second.x;
+    diff.y = first.y - second.y;
+    diff.z = first.z - second.z;
+
+    return diff;
+}
+
+geometry_msgs::msg::Point Point(float x, float y, float z) {
+    geometry_msgs::msg::Point temp;
+    temp.x = x;
+    temp.y = y;
+    temp.z = z;
+    return temp;
+}

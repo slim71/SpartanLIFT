@@ -29,6 +29,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(pugixml REQUIRED)
 find_package(comms REQUIRED)
 find_package(tf2 REQUIRED)
@@ -38,7 +39,7 @@ find_library(PUGIXML_DIR pugixml)
 
 # Create a library to allow separation of headers and sources
 add_library(Pelican_class src/PelicanModule/pelican.cpp)
-ament_target_dependencies(Pelican_class rclcpp px4_msgs comms tf2 nav_msgs)
+ament_target_dependencies(Pelican_class rclcpp px4_msgs comms tf2 nav_msgs geometry_msgs)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt Eigen3::Eigen)
 
@@ -128,7 +129,7 @@ if(BUILD_TESTING)
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
-  ament_target_dependencies(${PROJECT_NAME}_test rclcpp px4_msgs comms)
+  ament_target_dependencies(${PROJECT_NAME}_test rclcpp px4_msgs comms geometry_msgs)
   # Link to local library
   target_link_libraries(${PROJECT_NAME}_test Pelican_class)
 
@@ -150,7 +151,7 @@ add_executable(pelican
               ${LOGGER_SOURCES}
 )
 target_include_directories(pelican PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(pelican rclcpp px4_msgs comms nav_msgs)
+ament_target_dependencies(pelican rclcpp px4_msgs comms nav_msgs geometry_msgs)
 target_link_libraries(pelican Pelican_class)
 # Once: install executables
 install(

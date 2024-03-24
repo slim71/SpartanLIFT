@@ -119,6 +119,21 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->initTopics();
     this->initSubscribers();
     this->initPublishers();
+
+    // TODO: callback on its own?
+    this->position_timer_ = this->node_->create_wall_timer(
+        std::chrono::milliseconds(500), // TODO: constant
+        [this]() {
+            this->enu_odometry_mutex_.lock();
+            if (!this->enu_odometry_buffer_.empty()) {
+                auto pos = this->enu_odometry_buffer_.back();
+                this->enu_odometry_mutex_.unlock();
+                this->signalShareNewPosition(pos.pose.pose.position);
+            }
+            this->enu_odometry_mutex_.unlock();
+        },
+        this->gatherReentrantGroup()
+    );
 }
 
 void TacMapModule::stopService() {

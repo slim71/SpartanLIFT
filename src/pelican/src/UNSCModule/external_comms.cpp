@@ -50,6 +50,30 @@ std::optional<std::vector<float>> UNSCModule::gatherTargetPose() const {
     return this->node_->getTargetPosition(); // TODO: include yaw or change name?
 }
 
+unsigned int UNSCModule::gatherNetworkSize() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getNetworkSize();
+}
+
+unsigned int UNSCModule::gatherAgentID() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getID();
+}
+
+geometry_msgs::msg::Point UNSCModule::gatherCopterPosition(unsigned int id) {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getCopterPosition(id);
+}
+
 /************* To make other modules carry on an action ************/
 void UNSCModule::signalPublishVehicleCommand(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
@@ -86,4 +110,12 @@ bool UNSCModule::signalWaitForCommanderAck(uint16_t command) const {
     }
 
     return this->node_->commenceWaitForCommanderAck(command);
+}
+
+bool UNSCModule::signalCheckOffboardEngagement() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->initiateCheckOffboardEngagement();
 }
