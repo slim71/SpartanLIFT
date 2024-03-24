@@ -98,8 +98,11 @@ void UNSCModule::runPreChecks() {
 
 void UNSCModule::activateOffboardMode() {
     this->offboard_timer_ = this->node_->create_wall_timer(this->offboard_period_, [this] {
-        this->setAndMaintainOffboardMode();
+        this->setAndMaintainOffboardMode(); // TODO: use std::bind
     });
+    this->proximity_timer_ = this->node_->create_wall_timer(
+        this->proximity_period_, std::bind(&UNSCModule::proximityDetection, this)
+    ); // TODO: how to terminate it when Offboard phase is finished
 }
 
 void UNSCModule::setAndMaintainOffboardMode() { // TODO: not with itself
@@ -166,3 +169,5 @@ bool UNSCModule::sendToCommanderUnit(
     this->sendLogInfo("Command {} sent", command);
     return true;
 }
+
+void UNSCModule::proximityDetection() {}

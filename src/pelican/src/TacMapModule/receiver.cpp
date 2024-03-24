@@ -18,7 +18,7 @@ void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPositio
     globalpos_data.dead_reckoning = msg->dead_reckoning;
 
     std::lock_guard<std::mutex> lock(this->globalpos_mutex_);
-    this->globalpos_buffer_.push_back(globalpos_data);
+    this->globalpos_buffer_.push_back(globalpos_data); // CHECK: am I using this?
 }
 
 void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
@@ -107,7 +107,7 @@ void TacMapModule::checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr 
     this->enu_odometry_buffer_.push_back(enu_odometry_data);
     this->enu_odometry_mutex_.unlock();
 
-    // Only compensate once each second
+    // Only compensate once each second // TODO: create a timer that does this?
     if ((unsigned int) (msg->header.stamp.sec - this->last_compensated_) >=
         constants::COMPENSATION_GAP_SECS) {
         this->sendLogDebug("Height from global odometry: {}", msg->pose.pose.position.z);

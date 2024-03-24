@@ -27,6 +27,7 @@
 #include <boost/circular_buffer.hpp>
 #include <chrono>
 #include <fmt/core.h>
+#include <geometry_msgs/msg/point.hpp>
 #include <iostream>
 #include <math.h>
 #include <nav_msgs/msg/odometry.hpp>
@@ -50,7 +51,7 @@ class MissingExternModule : public std::exception {
 
 struct vote_count {
         unsigned int candidate_id;
-        int total;
+        unsigned int total;
 };
 
 struct heartbeat {
@@ -62,6 +63,7 @@ struct heartbeat {
 std::ostream& operator<<(std::ostream&, const heartbeat&);
 
 extern heartbeat ERROR_HB;
+extern geometry_msgs::msg::Point NAN_point;
 
 /***************** Enum Macros / X-Macros ****************/
 // Macro "constructors" for type and string tables

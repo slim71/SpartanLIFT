@@ -67,6 +67,7 @@ class TacMapModule {
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         void signalHeightCompensation(float) const;
+        void signalShareNewPosition(geometry_msgs::msg::Point);
 
     private: // Attributes
         Pelican* node_;
@@ -126,6 +127,8 @@ class TacMapModule {
 
         std::string enu_odometry_topic_; // i.e. "model/{model_name}_{agent_id}/odometry";
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_enu_odometry_topic_;
+
+        rclcpp::TimerBase::SharedPtr position_timer_;
 
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;

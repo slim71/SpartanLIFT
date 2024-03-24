@@ -25,7 +25,9 @@ class UNSCModule {
         bool setHome();
         bool returnToLaunchPosition();
         void activateOffboardMode();
+        void collisionAvoidance();
 
+        // Getters
         bool getRunningStatus() const;
         Eigen::Vector3f getOffset() const;
 
@@ -38,6 +40,7 @@ class UNSCModule {
         void runPreChecks();
         void setPositionMode();
         void setAndMaintainOffboardMode();
+        void proximityDetection();
 
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -48,11 +51,14 @@ class UNSCModule {
 
         // External communications
         rclcpp::Time gatherTime() const;
+        unsigned int gatherAgentID() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         std::optional<px4_msgs::msg::VehicleGlobalPosition> gatherGlobalPosition() const;
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
         std::optional<std::vector<float>> gatherTargetPose() const;
+        unsigned int gatherNetworkSize() const;
+        geometry_msgs::msg::Point gatherCopterPosition(unsigned int);
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
@@ -62,6 +68,7 @@ class UNSCModule {
         void signalPublishTrajectorySetpoint(float, float, float, float) const;
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
+        bool signalCheckOffboardEngagement() const;
 
     private: // Attributes
         Pelican* node_;
@@ -77,11 +84,17 @@ class UNSCModule {
         mutable std::mutex running_mutex_; // to be used with running_
 
         rclcpp::TimerBase::SharedPtr starting_timer_;
-        std::chrono::seconds briefing_time_ {constants::BRIEFING_TIME_SECS};
+        std::chrono::seconds briefing_time_ {
+            constants::BRIEFING_TIME_SECS}; // TODO: variable not needed since I use a constant?
 
         rclcpp::TimerBase::SharedPtr offboard_timer_;
-        std::chrono::milliseconds offboard_period_ {constants::OFFBOARD_PERIOD_MILLIS};
+        std::chrono::milliseconds offboard_period_ {
+            constants::OFFBOARD_PERIOD_MILLIS}; // TODO: variable not needed since I use a constant?
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
+
+        rclcpp::TimerBase::SharedPtr proximity_timer_;
+        std::chrono::milliseconds proximity_period_ {
+            std::chrono::seconds(1)}; // TODO: variable not needed since I use a constant?
 };
 
 #include "unsc_template.tpp"

@@ -1,4 +1,5 @@
 #include "types.hpp"
+#include "utilities.hpp"
 
 heartbeat ERROR_HB = {0, -1, rclcpp::Time(0, 0)};
 
@@ -63,3 +64,6 @@ std::string commands_to_string(supported_commands command) {
 std::string commands_to_string(uint16_t command) {
     return (command < (uint16_t) NumSupportedCommands) ? commands_names[command] : "";
 }
+
+/************************** NAN structure **************************/
+geometry_msgs::msg::Point NAN_point = Point(std::nan(""), std::nan(""), std::nan(""));

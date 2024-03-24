@@ -15,6 +15,11 @@ void Pelican::rogerWillCo(
     response->dropoff = false;
     response->success = false;
 
+    this->sendLogDebug(
+        "RogerRoger present: {}, takeoff: {}, landing: {}, retrieval: {}, dropoff: {}",
+        request->presence, request->takeoff, request->landing, request->retrieval, request->dropoff
+    );
+
     // Handling leader ID request
     if (request->presence) {
         this->sendLogDebug("Notifying I'm the leader to the user!");
@@ -314,7 +319,7 @@ bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
     auto app_vector = this->dispatch_vector_;
     this->dispatch_mutex_.unlock();
 
-    int ack_received = std::count_if(
+    unsigned int ack_received = std::count_if(
         app_vector.cbegin(), app_vector.cend(),
         [this, command, apply](const comms::msg::Command elem) {
             return (

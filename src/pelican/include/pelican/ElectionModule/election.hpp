@@ -72,7 +72,7 @@ class ElectionModule {
         unsigned int gatherCurrentTerm() const;
         int gatherNumberOfHbs() const;
         heartbeat gatherLastHb() const;
-        int gatherNetworkSize() const;
+        unsigned int gatherNetworkSize() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         bool confirmAgentIsCandidate() const;

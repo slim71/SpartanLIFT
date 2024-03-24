@@ -29,9 +29,10 @@ class Pelican : public rclcpp::Node {
         rclcpp::SubscriptionOptions getReentrantOptions() const;
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
-        int getNetworkSize() const;
+        unsigned int getNetworkSize() const;
         std::optional<std::vector<float>> getTargetPosition() const;
         float getActualTargetHeight() const;
+        geometry_msgs::msg::Point getCopterPosition(unsigned int) const;
 
         // Actions initiated by the module
         bool initiateSetHome();
@@ -71,13 +72,17 @@ class Pelican : public rclcpp::Node {
         void commenceIncreaseCurrentTerm();                                 // Election module
         void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
         bool commenceWaitForCommanderAck(uint16_t); // TacMap module
+        void commenceHeightCompensation(float
+        ); // TacMap module // CHECK: initiate instead of commence?
+        void commenceShareNewPosition(geometry_msgs::msg::Point); // TacMap module
+
+        bool initiateCheckOffboardEngagement();                   // TODO: change name
 
         // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
         void commenceStopElectionService();
         void commenceStopTacMapService();
         void commenceStopUNSCService();
-        void commenceHeightCompensation(float);
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -92,6 +97,8 @@ class Pelican : public rclcpp::Node {
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
+
+        void resizePositionVector(unsigned int);
 
         void setID(unsigned int);
         void setMass(double);
@@ -117,8 +124,8 @@ class Pelican : public rclcpp::Node {
         bool executeRPCCommand(uint16_t);
         void rendezvousFleet();
         void updateLastRPCCommandReceived();
-
-        bool initiateCheckOffboardEngagement();
+        void shareNewPosition(geometry_msgs::msg::Point);
+        void recordCopterPosition(const comms::msg::NetworkVertex);
         unsigned int initiateGetLeaderID();
 
         void
@@ -149,6 +156,7 @@ class Pelican : public rclcpp::Node {
         std::vector<float> target_position_;
         unsigned int last_rpc_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
+        std::vector<geometry_msgs::msg::Point> copters_positions_;
 
         mutable std::mutex id_mutex_;               // Used to access id_
         mutable std::mutex term_mutex_;             // Used to access current_term_
@@ -157,6 +165,7 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex last_rpc_command_mutex_; // Used to access carrying_
         mutable std::mutex target_position_mutex_;  // Used to access target_position_
         mutable std::mutex height_mutex_;           // Used to access actual_target_height_
+        mutable std::mutex positions_mutex_;        // to be used with copters_positions_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -183,6 +192,10 @@ class Pelican : public rclcpp::Node {
         rclcpp::Subscription<comms::msg::Command>::SharedPtr sub_to_dispatch_;
         rclcpp::Publisher<comms::msg::Command>::SharedPtr pub_to_dispatch_;
 
+        std::string locator_topic_ {"/fleet/position"}; // CHECK: inglobate in the network messages?
+        rclcpp::Subscription<comms::msg::NetworkVertex>::SharedPtr sub_to_locator_;
+        rclcpp::Publisher<comms::msg::NetworkVertex>::SharedPtr pub_to_locator_;
+
         std::vector<comms::msg::Status> discovery_vector_;
         mutable std::mutex discovery_mutex_; // To be used with discovery_vector_
 
@@ -192,7 +205,8 @@ class Pelican : public rclcpp::Node {
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         mutable std::mutex rpcs_mutex_;
 
-        std::chrono::seconds rollcall_timeout_ {constants::ROLLCALL_TIME_SECS};
+        std::chrono::seconds rollcall_timeout_ {
+            constants::ROLLCALL_TIME_SECS}; // TODO: get rid of the variable? unused?
         rclcpp::TimerBase::SharedPtr rollcall_timer_;
 
         std::chrono::seconds rpcs_ack_timeout_ {constants::ACK_TIME_SECS};

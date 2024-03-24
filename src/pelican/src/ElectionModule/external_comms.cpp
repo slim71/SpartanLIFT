@@ -50,7 +50,7 @@ heartbeat ElectionModule::gatherLastHb() const {
     return this->node_->requestLastHb();
 }
 
-int ElectionModule::gatherNetworkSize() const {
+unsigned int ElectionModule::gatherNetworkSize() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
