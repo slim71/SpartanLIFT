@@ -24,6 +24,7 @@
 #include "px4_msgs/msg/vehicle_odometry.hpp"
 #include "px4_msgs/msg/vehicle_status.hpp"
 #include <Eigen/Geometry>
+#include <bitset>
 #include <boost/circular_buffer.hpp>
 #include <chrono>
 #include <fmt/core.h>

@@ -71,6 +71,7 @@ void Pelican::rogerWillCo(
             response->success = true;
 
             this->setReferenceHeight(request->z);
+            // this->setSetpointPosition(request->x, request->y, request->z);
             this->setTargetPosition(request->x, request->y, request->z);
 
             std::thread retrieval_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
@@ -81,16 +82,20 @@ void Pelican::rogerWillCo(
     }
 }
 
-void Pelican::targetConvergence(
+// CHECK: how many times is this executed?
+void Pelican::targetConvergence( // Leader-side receiver of FleetInfo messages
     const std::shared_ptr<comms::srv::FleetInfo::Request> request,
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
 ) {
-    auto pos = this->getTargetPosition();
+    auto maybe_pos = this->getTargetPosition();
     float target_height = this->getActualTargetHeight();
-    if (pos) {
-        std::vector<float> v = pos.value();
-        response->target_x = v[0];
-        response->target_y = v[1];
+    if (maybe_pos) {
+        std::vector<float> pos = maybe_pos.value();
+        this->sendLogDebug(
+            "fleetinfo server; x: {:.4f}, y: {:.4f}, z: {:.4f}", pos[0], pos[1], pos[2]
+        ); // TODO: delete
+        response->target_x = pos[0];
+        response->target_y = pos[1];
         response->target_z = target_height;
 
     } else { // CHECK: needed? the follower should be able to know what the target refers to
@@ -414,7 +419,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
     }
 }
 
-void Pelican::rendezvousFleet() {
+void Pelican::rendezvousFleet() { // non-leader side; request
     // The leader has already set the target position before calling this
     if (!this->isLeader()) {
         // Search for a second, then log and search again if needed
@@ -458,7 +463,7 @@ void Pelican::rendezvousFleet() {
     this->initiateOffboardMode();
 }
 
-// This is only executed by non-leaders
+// This is only executed by non-leaders; response handling
 void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
@@ -466,6 +471,10 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
 
     if (status == std::future_status::ready) {
         auto response = future.get();
+        this->sendLogDebug(
+            "response: ({:.4f},{:.4f},{:.4f})", response->target_x, response->target_y,
+            response->target_z
+        );
 
         unsigned int own_id = this->getID();
         int multiplier = own_id < this->initiateGetLeaderID() ? own_id : own_id - 1;
@@ -477,7 +486,8 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
         );
 
         this->setReferenceHeight(response->target_z);
-        this->setTargetPosition(x, y, response->target_z);
+        // this->setSetpointPosition(x, y, response->target_z);
+        this->setTargetPosition(response->target_x, response->target_y, response->target_z);
     } else {
         this->sendLogDebug("Service not ready yet...");
     }

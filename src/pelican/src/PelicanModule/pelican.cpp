@@ -126,7 +126,8 @@ void Pelican::rollCall() {
 }
 
 void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
-    cancelTimer(this->rollcall_timer_);
+    // Cancel timer to avoid parallel executions // CHECK: can be done differently in ROS2?
+    cancelTimer(this->netsize_timer_);
 
     std::lock_guard<std::mutex> lock(this->discovery_mutex_);
 
@@ -147,23 +148,21 @@ void Pelican::storeAttendance(comms::msg::Status::SharedPtr msg) {
         this->sendLogDebug("Excluding own agent_id from the discovery");
     }
 
-    // TODO: change timer/timeout names
-    this->rollcall_timer_ = this->create_wall_timer(
-        this->rollcall_timeout_,
+    // (Re)set a timer which logs the inferred network size
+    this->netsize_timer_ = this->create_wall_timer(
+        this->netsize_timeout_,
         [this]() {
-            this->sendLogDebug("timer activated");
-            cancelTimer(this->rollcall_timer_); // Execute this only once
-            auto s = this->getNetworkSize();
-            this->resizePositionVector(s);
+            cancelTimer(this->netsize_timer_); // Execute this only once
+            auto net_size = this->getNetworkSize();
+            this->sendLogDebug("Discovered network has size {}", net_size);
+            this->resizeCopterPositionsVector(net_size);
         },
         this->getReentrantGroup()
     );
 }
 
-// TODO: storePosition function on its own?
-
-void Pelican::shareNewPosition(geometry_msgs::msg::Point pos) { // TODO: check for NAN? change name?
-    this->sendLogDebug("Storing pos: ({:.4f},{:.4f},{:.4f})", pos.x, pos.y, pos.z);
+void Pelican::sharePosition(geometry_msgs::msg::Point pos) { // TODO: check for NAN?
+    this->sendLogDebug("Sharing pos: ({:.4f},{:.4f},{:.4f})", pos.x, pos.y, pos.z);
     auto own_id = this->getID();
 
     this->positions_mutex_.lock();
@@ -181,8 +180,8 @@ void Pelican::recordCopterPosition(const comms::msg::NetworkVertex msg) {
     // TODO: check for nan
     std::lock_guard<std::mutex> lock(this->positions_mutex_);
     this->sendLogDebug(
-        "received position: ({:.4f},{:.4f},{:.4f}) from copter {}", msg.position.x, msg.position.y,
-        msg.position.z, msg.id
+        "Copter {} shared position: ({:.4f},{:.4f},{:.4f})", msg.id, msg.position.x, msg.position.y,
+        msg.position.z
     );
     if (this->copters_positions_.size() > 0) {
         this->copters_positions_[msg.id - 1] = msg.position;
@@ -192,17 +191,18 @@ void Pelican::recordCopterPosition(const comms::msg::NetworkVertex msg) {
 }
 
 // CHECK: add how to delete? or use another function?
-void Pelican::resizePositionVector(unsigned int new_size) {
-    this->sendLogDebug("Resizing vector to size {}", new_size);
+void Pelican::resizeCopterPositionsVector(unsigned int new_size) {
+    this->sendLogDebug("Resizing copter_positions_ vector to size {}", new_size);
     std::lock_guard<std::mutex> lock(this->positions_mutex_);
 
     int size_diff = this->copters_positions_.size() - new_size;
     // Incrementing vector
-    if (size_diff < 0) {
-        for (int i = 0; i < size_diff; i++) {
+    if (size_diff < 0) { // TODO: invert logic
+        this->sendLogDebug("Increasing it, adding {} elements", abs(size_diff));
+        for (int i = 0; i < abs(size_diff); i++) {
             this->copters_positions_.push_back(NAN_point);
         }
     } else {
-        this->sendLogDebug("Downsizing position vector!");
+        this->sendLogDebug("Downsizing position vector from length {}", size_diff + new_size);
     }
 }

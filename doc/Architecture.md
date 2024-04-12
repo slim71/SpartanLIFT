@@ -8,7 +8,7 @@ The architecture is then "single node - multi module": each node represents a wh
 - Logger module &rarr; handles all logging actions, formatting so that the user can determine which module produced the info
 - Election module &rarr; this is the core module for all actions related to the Leader Election task, based on the [Raft algorithm](https://raft.github.io/raft.pdf)
 - Heartbeat module &rarr; specializes in sending, receiving and storing heartbeats
-- TacMap module &rarr; handles communication with the PX4 package
+- TacMap module &rarr; handles communication with the PX4 package and with the Gazebo/ROS topics needed for the simulation
 - UNSC module &rarr; sends commands to the simulation
 
 <br>

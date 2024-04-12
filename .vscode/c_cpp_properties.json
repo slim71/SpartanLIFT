@@ -14,7 +14,8 @@
                 "/usr/include/**",
                 "/usr/include/",
                 "/usr/local/include/**",
-                "/usr/local/include/"
+                "/usr/local/include/",
+                "/opt/ros/humble/share/**"
             ],
             "defines": [],
             "cStandard": "c11",

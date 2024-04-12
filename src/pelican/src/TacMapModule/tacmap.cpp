@@ -120,15 +120,16 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->initSubscribers();
     this->initPublishers();
 
-    // TODO: callback on its own?
+    // Set a timer to constantly share own position with the other agents
     this->position_timer_ = this->node_->create_wall_timer(
-        std::chrono::milliseconds(500), // TODO: constant
+        std::chrono::milliseconds(constants::POS_SHARING_PERIOD_MILLIS),
         [this]() {
             this->enu_odometry_mutex_.lock();
             if (!this->enu_odometry_buffer_.empty()) {
                 auto pos = this->enu_odometry_buffer_.back();
                 this->enu_odometry_mutex_.unlock();
-                this->signalShareNewPosition(pos.pose.pose.position);
+                this->signalSharePosition(pos.pose.pose.position);
+                return;
             }
             this->enu_odometry_mutex_.unlock();
         },

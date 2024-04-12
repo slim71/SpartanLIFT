@@ -13,6 +13,8 @@ Eigen::Vector3f quat2RPY(geometry_msgs::msg::Quaternion);
 geometry_msgs::msg::Point
 operator-(const geometry_msgs::msg::Point, const geometry_msgs::msg::Point);
 geometry_msgs::msg::Point Point(float, float, float);
+std::bitset<4> movingDirection(geometry_msgs::msg::Point, std::vector<float>);
+std::bitset<4> obstaclePresence(geometry_msgs::msg::Point, geometry_msgs::msg::Point);
 
 #include "templates.tpp"
 

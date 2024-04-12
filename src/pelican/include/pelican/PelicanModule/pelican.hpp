@@ -30,6 +30,8 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getReentrantGroup() const;
         rclcpp::Time getTime() const;
         unsigned int getNetworkSize() const;
+        std::optional<std::vector<float>> getSetpointPosition() const;
+        std::optional<std::vector<float>> getTargetVelocity() const;
         std::optional<std::vector<float>> getTargetPosition() const;
         float getActualTargetHeight() const;
         geometry_msgs::msg::Point getCopterPosition(unsigned int) const;
@@ -64,19 +66,22 @@ class Pelican : public rclcpp::Node {
         void commencePublishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
-        );                                                                  // UNSC module
-        void commencePublishOffboardControlMode();                          // UNSC module
-        void commencePublishTrajectorySetpoint(float, float, float, float); // UNSC module
-        void commenceSetElectionStatus(int);                                // Heartbeat module
-        void commenceResetElectionTimer();                                  // Heartbeat module
-        void commenceIncreaseCurrentTerm();                                 // Election module
+        );                                                                           // UNSC module
+        void commencePublishOffboardControlMode();                                   // UNSC module
+        void
+        commencePublishTrajectorySetpoint(float, float, float, float, float, float); // UNSC module
+        void commenceSetElectionStatus(int);        // Heartbeat module
+        void commenceResetElectionTimer();          // Heartbeat module
+        void commenceIncreaseCurrentTerm();         // Election module
         void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
         bool commenceWaitForCommanderAck(uint16_t); // TacMap module
         void commenceHeightCompensation(float
         ); // TacMap module // CHECK: initiate instead of commence?
-        void commenceShareNewPosition(geometry_msgs::msg::Point); // TacMap module
+        void commenceSharePosition(geometry_msgs::msg::Point); // TacMap module
 
-        bool initiateCheckOffboardEngagement();                   // TODO: change name
+        bool initiateCheckOffboardEngagement();                // TODO: change name
+        void initiateSetSetpointPosition(float, float, float); // CHECK: initiate/commence name
+        void initiateSetTargetVelocity(float, float);          // CHECK: initiate/commence name
 
         // To stop modules; some are not actively used but kept for possible future use
         void commenceStopHeartbeatService();
@@ -98,13 +103,19 @@ class Pelican : public rclcpp::Node {
         void becomeFollower();
         void becomeCandidate();
 
-        void resizePositionVector(unsigned int);
+        void resizeCopterPositionsVector(unsigned int);
 
         void setID(unsigned int);
         void setMass(double);
         void setRole(possible_roles);
         void setTerm(unsigned int);
-        void setTargetPosition(float, float, float);
+        void setSetpointPosition(
+            float, float, float = std::nan("")
+        );                                    // CHECK: maybe to do with only one argument?
+        void setTargetVelocity(float, float); // CHECK: maybe to do with only one argument?
+        void setTargetPosition(
+            float, float, float = std::nan("")
+        ); // CHECK: maybe to do with only one argument?
         void setReferenceHeight(float);
         void setFlyingStatus();
         void unsetFlyingStatus();
@@ -124,7 +135,7 @@ class Pelican : public rclcpp::Node {
         bool executeRPCCommand(uint16_t);
         void rendezvousFleet();
         void updateLastRPCCommandReceived();
-        void shareNewPosition(geometry_msgs::msg::Point);
+        void sharePosition(geometry_msgs::msg::Point);
         void recordCopterPosition(const comms::msg::NetworkVertex);
         unsigned int initiateGetLeaderID();
 
@@ -152,20 +163,24 @@ class Pelican : public rclcpp::Node {
         bool mission_in_progress_ {false};
         std::string model_;
         possible_roles role_ {tbd};
-        float actual_target_height_ {0}; // needed in order to stabilize height tracking?
-        std::vector<float> target_position_;
+        float actual_target_height_ {0};       // needed in order to stabilize height tracking
+        std::vector<float> setpoint_position_; // referring to temporary setpoint along a trajectory
+        std::vector<float> setpoint_velocity_; // referring to temporary setpoint along a trajectory
+        std::vector<float> target_position_;   // Actual desired target
         unsigned int last_rpc_command_stored_ {0};
         unsigned int last_occupied_index_ {0};
         std::vector<geometry_msgs::msg::Point> copters_positions_;
 
-        mutable std::mutex id_mutex_;               // Used to access id_
-        mutable std::mutex term_mutex_;             // Used to access current_term_
-        mutable std::mutex flying_mutex_;           // Used to access flying_
-        mutable std::mutex carrying_mutex_;         // Used to access carrying_
-        mutable std::mutex last_rpc_command_mutex_; // Used to access carrying_
-        mutable std::mutex target_position_mutex_;  // Used to access target_position_
-        mutable std::mutex height_mutex_;           // Used to access actual_target_height_
-        mutable std::mutex positions_mutex_;        // to be used with copters_positions_
+        mutable std::mutex id_mutex_;                // Used to access id_
+        mutable std::mutex term_mutex_;              // Used to access current_term_
+        mutable std::mutex flying_mutex_;            // Used to access flying_
+        mutable std::mutex carrying_mutex_;          // Used to access carrying_
+        mutable std::mutex last_rpc_command_mutex_;  // Used to access carrying_
+        mutable std::mutex setpoint_position_mutex_; // Used to access setpoint_position_
+        mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_position_
+        mutable std::mutex target_position_mutex_;   // Used to access target_position_
+        mutable std::mutex height_mutex_;            // Used to access actual_target_height_
+        mutable std::mutex positions_mutex_;         // to be used with copters_positions_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -205,9 +220,8 @@ class Pelican : public rclcpp::Node {
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         mutable std::mutex rpcs_mutex_;
 
-        std::chrono::seconds rollcall_timeout_ {
-            constants::ROLLCALL_TIME_SECS}; // TODO: get rid of the variable? unused?
-        rclcpp::TimerBase::SharedPtr rollcall_timer_;
+        std::chrono::seconds netsize_timeout_ {constants::ROLLCALL_TIME_SECS};
+        rclcpp::TimerBase::SharedPtr netsize_timer_;
 
         std::chrono::seconds rpcs_ack_timeout_ {constants::ACK_TIME_SECS};
 };

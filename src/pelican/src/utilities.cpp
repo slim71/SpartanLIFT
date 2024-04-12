@@ -104,3 +104,38 @@ geometry_msgs::msg::Point Point(float x, float y, float z) {
     temp.z = z;
     return temp;
 }
+
+// TODO: see if there's a way to generalize the bitset size with direction/sectors inspected
+std::bitset<4> movingDirection(geometry_msgs::msg::Point starting_pos, std::vector<float> target) {
+    std::bitset<4> ret_value; // TODO: init value
+    if ((target.size() > 0) && (target.size() <= 3)) {
+        std::vector<double> difference = {
+            target[0] - starting_pos.x, target[1] - starting_pos.y, target[2] - starting_pos.z};
+
+        ret_value =
+            (((std::abs(difference[0]) > 0.2) && (difference[0] > 0)) |      // moving right
+             ((std::abs(difference[0]) > 0.2) && (difference[0] < 0)) << 1 | // moving left
+             ((std::abs(difference[1]) > 0.2) && (difference[1] > 0)) << 2 | // moving forward
+             ((std::abs(difference[1]) > 0.2) && (difference[1] < 0)) << 3   // moving backward
+            );
+    }
+
+    return ret_value;
+}
+
+std::bitset<4>
+obstaclePresence(geometry_msgs::msg::Point copter_pos, geometry_msgs::msg::Point obstacle_pos) {
+    std::bitset<4> ret_value; // TODO: init value
+
+    std::vector<double> difference = {
+        obstacle_pos.x - copter_pos.x, obstacle_pos.y - copter_pos.y,
+        obstacle_pos.z - copter_pos.z};
+    // TODO: 0000 if height difference is big?
+    ret_value =
+        (((std::abs(difference[0]) < 0.5) && (difference[0] > 0)) |
+         ((std::abs(difference[0]) < 0.5) && (difference[0] < 0)) << 1 |
+         ((std::abs(difference[1]) < 0.5) && (difference[1] > 0)) << 2 |
+         ((std::abs(difference[1]) < 0.5) && (difference[1] < 0)) << 3);
+
+    return ret_value;
+}

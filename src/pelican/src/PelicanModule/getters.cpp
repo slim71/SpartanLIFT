@@ -47,11 +47,26 @@ unsigned int Pelican::getNetworkSize() const {
     this->discovery_mutex_.lock();
     int s = this->discovery_vector_.size() + 1;
     this->discovery_mutex_.unlock();
-
-    this->sendLogDebug(
-        "Discovered network has size {}", s
-    ); // TODO: move somewhere else to log only once
     return s;
+}
+
+// TODO: change name to "setpoint" and the desired one to "target"?
+std::optional<std::vector<float>> Pelican::getSetpointPosition() const {
+    std::lock_guard<std::mutex> lock(this->setpoint_position_mutex_);
+    if (this->setpoint_position_.size() > 0) {
+        return this->setpoint_position_;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::vector<float>> Pelican::getTargetVelocity() const {
+    std::lock_guard<std::mutex> lock(this->setpoint_velocity_mutex_);
+    if (this->setpoint_velocity_.size() > 0) {
+        return this->setpoint_velocity_;
+    }
+
+    return std::nullopt;
 }
 
 std::optional<std::vector<float>> Pelican::getTargetPosition() const {
@@ -69,12 +84,18 @@ float Pelican::getActualTargetHeight() const {
 }
 
 geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
+    // Each node does not count itself in this, so manual +1 needed
     this->discovery_mutex_.lock();
-    auto len = this->discovery_vector_.size();
+    auto disc_len = this->discovery_vector_.size() + 1;
     this->discovery_mutex_.unlock();
 
-    if (len < id)
+    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+    auto copt_len = this->copters_positions_.size();
+
+    // At least one needed vector is too short
+    if ((disc_len < id) || (copt_len < id)) {
         return NAN_point;
+    }
 
     return this->copters_positions_[id - 1];
 }
