@@ -67,10 +67,10 @@ void TacMapModule::signalHeightCompensation(float odom_height) const {
     this->node_->commenceHeightCompensation(odom_height);
 }
 
-void TacMapModule::signalShareNewPosition(geometry_msgs::msg::Point pos) {
+void TacMapModule::signalSharePosition(geometry_msgs::msg::Point pos) {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commenceShareNewPosition(pos);
+    this->node_->commenceSharePosition(pos);
 }

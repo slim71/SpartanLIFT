@@ -21,7 +21,7 @@ class TacMapModule {
         void stopService();
 
         // Transmitting data
-        void publishTrajectorySetpoint(float, float, float, float);
+        void publishTrajectorySetpoint(float, float, float, float, float, float);
         void publishOffboardControlMode();
         void publishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -67,7 +67,7 @@ class TacMapModule {
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         void signalHeightCompensation(float) const;
-        void signalShareNewPosition(geometry_msgs::msg::Point);
+        void signalSharePosition(geometry_msgs::msg::Point);
 
     private: // Attributes
         Pelican* node_;

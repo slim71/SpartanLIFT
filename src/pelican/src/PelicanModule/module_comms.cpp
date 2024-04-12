@@ -73,8 +73,10 @@ void Pelican::commencePublishOffboardControlMode() {
     this->tac_core_.publishOffboardControlMode();
 }
 
-void Pelican::commencePublishTrajectorySetpoint(float x, float y, float z, float yaw) {
-    this->tac_core_.publishTrajectorySetpoint(x, y, z, yaw);
+void Pelican::commencePublishTrajectorySetpoint(
+    float x, float y, float z, float yaw, float vx, float vy
+) {
+    this->tac_core_.publishTrajectorySetpoint(x, y, z, yaw, vx, vy);
 }
 
 std::optional<px4_msgs::msg::VehicleGlobalPosition> Pelican::requestGlobalPosition() {
@@ -126,7 +128,7 @@ void Pelican::commenceSetTerm(uint64_t term) {
 }
 
 void Pelican::commenceHeightCompensation(float odom_height) {
-    auto maybe_target = this->getTargetPosition();
+    auto maybe_target = this->getSetpointPosition();
     float target_height = this->getActualTargetHeight();
 
     if (this->initiateCheckOffboardEngagement() && maybe_target) {
@@ -141,10 +143,18 @@ void Pelican::commenceHeightCompensation(float odom_height) {
             "current: {}, target: {}, compensated:{}", current_target[2], target_height,
             compensated_height
         );
-        this->setTargetPosition(current_target[0], current_target[1], compensated_height);
+        this->setSetpointPosition(current_target[0], current_target[1], compensated_height);
     }
 }
 
-void Pelican::commenceShareNewPosition(geometry_msgs::msg::Point pos) {
-    this->shareNewPosition(pos);
+void Pelican::commenceSharePosition(geometry_msgs::msg::Point pos) {
+    this->sharePosition(pos);
+}
+
+void Pelican::initiateSetSetpointPosition(float x, float y, float z) {
+    this->setSetpointPosition(x, y, z);
+}
+
+void Pelican::initiateSetTargetVelocity(float vx, float vy) {
+    this->setTargetVelocity(vx, vy);
 }

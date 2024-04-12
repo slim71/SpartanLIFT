@@ -42,12 +42,29 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     return this->node_->requestStatus();
 }
 
+// TODO: include yaw or change name?
 std::optional<std::vector<float>> UNSCModule::gatherTargetPose() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->getTargetPosition(); // TODO: include yaw or change name?
+    return this->node_->getSetpointPosition();
+}
+
+std::optional<std::vector<float>> UNSCModule::gatherTargetVelocity() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getTargetVelocity();
+}
+
+std::optional<std::vector<float>> UNSCModule::gatherDesiredPose() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getTargetPosition();
 }
 
 unsigned int UNSCModule::gatherNetworkSize() const {
@@ -96,12 +113,14 @@ void UNSCModule::signalPublishOffboardControlMode() const {
     this->node_->commencePublishOffboardControlMode();
 }
 
-void UNSCModule::signalPublishTrajectorySetpoint(float x, float y, float z, float yaw) const {
+void UNSCModule::signalPublishTrajectorySetpoint(
+    float x, float y, float z, float yaw, float vx, float vy
+) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw);
+    this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw, vx, vy);
 }
 
 bool UNSCModule::signalWaitForCommanderAck(uint16_t command) const {
@@ -118,4 +137,20 @@ bool UNSCModule::signalCheckOffboardEngagement() const {
     }
 
     return this->node_->initiateCheckOffboardEngagement();
+}
+
+void UNSCModule::signalSetSetpointPosition(float x, float y, float z) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->initiateSetSetpointPosition(x, y, z);
+}
+
+void UNSCModule::signalSetTargetVelocity(float vx, float vy) const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->initiateSetTargetVelocity(vx, vy);
 }

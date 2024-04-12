@@ -6,6 +6,7 @@
 class Pelican;
 
 // TODO: each agents logs in separate files?
+// TODO: is different level file/terminal possible?
 class LoggerModule {
     public:
         explicit LoggerModule();

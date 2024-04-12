@@ -148,5 +148,6 @@
     "**/.vscode/**",
     "**/.github/**",
     "**/_output/**"
-  ]
+  ],
+  "C_Cpp.loggingLevel": "Error"
 }

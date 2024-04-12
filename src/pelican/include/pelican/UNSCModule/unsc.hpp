@@ -25,7 +25,6 @@ class UNSCModule {
         bool setHome();
         bool returnToLaunchPosition();
         void activateOffboardMode();
-        void collisionAvoidance();
 
         // Getters
         bool getRunningStatus() const;
@@ -38,16 +37,17 @@ class UNSCModule {
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
         void runPreChecks();
-        void setPositionMode();
         void setAndMaintainOffboardMode();
-        void proximityDetection();
+        void consensusToRendezvous();
+        geometry_msgs::msg::Point adjustmentForCollisionAvoidance(geometry_msgs::msg::Point);
 
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         );
 
-        Eigen::Vector3f convertLocalToBody(const Eigen::Vector3f&) const;
+        Eigen::Vector3f
+        convertLocalToBody(const Eigen::Vector3f&) const; // CHECK: just a util func?
 
         // External communications
         rclcpp::Time gatherTime() const;
@@ -57,6 +57,8 @@ class UNSCModule {
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
         std::optional<std::vector<float>> gatherTargetPose() const;
+        std::optional<std::vector<float>> gatherTargetVelocity() const;
+        std::optional<std::vector<float>> gatherDesiredPose() const;
         unsigned int gatherNetworkSize() const;
         geometry_msgs::msg::Point gatherCopterPosition(unsigned int);
 
@@ -65,10 +67,12 @@ class UNSCModule {
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         ) const;
-        void signalPublishTrajectorySetpoint(float, float, float, float) const;
+        void signalPublishTrajectorySetpoint(float, float, float, float, float, float) const;
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
+        void signalSetSetpointPosition(float, float, float = std::nan("")) const;
+        void signalSetTargetVelocity(float, float) const;
 
     private: // Attributes
         Pelican* node_;
@@ -84,17 +88,15 @@ class UNSCModule {
         mutable std::mutex running_mutex_; // to be used with running_
 
         rclcpp::TimerBase::SharedPtr starting_timer_;
-        std::chrono::seconds briefing_time_ {
-            constants::BRIEFING_TIME_SECS}; // TODO: variable not needed since I use a constant?
+        std::chrono::seconds briefing_time_ {constants::BRIEFING_TIME_SECS}; // TODO: change names?
 
         rclcpp::TimerBase::SharedPtr offboard_timer_;
-        std::chrono::milliseconds offboard_period_ {
-            constants::OFFBOARD_PERIOD_MILLIS}; // TODO: variable not needed since I use a constant?
+        std::chrono::milliseconds offboard_period_ {constants::OFFBOARD_PERIOD_MILLIS};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
 
-        rclcpp::TimerBase::SharedPtr proximity_timer_;
-        std::chrono::milliseconds proximity_period_ {
-            std::chrono::seconds(1)}; // TODO: variable not needed since I use a constant?
+        rclcpp::TimerBase::SharedPtr rendezvous_timer_;
+        std::chrono::milliseconds rendezvous_period_ {
+            std::chrono::milliseconds(constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS)};
 };
 
 #include "unsc_template.tpp"
