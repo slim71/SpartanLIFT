@@ -21,7 +21,7 @@ class TacMapModule {
         void stopService();
 
         // Transmitting data
-        void publishTrajectorySetpoint(float, float, float, float, float, float);
+        void publishTrajectorySetpoint(geometry_msgs::msg::Point, geometry_msgs::msg::Point);
         void publishOffboardControlMode();
         void publishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -29,10 +29,10 @@ class TacMapModule {
         );
         bool waitForCommanderAck(uint16_t);
 
-        std::optional<px4_msgs::msg::VehicleGlobalPosition> getGlobalPosition();
-        std::optional<px4_msgs::msg::VehicleOdometry> getOdometry();
-        std::optional<px4_msgs::msg::VehicleCommandAck> getCommanderAck();
-        std::optional<px4_msgs::msg::VehicleStatus> getStatus();
+        std::optional<px4_msgs::msg::VehicleOdometry> getNEDOdometry() const;
+        std::optional<nav_msgs::msg::Odometry> getENUOdometry() const;
+        std::optional<px4_msgs::msg::VehicleCommandAck> getCommanderAck() const;
+        std::optional<px4_msgs::msg::VehicleStatus> getStatus() const;
         bool getRunningStatus() const;
         bool getInitiatedStatus() const;
 
@@ -52,11 +52,10 @@ class TacMapModule {
         void initPublishers();
 
         // Receiving data
-        void storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr);
-        void storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
+        void storeNEDOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
-        void checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr);
+        void storeENUOdometry(const nav_msgs::msg::Odometry::SharedPtr);
 
         // External communications
         unsigned int gatherAgentID() const;
@@ -66,19 +65,34 @@ class TacMapModule {
         rclcpp::Time gatherTime() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
-        void signalHeightCompensation(float) const;
+        void signalHeightCompensation(double) const;
         void signalSharePosition(geometry_msgs::msg::Point);
 
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
-
         std::atomic<bool> running_ {true};
-
         int system_id_ {0};
         int component_id_ {0};
 
-        int32_t last_compensated_ {0};
+        // Only one ack memorized because messages from that topic should be sparse
+        std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
+
+        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> ned_odometry_buffer_ {
+            constants::NED_ODOMETRY_BUFFER_SIZE};
+        boost::circular_buffer<nav_msgs::msg::Odometry> enu_odometry_buffer_ {
+            constants::ENU_ODOMETRY_BUFFER_SIZE};
+        boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
+            constants::STATUS_BUFFER_SIZE};
+
+        mutable std::mutex running_mutex_;       // to be used with running_
+        mutable std::mutex commander_ack_mutex_; // to be used with last_commander_ack_
+        mutable std::mutex globalpos_mutex_;     // to be used with gps_buffer_
+        mutable std::mutex ned_odometry_mutex_;  // to be used with ned_odometry_buffer_
+        mutable std::mutex enu_odometry_mutex_;  // to be used with enu_odometry_buffer_
+        mutable std::mutex status_mutex_;        // to be used with status_buffer_
+        mutable std::mutex system_id_mutex_;     // to be used with system_id_
+        mutable std::mutex component_id_mutex_;  // to be used with component_id_
 
         // The subscription sets a QoS profile based on rmw_qos_profile_sensor_data.
         // This is needed because the default ROS 2 QoS profile for subscribers is
@@ -100,10 +114,6 @@ class TacMapModule {
         std::string control_mode_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_control_mode";
         rclcpp::Subscription<px4_msgs::msg::VehicleControlMode>::SharedPtr
             sub_to_control_mode_topic_;
-
-        std::string global_pos_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_global_position";
-        rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr
-            sub_to_global_pos_topic_;
 
         std::string ned_odometry_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_odometry";
         rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr sub_to_odometry_topic_;
@@ -129,27 +139,7 @@ class TacMapModule {
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_to_enu_odometry_topic_;
 
         rclcpp::TimerBase::SharedPtr position_timer_;
-
-        // Only one ack memorized because messages from that topic should be sparse
-        std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
-
-        boost::circular_buffer<px4_msgs::msg::VehicleGlobalPosition> globalpos_buffer_ {
-            constants::GLOBALPOS_BUFFER_SIZE};
-        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> ned_odometry_buffer_ {
-            constants::NED_ODOMETRY_BUFFER_SIZE};
-        boost::circular_buffer<nav_msgs::msg::Odometry> enu_odometry_buffer_ {
-            constants::ENU_ODOMETRY_BUFFER_SIZE};
-        boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
-            constants::STATUS_BUFFER_SIZE};
-
-        mutable std::mutex running_mutex_;       // to be used with running_
-        mutable std::mutex commander_ack_mutex_; // to be used with last_commander_ack_
-        mutable std::mutex globalpos_mutex_;     // to be used with gps_buffer_
-        mutable std::mutex ned_odometry_mutex_;  // to be used with ned_odometry_buffer_
-        mutable std::mutex enu_odometry_mutex_;  // to be used with enu_odometry_buffer_
-        mutable std::mutex status_mutex_;        // to be used with status_buffer_
-        mutable std::mutex system_id_mutex_;     // to be used with system_id_
-        mutable std::mutex component_id_mutex_;  // to be used with component_id_
+        rclcpp::TimerBase::SharedPtr compensation_timer_;
 };
 
 #include "tacmap_template.tpp"

@@ -2,3 +2,5 @@ Pelican:
   ros__parameters:
     model: "/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/X3/model.sdf"
     id: 1
+    roi: 2.0
+    collision_radius: 1.0

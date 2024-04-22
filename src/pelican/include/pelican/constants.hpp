@@ -2,7 +2,7 @@ namespace constants {
     static constexpr unsigned int DELAY_MILLIS = 10;
     static constexpr unsigned int ROLLCALL_TIME_SECS = 1;
     static constexpr unsigned int ACK_TIME_SECS = 1;
-    static constexpr unsigned int BRIEFING_TIME_SECS = 10;
+    static constexpr unsigned int PRECHECKS_TIME_SECS = 10;
     static constexpr unsigned int HB_REPETITION_PERIOD_MILLIS = 100;
     static constexpr unsigned int ACK_WAIT_MILLIS = 100;
     static constexpr unsigned int OFFBOARD_PERIOD_MILLIS = 20;
@@ -31,10 +31,14 @@ namespace constants {
 
     static constexpr unsigned int MAVLINK_ENABLE_CUSTOM_MODE = 1;
     static constexpr unsigned int PX4_OFFBOARD_MODE = 6;
-    static constexpr float CONFIRM_SET_HOME = 1.0;
+    static constexpr double CONFIRM_SET_HOME = 1.0;
 
     // Up to and including C++17, pi is not a constant introduced into the language.
     // It is present in C++20, but switching standard just for a constant seems a bit
     // of an overkill. Have it hardcoded.
     static constexpr double PI = 3.14159265358979323846;
+
+    static constexpr double ALPHA_REND = 0.2;
+    static constexpr double BETA_REND = 1.0;
+    static constexpr double AVOIDANCE_DISTANCE = 1.0;
 } // namespace constants

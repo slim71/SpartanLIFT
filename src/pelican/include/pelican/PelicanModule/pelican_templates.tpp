@@ -1,6 +1,8 @@
 #ifndef _PELICAN_TEMPLATES_HPP_
 #define _PELICAN_TEMPLATES_HPP_
 
+#include "types.hpp"
+
 template<typename... Args> void Pelican::sendLogDebug(std::string s, Args... args) const {
     if(this->logger_.isReady())
         this->logger_.logDebug(main_module, s, args...);

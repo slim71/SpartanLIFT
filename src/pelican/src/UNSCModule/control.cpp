@@ -47,7 +47,7 @@ bool UNSCModule::returnToLaunchPosition() {
 
 void UNSCModule::runPreChecks() {
     // Delete wall timer to have it set off only once
-    cancelTimer(this->starting_timer_);
+    cancelTimer(this->prechecks_timer_);
 
     this->signalPublishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_RUN_PREARM_CHECKS);
 
@@ -98,50 +98,35 @@ void UNSCModule::runPreChecks() {
 
 void UNSCModule::activateOffboardMode() {
     this->offboard_timer_ = this->node_->create_wall_timer(
-        this->offboard_period_, std::bind(&UNSCModule::setAndMaintainOffboardMode, this)
-        // [this] {
-        // this->setAndMaintainOffboardMode(); // TODO: use std::bind}
+        this->offboard_period_, std::bind(&UNSCModule::setAndMaintainOffboardMode, this),
+        this->gatherOffboardExclusiveGroup()
     );
     this->rendezvous_timer_ = this->node_->create_wall_timer(
-        this->rendezvous_period_, std::bind(&UNSCModule::consensusToRendezvous, this)
-    ); // TODO: how to terminate it when Offboard phase is finished
+        this->rendezvous_period_, std::bind(&UNSCModule::consensusToRendezvous, this),
+        this->gatherRendezvousExclusiveGroup()
+    );
 }
 
-void UNSCModule::setAndMaintainOffboardMode() { // TODO: not with itself
-    auto opt_target = this->gatherTargetPose();
-    float x, y, z, yaw;
-    if (opt_target) {
-        auto target = opt_target.value();
-        x = target[0];
-        y = target[1];
-        z = target[2];
-        yaw = 0;
-    } else {
+void UNSCModule::setAndMaintainOffboardMode() {
+    auto opt_target = this->gatherTargetPosition();
+    if (!opt_target) {
         this->sendLogDebug("No target pose found");
         return;
     }
-    auto maybe_vel = this->gatherTargetVelocity();
-    float vx, vy;
-    if (maybe_vel) {
-        auto target = maybe_vel.value();
-        vx = target[0];
-        vy = target[1];
-    } else {
+    auto target_pos = opt_target.value();
+    auto maybe_vel = this->gatherSetpointVelocity();
+    if (!maybe_vel) {
         this->sendLogDebug("No target vel found");
         return;
     }
+    auto target_vel = maybe_vel.value();
+    double vx = target_vel.x;
+    double vy = target_vel.y;
 
-    Eigen::Vector3f des_body_pos = this->convertLocalToBody({x, y, z});
+    Eigen::Vector3d des_body_pos = convertENUtoNED(
+        {target_pos.x, target_pos.y, target_pos.z}, Eigen::Vector3d(this->getOffset().data())
+    );
     std::vector<double> des_body_vel = {vy, vx}; // Inverted to convert from ENU to NED
-
-    // TODO: delete
-    this->sendLogDebug(
-        "offboard: ({:.4f}, {:.4f}, {:.4f}) became ({:.4f}, {:.4f}, {:.4f})", x, y, z,
-        des_body_pos(0), des_body_pos(1), des_body_pos(2)
-    );
-    this->sendLogDebug(
-        "velocity ({:.4f}, {:.4f}) became ({:.4f}, {:4f})", vx, vy, des_body_vel[0], des_body_vel[1]
-    );
 
     if (this->offboard_setpoint_counter_ == constants::OFFBOARD_SETPOINT_LIMIT) {
         // Change to Offboard mode after the needed amount of setpoints
@@ -157,7 +142,11 @@ void UNSCModule::setAndMaintainOffboardMode() { // TODO: not with itself
     // offboard_control_mode needs to be paired with trajectory_setpoint
     this->signalPublishOffboardControlMode();
     this->signalPublishTrajectorySetpoint(
-        des_body_pos(0), des_body_pos(1), des_body_pos(2), yaw, des_body_vel[0], des_body_vel[1]
+        geometry_msgs::msg::Point()
+            .set__x(des_body_pos(0))
+            .set__y(des_body_pos(1))
+            .set__z(des_body_pos(2)),
+        geometry_msgs::msg::Point().set__x(des_body_vel[0]).set__y(des_body_vel[1])
     );
 
     // stop the counter after reaching OFFBOARD_SETPOINT_LIMIT + 1
@@ -190,110 +179,97 @@ bool UNSCModule::sendToCommanderUnit(
 }
 
 /**************************************************************************************/
-void UNSCModule::consensusToRendezvous(
-) { // collision avoidance is included in the updating algorithm
-    double alpha = 0.2;
-    double beta = 1.0;
-
-    auto maybe_predefined = this->gatherDesiredPose();
-    if (!maybe_predefined) {
+// collision avoidance is included in the updating algorithm
+void UNSCModule::consensusToRendezvous() {
+    auto maybe_des_pos = this->gatherDesiredPosition();
+    if (!maybe_des_pos) {
         this->sendLogWarning("Desired not set!");
         return;
     }
-    auto predefinedLocation = maybe_predefined.value();
+    auto des_pos = maybe_des_pos.value();
 
-    auto initialPosition = this->gatherCopterPosition(this->gatherAgentID());
-    auto updatedPosition = initialPosition;
-    this->sendLogDebug(
-        "Own pos at start: ({:.4f},{:.4f},{:.4f})", updatedPosition.x, updatedPosition.y,
-        updatedPosition.z
-    );
+    auto init_pos = this->gatherCopterPosition(this->gatherAgentID());
+    auto updated_pos = init_pos;
+    this->sendLogDebug("Own pos at start of rendezvous iteration: {}", updated_pos);
 
     // Compute the distance between the agent and the predefined location
-    double distanceToPredefinedLocation = std::hypot(
-        updatedPosition.x - predefinedLocation[0], updatedPosition.y - predefinedLocation[1]
-    );
-    this->sendLogDebug(
-        "distance To PredefinedLocation ({:.4f}, {:.4f}): {:.4f}", predefinedLocation[0],
-        predefinedLocation[1], distanceToPredefinedLocation
-    );
+    double dist_to_des_pos = std::hypot(updated_pos.x - des_pos.x, updated_pos.y - des_pos.y);
+    this->sendLogDebug("Distance to desired position {}: {:.4f}", des_pos, dist_to_des_pos);
 
     // Compute adjustment vector for collision avoidance with nearby agents
-    geometry_msgs::msg::Point adjustmentVector = adjustmentForCollisionAvoidance(updatedPosition);
-    this->sendLogDebug(
-        "adjustmentVector: ({:.4f},{:.4f},-)", adjustmentVector.x, adjustmentVector.y
-    );
+    geometry_msgs::msg::Point collision_adjustment = adjustmentForCollisionAvoidance(updated_pos);
+    this->sendLogDebug("Collision adjustment: {}", collision_adjustment);
 
     // Check if the distance is less than the threshold
-    if (distanceToPredefinedLocation >= 2.0) {
-        // Apply influence of the predefined location (alpha)
-        updatedPosition.x = alpha * predefinedLocation[0] + (1 - alpha) * updatedPosition.x;
-        updatedPosition.y = alpha * predefinedLocation[1] + (1 - alpha) * updatedPosition.y;
-        this->sendLogDebug(
-            "Updated position after alpha: ({:.4f},{:.4f},-)", updatedPosition.x, updatedPosition.y
-        );
+    if (dist_to_des_pos >= this->gatherROI()) {
+        // Apply influence of the predefined location (constants::ALPHA_REND)
+        updated_pos.x =
+            constants::ALPHA_REND * des_pos.x + (1 - constants::ALPHA_REND) * updated_pos.x;
+        updated_pos.y =
+            constants::ALPHA_REND * des_pos.y + (1 - constants::ALPHA_REND) * updated_pos.y;
+        this->sendLogDebug("Updated position after distance coverage: {}", updated_pos);
     }
 
-    // Apply influence of the adjustment vector for collision avoidance (beta)
-    updatedPosition.x += beta * adjustmentVector.x;
-    updatedPosition.y += beta * adjustmentVector.y;
-    this->sendLogDebug(
-        "Updated position after beta: ({:.4f},{:.4f},-)", updatedPosition.x, updatedPosition.y
-    );
+    // Apply influence of the adjustment vector for collision avoidance
+    updated_pos.x += constants::BETA_REND * collision_adjustment.x;
+    updated_pos.y += constants::BETA_REND * collision_adjustment.y;
+    this->sendLogDebug("Updated position after collision adjustments: {}", updated_pos);
 
-    if ((updatedPosition == initialPosition) && (adjustmentVector.x == 0.0) &&
-        (adjustmentVector.y == 0.0)) {
-        this->sendLogDebug("all ok");
+    geometry_msgs::msg::Point vel = geometry_msgs::msg::Point()
+                                        .set__x(
+                                            (updated_pos.x - init_pos.x) /
+                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
+                                        )
+                                        .set__y(
+                                            (updated_pos.y - init_pos.y) /
+                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
+                                        );
+    this->sendLogDebug("Computed velocity for next setpoint: {}", vel);
+
+    // TODO: stop offboard altogether? move to pose mode
+    if (updated_pos == init_pos) {
         cancelTimer(this->rendezvous_timer_);
     }
-    this->signalSetSetpointPosition(
-        updatedPosition.x, updatedPosition.y, this->node_->getActualTargetHeight()
-    ); // TODO: if this works, adapt the get function; not the actual, but the current
-    std::vector<double> vel = {
-        (updatedPosition.x - initialPosition.x) / 0.5,
-        (updatedPosition.y - initialPosition.y) /
-            0.5}; // TODO: the time is the same as the timer for consensusToRendezvous, in secs
-    this->sendLogDebug("Computed velocity for next setpoint: {:.4f}, {:.4f}", vel[0], vel[1]);
-    this->signalSetTargetVelocity(vel[0], vel[1]);
+
+    // Not changing the z component, so the current one is kept
+    this->signalSetSetpointPosition(updated_pos);
+    this->signalSetSetpointVelocity(vel);
 }
 
-// TODO: clearer and more concise logs
 geometry_msgs::msg::Point
 UNSCModule::adjustmentForCollisionAvoidance(geometry_msgs::msg::Point agentPosition) {
     // Initialize the total adjustment vector to zero
     double totalAdjustmentX = 0.0;
     double totalAdjustmentY = 0.0;
-    double avoidanceDistance = 1.0;
 
     unsigned int net_size = this->gatherNetworkSize();
     unsigned int my_id = this->gatherAgentID();
 
     // Compute adjustment vector for each neighbor
     for (unsigned int copter_id = 1; copter_id <= net_size; copter_id++) { // for each copter
-        if (copter_id != my_id) { // exclude my own position
+        if (copter_id != my_id) { // Exclude my own position
             auto neighborPosition = this->gatherCopterPosition(copter_id);
-            if (neighborPosition !=
-                NAN_point) { // copter position valid // CHECK: != not working with nan?
+            // CHECK: != not working with nan? retest when seen again
+            if (neighborPosition != NAN_point) { // Copter position valid
 
                 // Compute vector from neighbor to agent
                 double dx = neighborPosition.x - agentPosition.x;
                 double dy = neighborPosition.y - agentPosition.y;
-                double distance =
-                    std::hypot(dx, dy); // Euclidean distance between the agent and the neighbor
+                // Euclidean distance between the agent and the neighbor
+                double distance = std::hypot(dx, dy);
                 this->sendLogDebug(
-                    "distance from copter {} at ({:.4f},{:.4f},{:.4f}): {:.4f} ({:.4f},{:.4f})",
-                    copter_id, neighborPosition.x, neighborPosition.y, neighborPosition.z, distance,
-                    dx, dy
+                    "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
+                    neighborPosition, distance, dx, dy
                 );
 
                 // Adjust only if the distance is less than the threshold
-                if (distance < avoidanceDistance) {
+                if (distance < gatherCollisionRadius()) {
                     // Compute the adjustment direction (away from the neighbor)
-                    double adjustmentMagnitude = avoidanceDistance - distance;
+                    double adjustmentMagnitude = constants::AVOIDANCE_DISTANCE - distance;
                     double adjustmentDirectionX = dx / distance * adjustmentMagnitude;
                     double adjustmentDirectionY = dy / distance * adjustmentMagnitude;
                     this->sendLogDebug(
-                        "Adjustment contributions: {:.4f}, {:.4f} (mag: {:.4f})",
+                        "Adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
                         adjustmentDirectionX, adjustmentDirectionY, adjustmentMagnitude
                     );
 
@@ -304,12 +280,7 @@ UNSCModule::adjustmentForCollisionAvoidance(geometry_msgs::msg::Point agentPosit
             }
         }
     }
-
-    geometry_msgs::msg::Point ret_value;
-    ret_value.x = totalAdjustmentX;
-    ret_value.y = totalAdjustmentY;
-    ret_value.z = 0;
-
     // Return the normalized total adjustment vector
-    return ret_value;
+    return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
+    ;
 }

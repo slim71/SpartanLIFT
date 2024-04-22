@@ -1,35 +1,12 @@
 #include "TacMapModule/tacmap.hpp"
 
-void TacMapModule::storeGlobalPosition(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg) {
-    px4_msgs::msg::VehicleGlobalPosition globalpos_data;
-    globalpos_data.timestamp = msg->timestamp;               // [us]
-    globalpos_data.timestamp_sample = msg->timestamp_sample; // [us]
-    globalpos_data.lat = msg->lat;                           // [deg]
-    globalpos_data.lon = msg->lon;                           // [deg]
-    globalpos_data.alt = msg->alt;                           // [m]
-    globalpos_data.alt_ellipsoid = msg->alt_ellipsoid;       // [m]
-    globalpos_data.delta_alt = msg->delta_alt;
-    globalpos_data.lat_lon_reset_counter = msg->lat_lon_reset_counter;
-    globalpos_data.alt_reset_counter = msg->alt_reset_counter;
-    globalpos_data.eph = msg->eph;                 // [m]
-    globalpos_data.epv = msg->epv;                 // [m]
-    globalpos_data.terrain_alt = msg->terrain_alt; // [m]
-    globalpos_data.terrain_alt_valid = msg->terrain_alt_valid;
-    globalpos_data.dead_reckoning = msg->dead_reckoning;
-
-    std::lock_guard<std::mutex> lock(this->globalpos_mutex_);
-    this->globalpos_buffer_.push_back(globalpos_data); // CHECK: am I using this?
-}
-
-void TacMapModule::storeOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
-    px4_msgs::msg::VehicleOdometry ned_odometry_data;
-    ned_odometry_data.timestamp = msg->timestamp;
-    ned_odometry_data.position = msg->position;
-    ned_odometry_data.q = msg->q;
-    // Other fields not needed
-
+void TacMapModule::storeNEDOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
     std::lock_guard<std::mutex> lock(this->ned_odometry_mutex_);
-    this->ned_odometry_buffer_.push_back(ned_odometry_data);
+    this->ned_odometry_buffer_.push_back(px4_msgs::msg::VehicleOdometry()
+                                             .set__timestamp(msg->timestamp)
+                                             .set__position(msg->position)
+                                             .set__q(msg->q));
+    // Other fields not needed
 }
 
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
@@ -85,33 +62,22 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
 
     if (this->last_commander_ack_)
         this->last_commander_ack_.reset();
-    this->last_commander_ack_ = px4_msgs::msg::VehicleCommandAck();
 
-    this->last_commander_ack_->timestamp = msg->timestamp;
-    this->last_commander_ack_->command = msg->command;
-    this->last_commander_ack_->result = msg->result;
-    this->last_commander_ack_->result_param1 = msg->result_param1;
-    this->last_commander_ack_->result_param2 = msg->result_param2;
-    this->last_commander_ack_->target_system = msg->target_system;
-    this->last_commander_ack_->target_component = msg->target_component;
-    this->last_commander_ack_->from_external = msg->from_external;
+    this->last_commander_ack_ = px4_msgs::msg::VehicleCommandAck()
+                                    .set__timestamp(msg->timestamp)
+                                    .set__command(msg->command)
+                                    .set__result(msg->result)
+                                    .set__result_param1(msg->result_param1)
+                                    .set__result_param2(msg->result_param2)
+                                    .set__target_system(msg->target_system)
+                                    .set__target_component(msg->target_component)
+                                    .set__from_external(msg->from_external);
 }
 
-void TacMapModule::checkGlobalOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    nav_msgs::msg::Odometry enu_odometry_data;
-    enu_odometry_data.header = msg->header;
-    enu_odometry_data.pose = msg->pose;
-    enu_odometry_data.twist = msg->twist;
-
-    this->enu_odometry_mutex_.lock();
-    this->enu_odometry_buffer_.push_back(enu_odometry_data);
-    this->enu_odometry_mutex_.unlock();
-
-    // Only compensate once each second // TODO: create a timer that does this?
-    if ((unsigned int) (msg->header.stamp.sec - this->last_compensated_) >=
-        constants::COMPENSATION_GAP_SECS) {
-        this->sendLogDebug("Height from global odometry: {}", msg->pose.pose.position.z);
-        this->last_compensated_ = msg->header.stamp.sec;
-        this->signalHeightCompensation(msg->pose.pose.position.z);
-    }
+void TacMapModule::storeENUOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock(this->enu_odometry_mutex_);
+    this->enu_odometry_buffer_.push_back(nav_msgs::msg::Odometry()
+                                             .set__header(msg->header)
+                                             .set__pose(msg->pose)
+                                             .set__twist(msg->twist));
 }

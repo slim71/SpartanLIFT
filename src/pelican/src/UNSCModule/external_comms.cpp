@@ -18,12 +18,20 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherReentrantGroup() const {
     return this->node_->getReentrantGroup();
 }
 
-std::optional<px4_msgs::msg::VehicleGlobalPosition> UNSCModule::gatherGlobalPosition() const {
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherOffboardExclusiveGroup() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->requestGlobalPosition();
+    return this->node_->getOffboardExclusiveGroup();
+}
+
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherRendezvousExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getRendezvousExclusiveGroup();
 }
 
 std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const {
@@ -31,7 +39,7 @@ std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const
         throw MissingExternModule();
     }
 
-    return this->node_->requestOdometry();
+    return this->node_->requestNEDOdometry();
 }
 
 std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
@@ -42,8 +50,7 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     return this->node_->requestStatus();
 }
 
-// TODO: include yaw or change name?
-std::optional<std::vector<float>> UNSCModule::gatherTargetPose() const {
+std::optional<geometry_msgs::msg::Point> UNSCModule::gatherTargetPosition() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -51,15 +58,15 @@ std::optional<std::vector<float>> UNSCModule::gatherTargetPose() const {
     return this->node_->getSetpointPosition();
 }
 
-std::optional<std::vector<float>> UNSCModule::gatherTargetVelocity() const {
+std::optional<geometry_msgs::msg::Point> UNSCModule::gatherSetpointVelocity() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->getTargetVelocity();
+    return this->node_->getSetpointVelocity();
 }
 
-std::optional<std::vector<float>> UNSCModule::gatherDesiredPose() const {
+std::optional<geometry_msgs::msg::Point> UNSCModule::gatherDesiredPosition() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -83,12 +90,28 @@ unsigned int UNSCModule::gatherAgentID() const {
     return this->node_->getID();
 }
 
-geometry_msgs::msg::Point UNSCModule::gatherCopterPosition(unsigned int id) {
+geometry_msgs::msg::Point UNSCModule::gatherCopterPosition(unsigned int id) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
     return this->node_->getCopterPosition(id);
+}
+
+double UNSCModule::gatherROI() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getROI();
+}
+
+double UNSCModule::gatherCollisionRadius() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getCollisionRadius();
 }
 
 /************* To make other modules carry on an action ************/
@@ -114,13 +137,13 @@ void UNSCModule::signalPublishOffboardControlMode() const {
 }
 
 void UNSCModule::signalPublishTrajectorySetpoint(
-    float x, float y, float z, float yaw, float vx, float vy
+    geometry_msgs::msg::Point pos, geometry_msgs::msg::Point vel
 ) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commencePublishTrajectorySetpoint(x, y, z, yaw, vx, vy);
+    this->node_->commencePublishTrajectorySetpoint(pos, vel);
 }
 
 bool UNSCModule::signalWaitForCommanderAck(uint16_t command) const {
@@ -136,21 +159,21 @@ bool UNSCModule::signalCheckOffboardEngagement() const {
         throw MissingExternModule();
     }
 
-    return this->node_->initiateCheckOffboardEngagement();
+    return this->node_->commenceCheckOffboardEngagement();
 }
 
-void UNSCModule::signalSetSetpointPosition(float x, float y, float z) const {
+void UNSCModule::signalSetSetpointPosition(geometry_msgs::msg::Point p) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->initiateSetSetpointPosition(x, y, z);
+    return this->node_->commenceSetSetpointPosition(p);
 }
 
-void UNSCModule::signalSetTargetVelocity(float vx, float vy) const {
+void UNSCModule::signalSetSetpointVelocity(geometry_msgs::msg::Point v) const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->initiateSetTargetVelocity(vx, vy);
+    return this->node_->commenceSetSetpointVelocity(v);
 }

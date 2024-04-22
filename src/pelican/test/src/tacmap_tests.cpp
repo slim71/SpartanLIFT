@@ -2,13 +2,8 @@
 #include "types.hpp"
 
 /********************* Simple methods testing **********************/
-TEST_F(TacMapTest, TestGetGlobalPosition) {
-    auto ret = this->core_.getGlobalPosition();
-    ASSERT_EQ(typeid(ret), typeid(std::optional<px4_msgs::msg::VehicleGlobalPosition>));
-}
-
 TEST_F(TacMapTest, TestGetOdometry) {
-    auto ret = this->core_.getOdometry();
+    auto ret = this->core_.getNEDOdometry();
     ASSERT_EQ(typeid(ret), typeid(std::optional<px4_msgs::msg::VehicleOdometry>));
 }
 

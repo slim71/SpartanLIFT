@@ -33,7 +33,6 @@ set(MESSAGE_FILES
     msg/Heartbeat.msg
     msg/Proposal.msg
     msg/RequestVoteRPC.msg
-    msg/Status.msg
     msg/NetworkVertex.msg
 )
 

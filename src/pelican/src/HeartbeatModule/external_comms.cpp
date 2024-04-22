@@ -75,7 +75,7 @@ void HeartbeatModule::signalResetElectionTimer() {
     this->node_->commenceResetElectionTimer();
 }
 
-void HeartbeatModule::signalSetTerm(uint64_t term) const {
+void HeartbeatModule::signalSetTerm(uint64_t term) {
     if (!this->node_) {
         throw MissingExternModule();
     }

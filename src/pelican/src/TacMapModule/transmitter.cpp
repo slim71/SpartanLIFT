@@ -1,13 +1,13 @@
 #include "TacMapModule/tacmap.hpp"
 
 void TacMapModule::publishTrajectorySetpoint(
-    float x, float y, float z, float yaw, float vx, float vy
+    geometry_msgs::msg::Point pos, geometry_msgs::msg::Point vel
 ) {
     px4_msgs::msg::TrajectorySetpoint msg {};
 
-    msg.position = {x, y, z};
-    msg.yaw = yaw;                          // [rad]; [-PI:PI] // TODO: try to ignore
-    msg.velocity = {vx, vy, std::nanf("")}; // Not interested in the vertical velocity
+    msg.position = {(float) pos.x, (float) pos.y, (float) pos.z};
+    msg.velocity = {
+        (float) vel.x, (float) vel.y, std::nanf("")}; // Not interested in the vertical velocity
 
     msg.timestamp = this->gatherTime().nanoseconds() / 1000;
 
