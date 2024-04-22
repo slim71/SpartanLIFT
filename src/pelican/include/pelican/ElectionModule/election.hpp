@@ -29,7 +29,7 @@ class ElectionModule {
         void stopService();
         void flushVotes();
 
-        unsigned int getLeaderID();
+        unsigned int getLeaderID() const;
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -41,7 +41,7 @@ class ElectionModule {
         void leaderElection();
         void triggerVotes();
         void vote(int id_to_vote, double candidate_mass) const;
-        void serveVoteRequest(const comms::msg::RequestVoteRPC msg) const;
+        void serveVoteRequest(const comms::msg::RequestVoteRPC msg);
         void storeVotes(const comms::msg::Proposal::SharedPtr msg);
 
         bool checkElectionCompleted() const;
@@ -77,10 +77,10 @@ class ElectionModule {
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         bool confirmAgentIsCandidate() const;
         void signalIncreaseTerm() const;
-        void signalSetTerm(uint64_t) const;
-        void signalTransitionToLeader() const;
-        void signalTransitionToCandidate() const;
-        void signalTransitionToFollower() const;
+        void signalSetTerm(uint64_t);
+        void signalTransitionToLeader();
+        void signalTransitionToCandidate();
+        void signalTransitionToFollower();
 
     private: // Attributes
         Pelican* node_;

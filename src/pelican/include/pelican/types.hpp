@@ -19,15 +19,16 @@
 #include "px4_msgs/msg/vehicle_command.hpp"
 #include "px4_msgs/msg/vehicle_command_ack.hpp"
 #include "px4_msgs/msg/vehicle_control_mode.hpp"
-#include "px4_msgs/msg/vehicle_global_position.hpp"
 #include "px4_msgs/msg/vehicle_local_position.hpp"
 #include "px4_msgs/msg/vehicle_odometry.hpp"
 #include "px4_msgs/msg/vehicle_status.hpp"
 #include <Eigen/Geometry>
+#include <array>
 #include <bitset>
 #include <boost/circular_buffer.hpp>
 #include <chrono>
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <geometry_msgs/msg/point.hpp>
 #include <iostream>
 #include <math.h>
@@ -66,12 +67,12 @@ std::ostream& operator<<(std::ostream&, const heartbeat&);
 extern heartbeat ERROR_HB;
 extern geometry_msgs::msg::Point NAN_point;
 
-/***************** Enum Macros / X-Macros ****************/
+/********************** Enum Macros / X-Macros *********************/
 // Macro "constructors" for type and string tables
 #define AS_BARE(a) a,
 #define AS_STR(a) #a,
 
-/************************ Modules ************************/
+/***************************** Modules *****************************/
 // Table; _ for any substitution
 #define MODULES(_) \
     _(nullmodule)  \
@@ -87,7 +88,7 @@ enum possible_modules { MODULES(AS_BARE) NumModules };
 std::string modules_to_string(possible_modules);
 possible_modules string_to_modules(const std::string&);
 
-/************************* Roles *************************/
+/****************************** Roles ******************************/
 // Table; _ for any substitution
 #define ROLES(_) \
     _(tbd)       \
@@ -102,7 +103,7 @@ possible_roles string_to_roles(const std::string&);
 std::ostream& operator<<(std::ostream&, const possible_modules&);
 std::ostream& operator<<(std::ostream&, const possible_roles&);
 
-/************************ Commands ***********************/
+/***************************** Commands ****************************/
 #define COMMANDS(_)      \
     _(NO_COMMAND)        \
     _(TAKEOFF_COMMAND)   \
@@ -115,5 +116,32 @@ enum supported_commands : uint16_t { COMMANDS(AS_BARE) NumSupportedCommands };
 
 std::string commands_to_string(supported_commands);
 std::string commands_to_string(uint16_t);
+
+/*************************** Formatters ****************************/
+// Custom formatter specialization to quickly format
+// geometry_msgs::msg::Point and Eigen::Vector3d data with fmt
+template<> class fmt::formatter<geometry_msgs::msg::Point> {
+    public:
+        constexpr auto parse(format_parse_context& ctx) {
+            return ctx.begin();
+        }
+
+        template<typename Context>
+        constexpr auto format(geometry_msgs::msg::Point const& p, Context& ctx) const {
+            return format_to(ctx.out(), "({:.4f}, {:.4f}, {:.4f})", p.x, p.y, p.z);
+        }
+};
+
+template<> class fmt::formatter<Eigen::Vector3d> {
+    public:
+        constexpr auto parse(format_parse_context& ctx) {
+            return ctx.begin();
+        }
+
+        template<typename Context>
+        constexpr auto format(Eigen::Vector3d const& v, Context& ctx) const {
+            return format_to(ctx.out(), "({}, {}, {})", v[0], v[1], v[2]);
+        }
+};
 
 #endif

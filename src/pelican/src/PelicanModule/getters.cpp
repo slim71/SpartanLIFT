@@ -35,12 +35,28 @@ rclcpp::CallbackGroup::SharedPtr Pelican::getReentrantGroup() const {
     return this->reentrant_group_;
 }
 
+rclcpp::CallbackGroup::SharedPtr Pelican::getTimerExclusiveGroup() const {
+    return this->timer_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getOffboardExclusiveGroup() const {
+    return this->offboard_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getRendezvousExclusiveGroup() const {
+    return this->rendezvous_exclusive_group_;
+}
+
 rclcpp::Time Pelican::getTime() const {
     return this->now();
 }
 
-float Pelican::getROI() const {
+double Pelican::getROI() const {
     return this->roi_;
+}
+
+double Pelican::getCollisionRadius() const {
+    return this->collision_radius_;
 }
 
 unsigned int Pelican::getNetworkSize() const {
@@ -50,35 +66,34 @@ unsigned int Pelican::getNetworkSize() const {
     return s;
 }
 
-// TODO: change name to "setpoint" and the desired one to "target"?
-std::optional<std::vector<float>> Pelican::getSetpointPosition() const {
+std::optional<geometry_msgs::msg::Point> Pelican::getSetpointPosition() const {
     std::lock_guard<std::mutex> lock(this->setpoint_position_mutex_);
-    if (this->setpoint_position_.size() > 0) {
+    if (this->setpoint_position_ != NAN_point) {
         return this->setpoint_position_;
     }
 
     return std::nullopt;
 }
 
-std::optional<std::vector<float>> Pelican::getTargetVelocity() const {
+std::optional<geometry_msgs::msg::Point> Pelican::getSetpointVelocity() const {
     std::lock_guard<std::mutex> lock(this->setpoint_velocity_mutex_);
-    if (this->setpoint_velocity_.size() > 0) {
+    if (this->setpoint_velocity_ != NAN_point) {
         return this->setpoint_velocity_;
     }
 
     return std::nullopt;
 }
 
-std::optional<std::vector<float>> Pelican::getTargetPosition() const {
+std::optional<geometry_msgs::msg::Point> Pelican::getTargetPosition() const {
     std::lock_guard<std::mutex> lock(this->target_position_mutex_);
-    if (this->target_position_.size() > 0) {
+    if (this->target_position_ != NAN_point) {
         return this->target_position_;
     }
 
     return std::nullopt;
 }
 
-float Pelican::getActualTargetHeight() const {
+double Pelican::getActualTargetHeight() const {
     std::lock_guard<std::mutex> lock(this->height_mutex_);
     return this->actual_target_height_;
 }

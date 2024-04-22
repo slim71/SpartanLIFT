@@ -70,7 +70,7 @@ void ElectionModule::leaderElection() {
     auto app_votes = this->received_votes_;
     this->votes_mutex_.unlock();
 
-    if (!this->checkVotingCompleted() && app_votes.size() > 0) {
+    if (!this->checkVotingCompleted() && !app_votes.empty()) {
         // Sort votes based on the proposed leader
         std::sort(
             app_votes.begin(), app_votes.end(),
@@ -167,7 +167,7 @@ void ElectionModule::triggerVotes() {
     this->pub_to_request_vote_rpc_topic_->publish(req);
 }
 
-void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) const {
+void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
     if (msg.solicitant_id == this->gatherAgentID()) {
         this->sendLogDebug("Not serving my own vote request");
         return;
@@ -212,11 +212,11 @@ void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
         return;
     }
 
-    auto msg = comms::msg::Proposal();
-    msg.term_id = this->gatherCurrentTerm();
-    msg.voter_id = this->gatherAgentID();
-    msg.proposed_leader = id_to_vote;
-    msg.candidate_mass = candidate_mass;
+    comms::msg::Proposal msg = comms::msg::Proposal()
+                                   .set__term_id(this->gatherCurrentTerm())
+                                   .set__voter_id(this->gatherAgentID())
+                                   .set__proposed_leader(id_to_vote)
+                                   .set__candidate_mass(candidate_mass);
 
     this->sendLogInfo("Voting agent {}", id_to_vote);
     this->pub_to_leader_election_topic_->publish(msg);

@@ -28,8 +28,8 @@ class Datapad : public rclcpp::Node {
         void backToLZ();
         void payloadExtraction();
         void payloadDropoff();
-        void processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::SharedFuture);
-        void sendTeleopData(Flags);
+        void processFleetLeaderCommandAck(rclcpp::Client<comms::srv::TeleopData>::SharedFuture);
+        void teleopTaskServer(Flags);
 
     private:                                     // Attributes
         LoggerModule logger_;

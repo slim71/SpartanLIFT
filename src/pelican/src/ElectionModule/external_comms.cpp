@@ -6,6 +6,7 @@ unsigned int ElectionModule::gatherAgentID() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
+    this->sendLogDebug("gathering id");
 
     return this->node_->getID();
 }
@@ -30,6 +31,7 @@ unsigned int ElectionModule::gatherCurrentTerm() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
+    this->sendLogDebug("gathering term");
 
     return this->node_->getCurrentTerm();
 }
@@ -92,7 +94,7 @@ void ElectionModule::signalIncreaseTerm() const {
     this->node_->commenceIncreaseCurrentTerm();
 }
 
-void ElectionModule::signalSetTerm(uint64_t term) const {
+void ElectionModule::signalSetTerm(uint64_t term) {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -100,7 +102,7 @@ void ElectionModule::signalSetTerm(uint64_t term) const {
     this->node_->commenceSetTerm(term);
 }
 
-void ElectionModule::signalTransitionToLeader() const {
+void ElectionModule::signalTransitionToLeader() {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -108,7 +110,7 @@ void ElectionModule::signalTransitionToLeader() const {
     this->node_->commenceLeaderOperations();
 }
 
-void ElectionModule::signalTransitionToCandidate() const {
+void ElectionModule::signalTransitionToCandidate() {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -116,7 +118,7 @@ void ElectionModule::signalTransitionToCandidate() const {
     this->node_->commenceCandidateOperations();
 }
 
-void ElectionModule::signalTransitionToFollower() const {
+void ElectionModule::signalTransitionToFollower() {
     if (!this->node_) {
         throw MissingExternModule();
     }

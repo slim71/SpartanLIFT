@@ -4,7 +4,9 @@ void Datapad::landingPage() {
     std::cout << std::endl << "Select functionality" << std::endl;
     this->sendLogDebug("Select functionality");
 
+    std::string str_choice;
     int choice;
+    bool input_error = false;
     while (true) {
         std::cout << "(1) Ensure leader is elected" << std::endl;
         std::cout << "(2) Initiate takeoff" << std::endl;
@@ -20,16 +22,25 @@ void Datapad::landingPage() {
         this->sendLogDebug("(5) Initiate landing");
         this->sendLogDebug("(0) Exit");
 
-        std::cin >> choice;
+        std::cin >> str_choice;
 
-        this->running_mutex_.lock();
-        auto ret = this->running_;
-        this->running_mutex_.unlock();
+        auto ret = this->isRunning();
         if (!ret)
             break;
 
-        if (std::cin.fail()) {
-            std::cout << "Input is not a number!" << std::endl << std::endl;
+        input_error = false;
+        try {
+            size_t pos;
+            choice = std::stoi(str_choice, &pos);
+            // Was the full string used to build the int?
+            if (pos != str_choice.size())
+                input_error = true;
+        } catch (std::logic_error&) {
+            input_error = true;
+        }
+
+        if (input_error) {
+            std::cout << "Invalid choice given!" << std::endl << std::endl;
             this->sendLogDebug("Wrong input!");
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -37,21 +48,27 @@ void Datapad::landingPage() {
             this->sendLogDebug("Choice made: {}", choice);
             switch (choice) {
                 case 0:
+                    this->sendLogDebug("Initiating 'shutdown' functionality");
                     rclcpp::shutdown();
                     return;
                 case 1:
+                    this->sendLogDebug("Initiating 'contactLeader' functionality");
                     this->contactLeader();
                     break;
                 case 2:
+                    this->sendLogDebug("Initiating 'unitSortie' functionality");
                     this->unitSortie();
                     break;
                 case 3:
+                    this->sendLogDebug("Initiating 'payloadExtraction' functionality");
                     this->payloadExtraction();
                     break;
                 case 4:
+                    this->sendLogDebug("Initiating 'payloadDropoff' functionality");
                     this->payloadDropoff();
                     break;
                 case 5:
+                    this->sendLogDebug("Initiating 'backToLZ' functionality");
                     this->backToLZ();
                     break;
                 default:
@@ -69,10 +86,13 @@ void Datapad::landingPage() {
 }
 
 void Datapad::contactLeader() {
-    this->sendTeleopData(Flags().SetPresence());
+    this->sendLogDebug("Contacting leader...");
+    this->teleopTaskServer(Flags().SetPresence());
 }
 
-void Datapad::processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::SharedFuture future) {
+void Datapad::processFleetLeaderCommandAck(
+    rclcpp::Client<comms::srv::TeleopData>::SharedFuture future
+) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
@@ -120,6 +140,7 @@ void Datapad::processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::Shar
         if (response->retrieval) {
             if (response->success) {
                 this->sendLogInfo("Payload position acquired");
+                this->transport_wip_ = true;
             } else {
                 this->sendLogWarning("Could not transmit payload position");
             }
@@ -129,8 +150,7 @@ void Datapad::processLeaderResponse(rclcpp::Client<comms::srv::TeleopData>::Shar
         if (response->dropoff) {
             if (response->success) {
                 this->sendLogInfo("Dropoff position acquired");
-                // CHECK: to be set here, or on notification of succesful engage?
-                this->transport_wip_ = true;
+                this->transport_wip_ = false;
             } else {
                 this->sendLogWarning("Could not transmit dropoff position");
             }
@@ -156,7 +176,7 @@ void Datapad::unitSortie() {
         return;
     }
 
-    this->sendTeleopData(Flags().SetTakeoff());
+    this->teleopTaskServer(Flags().SetTakeoff());
 }
 
 void Datapad::backToLZ() {
@@ -173,7 +193,7 @@ void Datapad::backToLZ() {
         return;
     }
 
-    this->sendTeleopData(Flags().SetLanding());
+    this->teleopTaskServer(Flags().SetLanding());
 }
 
 void Datapad::payloadExtraction() {
@@ -190,7 +210,7 @@ void Datapad::payloadExtraction() {
         return;
     }
 
-    this->sendTeleopData(Flags().SetRetrieval());
+    this->teleopTaskServer(Flags().SetRetrieval());
 }
 
 void Datapad::payloadDropoff() {
@@ -207,10 +227,10 @@ void Datapad::payloadDropoff() {
         return;
     }
 
-    this->sendTeleopData(Flags().SetDropoff());
+    this->teleopTaskServer(Flags().SetDropoff());
 }
 
-void Datapad::sendTeleopData(Flags flags) {
+void Datapad::teleopTaskServer(Flags flags) { // Server side of TeleopData service
     auto request = std::make_shared<comms::srv::TeleopData::Request>();
     request->presence = flags.GetPresence();
     request->takeoff = flags.GetTakeoff();
@@ -264,7 +284,7 @@ void Datapad::sendTeleopData(Flags flags) {
 
         // Send request
         auto result = this->teleopdata_client_->async_send_request(
-            request, std::bind(&Datapad::processLeaderResponse, this, std::placeholders::_1)
+            request, std::bind(&Datapad::processFleetLeaderCommandAck, this, std::placeholders::_1)
         );
 
         // If the callback is never called, because we never got a reply for the service server,

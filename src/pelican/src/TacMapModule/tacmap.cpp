@@ -14,7 +14,6 @@ TacMapModule::~TacMapModule() {
     resetSharedPointer(this->sub_to_flags_topic_);
     resetSharedPointer(this->sub_to_attitude_topic_);
     resetSharedPointer(this->sub_to_control_mode_topic_);
-    resetSharedPointer(this->sub_to_global_pos_topic_);
     resetSharedPointer(this->sub_to_odometry_topic_);
     resetSharedPointer(this->sub_to_status_topic_);
 
@@ -36,7 +35,6 @@ void TacMapModule::initTopics() {
     this->flags_topic_ = px4_header + "/fmu/out/failsafe_flags"s;
     this->attitude_topic_ = px4_header + "/fmu/out/vehicle_attitude"s;
     this->control_mode_topic_ = px4_header + "/fmu/out/vehicle_control_mode"s;
-    this->global_pos_topic_ = px4_header + "/fmu/out/vehicle_global_position"s;
     this->ned_odometry_topic_ = px4_header + "/fmu/out/vehicle_odometry"s;
     this->command_ack_topic_ = px4_header + "/fmu/out/vehicle_command_ack"s;
     this->status_topic_ = px4_header + "/fmu/out/vehicle_status"s;
@@ -60,16 +58,9 @@ void TacMapModule::initSubscribers() {
         throw MissingExternModule();
     }
 
-    this->sub_to_global_pos_topic_ =
-        this->node_->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(
-            this->global_pos_topic_, this->px4_qos_,
-            std::bind(&TacMapModule::storeGlobalPosition, this, std::placeholders::_1),
-            this->gatherReentrantOptions()
-        );
-
     this->sub_to_odometry_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
         this->ned_odometry_topic_, this->px4_qos_,
-        std::bind(&TacMapModule::storeOdometry, this, std::placeholders::_1),
+        std::bind(&TacMapModule::storeNEDOdometry, this, std::placeholders::_1),
         this->gatherReentrantOptions()
     );
 
@@ -88,7 +79,7 @@ void TacMapModule::initSubscribers() {
 
     this->sub_to_enu_odometry_topic_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
         this->enu_odometry_topic_, this->standard_qos_,
-        std::bind(&TacMapModule::checkGlobalOdometry, this, std::placeholders::_1),
+        std::bind(&TacMapModule::storeENUOdometry, this, std::placeholders::_1),
         this->gatherReentrantOptions()
     );
 }
@@ -124,14 +115,27 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     this->position_timer_ = this->node_->create_wall_timer(
         std::chrono::milliseconds(constants::POS_SHARING_PERIOD_MILLIS),
         [this]() {
-            this->enu_odometry_mutex_.lock();
-            if (!this->enu_odometry_buffer_.empty()) {
-                auto pos = this->enu_odometry_buffer_.back();
-                this->enu_odometry_mutex_.unlock();
-                this->signalSharePosition(pos.pose.pose.position);
+            auto maybe_odom = this->getENUOdometry();
+            if (!maybe_odom)
                 return;
-            }
-            this->enu_odometry_mutex_.unlock();
+            auto last_enu_odom = maybe_odom.value();
+            this->signalSharePosition(last_enu_odom.pose.pose.position);
+        },
+        this->gatherReentrantGroup()
+    );
+
+    // Set a timer for height tracking compensation
+    this->compensation_timer_ = this->node_->create_wall_timer(
+        std::chrono::seconds(constants::COMPENSATION_GAP_SECS),
+        [this]() {
+            auto maybe_odom = this->getENUOdometry();
+            if (!maybe_odom)
+                return;
+            auto last_enu_odom = maybe_odom.value();
+            this->sendLogDebug(
+                "Height from global odometry: {}", last_enu_odom.pose.pose.position.z
+            );
+            this->signalHeightCompensation(last_enu_odom.pose.pose.position.z);
         },
         this->gatherReentrantGroup()
     );

@@ -74,17 +74,13 @@ void Pelican::commencePublishOffboardControlMode() {
 }
 
 void Pelican::commencePublishTrajectorySetpoint(
-    float x, float y, float z, float yaw, float vx, float vy
+    geometry_msgs::msg::Point pos, geometry_msgs::msg::Point vel
 ) {
-    this->tac_core_.publishTrajectorySetpoint(x, y, z, yaw, vx, vy);
+    this->tac_core_.publishTrajectorySetpoint(pos, vel);
 }
 
-std::optional<px4_msgs::msg::VehicleGlobalPosition> Pelican::requestGlobalPosition() {
-    return this->tac_core_.getGlobalPosition();
-}
-
-std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestOdometry() {
-    return this->tac_core_.getOdometry();
+std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestNEDOdometry() {
+    return this->tac_core_.getNEDOdometry();
 }
 
 std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() {
@@ -99,7 +95,7 @@ void Pelican::commenceStopTacMapService() {
     this->tac_core_.stopService();
 }
 
-bool Pelican::initiateCheckOffboardEngagement() {
+bool Pelican::commenceCheckOffboardEngagement() {
     return this->tac_core_.checkOffboardEngagement();
 }
 
@@ -127,23 +123,18 @@ void Pelican::commenceSetTerm(uint64_t term) {
     this->setTerm(term);
 }
 
-void Pelican::commenceHeightCompensation(float odom_height) {
+void Pelican::commenceHeightCompensation(double odom_height) {
     auto maybe_target = this->getSetpointPosition();
-    float target_height = this->getActualTargetHeight();
+    double target_height = this->getActualTargetHeight();
 
-    if (this->initiateCheckOffboardEngagement() && maybe_target) {
+    if (this->commenceCheckOffboardEngagement() && maybe_target) {
         auto current_target = maybe_target.value();
+        auto compensated_height = current_target.z + (target_height - odom_height);
         this->sendLogDebug(
-            "current: {}, target: {}, diff: {}", current_target[2], target_height,
-            abs(target_height - current_target[2])
+            "Height| current: {:.4f}, target: {:.4f}, odom: {:.4f}, compensated: {:.4f}",
+            current_target.z, target_height, odom_height, compensated_height
         );
-
-        auto compensated_height = current_target[2] + (target_height - odom_height);
-        this->sendLogDebug(
-            "current: {}, target: {}, compensated:{}", current_target[2], target_height,
-            compensated_height
-        );
-        this->setSetpointPosition(current_target[0], current_target[1], compensated_height);
+        this->setSetpointPosition(current_target.set__z(compensated_height));
     }
 }
 
@@ -151,10 +142,10 @@ void Pelican::commenceSharePosition(geometry_msgs::msg::Point pos) {
     this->sharePosition(pos);
 }
 
-void Pelican::initiateSetSetpointPosition(float x, float y, float z) {
-    this->setSetpointPosition(x, y, z);
+void Pelican::commenceSetSetpointPosition(geometry_msgs::msg::Point p) {
+    this->setSetpointPosition(p);
 }
 
-void Pelican::initiateSetTargetVelocity(float vx, float vy) {
-    this->setTargetVelocity(vx, vy);
+void Pelican::commenceSetSetpointVelocity(geometry_msgs::msg::Point v) {
+    this->setSetpointVelocity(v);
 }

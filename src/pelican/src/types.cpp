@@ -66,4 +66,6 @@ std::string commands_to_string(uint16_t command) {
 }
 
 /************************** NAN structure **************************/
-geometry_msgs::msg::Point NAN_point = Point(std::nan(""), std::nan(""), std::nan(""));
+// geometry_msgs::msg::Point NAN_point = Point(std::nan(""), std::nan(""), std::nan(""));
+geometry_msgs::msg::Point NAN_point =
+    geometry_msgs::msg::Point().set__x(std::nan("")).set__y(std::nan("")).set__z(std::nan(""));

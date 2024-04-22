@@ -1,7 +1,7 @@
 #include "PelicanModule/pelican.hpp"
 
 // TODO: make this work as a unique handling of whatever command, rendezvous and formation included
-// This is only executed by the leader
+// This is only executed by the leader; receiver of Teleop requests
 void Pelican::rogerWillCo(
     const std::shared_ptr<comms::srv::TeleopData::Request> request,
     const std::shared_ptr<comms::srv::TeleopData::Response> response
@@ -66,13 +66,15 @@ void Pelican::rogerWillCo(
         if (!this->isCarrying()) {
             this->sendLogDebug("Notifying start of payload extraction operations!");
             this->sendLogInfo(
-                "Payload is at ({:.4f},{:.4f},{:.4f})", request->x, request->y, request->z
+                "Payload is at {}",
+                geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
             response->success = true;
 
             this->setReferenceHeight(request->z);
-            // this->setSetpointPosition(request->x, request->y, request->z);
-            this->setTargetPosition(request->x, request->y, request->z);
+            this->setTargetPosition(
+                geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
+            );
 
             std::thread retrieval_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
             retrieval_thread.detach();
@@ -82,25 +84,17 @@ void Pelican::rogerWillCo(
     }
 }
 
-// CHECK: how many times is this executed?
-void Pelican::targetConvergence( // Leader-side receiver of FleetInfo messages
-    const std::shared_ptr<comms::srv::FleetInfo::Request> request,
+void Pelican::targetNotification( // Leader-side, receiver of FleetInfo requests
+    const std::shared_ptr<comms::srv::FleetInfo::Request>,
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
 ) {
     auto maybe_pos = this->getTargetPosition();
-    float target_height = this->getActualTargetHeight();
+    double target_height = this->getActualTargetHeight();
     if (maybe_pos) {
-        std::vector<float> pos = maybe_pos.value();
-        this->sendLogDebug(
-            "fleetinfo server; x: {:.4f}, y: {:.4f}, z: {:.4f}", pos[0], pos[1], pos[2]
-        ); // TODO: delete
-        response->target_x = pos[0];
-        response->target_y = pos[1];
-        response->target_z = target_height;
-
-    } else { // CHECK: needed? the follower should be able to know what the target refers to
-        response->formation = false;
-        response->rendezvous = false;
+        geometry_msgs::msg::Point pos = maybe_pos.value();
+        response->target.x = pos.x;
+        response->target.y = pos.y;
+        response->target.z = target_height;
     }
 }
 
@@ -402,9 +396,10 @@ bool Pelican::executeRPCCommand(uint16_t command) {
         case RENDEZVOUS:
             this->rendezvousFleet();
 
-            // Give the mode switch some time to activate // CHECK wait value; maybe another way?
+            // Give the mode switch some time to activate // CHECK maybe another way instead of
+            // sleeping?
             std::this_thread::sleep_for(std::chrono::seconds(constants::RENDEZVOUS_WAIT_TIME_SECS));
-            if (!this->initiateCheckOffboardEngagement()) {
+            if (!this->commenceCheckOffboardEngagement()) {
                 this->sendLogWarning("Rendezvous operations could not be accomplished!");
             } else {
                 this->sendLogInfo(("Rendezvous initiated"));
@@ -419,7 +414,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
     }
 }
 
-void Pelican::rendezvousFleet() { // non-leader side; request
+void Pelican::rendezvousFleet() { // non-leader side; request for FleetInfo data
     // The leader has already set the target position before calling this
     if (!this->isLeader()) {
         // Search for a second, then log and search again if needed
@@ -463,7 +458,7 @@ void Pelican::rendezvousFleet() { // non-leader side; request
     this->initiateOffboardMode();
 }
 
-// This is only executed by non-leaders; response handling
+// This is only executed by non-leaders; response handling for FleetInfo data
 void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
@@ -471,23 +466,10 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
 
     if (status == std::future_status::ready) {
         auto response = future.get();
-        this->sendLogDebug(
-            "response: ({:.4f},{:.4f},{:.4f})", response->target_x, response->target_y,
-            response->target_z
-        );
+        this->sendLogInfo("Target received: {}", response->target);
 
-        unsigned int own_id = this->getID();
-        int multiplier = own_id < this->initiateGetLeaderID() ? own_id : own_id - 1;
-        float alpha = 2 * constants::PI / (this->getNetworkSize() - 1) * multiplier;
-        float x = response->target_x + this->getROI() * cos(alpha);
-        float y = response->target_y + this->getROI() * sin(alpha);
-        this->sendLogDebug(
-            "multiplier: {}, x: {:.4f}, y:{:.4f}, alpha: {:.4f}", multiplier, x, y, alpha
-        );
-
-        this->setReferenceHeight(response->target_z);
-        // this->setSetpointPosition(x, y, response->target_z);
-        this->setTargetPosition(response->target_x, response->target_y, response->target_z);
+        this->setReferenceHeight(response->target.z);
+        this->setTargetPosition(response->target);
     } else {
         this->sendLogDebug("Service not ready yet...");
     }

@@ -24,7 +24,7 @@ void Pelican::becomeLeader() {
     );
     this->fleetinfo_server_ = this->create_service<comms::srv::FleetInfo>(
         "shareinfo_service",
-        std::bind(&Pelican::targetConvergence, this, std::placeholders::_1, std::placeholders::_2)
+        std::bind(&Pelican::targetNotification, this, std::placeholders::_1, std::placeholders::_2)
     );
 
     this->hb_core_.sendNow(); // To promptly notify all agents about the new leader

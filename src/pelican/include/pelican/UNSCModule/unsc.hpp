@@ -28,7 +28,7 @@ class UNSCModule {
 
         // Getters
         bool getRunningStatus() const;
-        Eigen::Vector3f getOffset() const;
+        Eigen::Vector3d getOffset() const;
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -46,53 +46,54 @@ class UNSCModule {
             float = NAN
         );
 
-        Eigen::Vector3f
-        convertLocalToBody(const Eigen::Vector3f&) const; // CHECK: just a util func?
-
         // External communications
         rclcpp::Time gatherTime() const;
         unsigned int gatherAgentID() const;
-        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
-        std::optional<px4_msgs::msg::VehicleGlobalPosition> gatherGlobalPosition() const;
+        double gatherROI() const;
+        double gatherCollisionRadius() const;
         std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
-        std::optional<std::vector<float>> gatherTargetPose() const;
-        std::optional<std::vector<float>> gatherTargetVelocity() const;
-        std::optional<std::vector<float>> gatherDesiredPose() const;
+        std::optional<geometry_msgs::msg::Point> gatherTargetPosition() const;
+        std::optional<geometry_msgs::msg::Point> gatherSetpointVelocity() const;
+        std::optional<geometry_msgs::msg::Point> gatherDesiredPosition() const;
         unsigned int gatherNetworkSize() const;
-        geometry_msgs::msg::Point gatherCopterPosition(unsigned int);
+        geometry_msgs::msg::Point gatherCopterPosition(unsigned int) const;
+        // For callback groups
+        rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherRendezvousExclusiveGroup() const;
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
         ) const;
-        void signalPublishTrajectorySetpoint(float, float, float, float, float, float) const;
+        void signalPublishTrajectorySetpoint(geometry_msgs::msg::Point, geometry_msgs::msg::Point)
+            const;
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
-        void signalSetSetpointPosition(float, float, float = std::nan("")) const;
-        void signalSetTargetVelocity(float, float) const;
+        void signalSetSetpointPosition(geometry_msgs::msg::Point) const;
+        void signalSetSetpointVelocity(geometry_msgs::msg::Point) const;
 
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
 
         // For possible future use
-        Eigen::Vector3f offset_ {0, 0, 0}; // [m, m, m]
-        float yaw_ {0};                    // [rad]
-        mutable std::mutex offset_mutex_;  // to be used with offset_ and yaw_
-
+        Eigen::Vector3d offset_ {0, 0, 0}; // [m, m, m]
         std::atomic<bool> running_ {true};
         bool sitl_ready_ {false};
-        mutable std::mutex running_mutex_; // to be used with running_
+        uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
 
-        rclcpp::TimerBase::SharedPtr starting_timer_;
-        std::chrono::seconds briefing_time_ {constants::BRIEFING_TIME_SECS}; // TODO: change names?
+        mutable std::mutex offset_mutex_;        // to be used with offset_ and yaw_
+        mutable std::mutex running_mutex_;       // to be used with running_
+
+        rclcpp::TimerBase::SharedPtr prechecks_timer_;
+        std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
 
         rclcpp::TimerBase::SharedPtr offboard_timer_;
         std::chrono::milliseconds offboard_period_ {constants::OFFBOARD_PERIOD_MILLIS};
-        uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
 
         rclcpp::TimerBase::SharedPtr rendezvous_timer_;
         std::chrono::milliseconds rendezvous_period_ {
