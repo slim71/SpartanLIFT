@@ -196,3 +196,26 @@ void Pelican::resizeCopterPositionsVector(unsigned int new_size, unsigned int lo
         }
     }
 }
+
+rclcpp_action::GoalResponse Pelican::
+    handleTeleopDataGoal(const rclcpp_action::GoalUUID&, std::shared_ptr<const comms::action::TeleopData::Goal>) {
+    this->sendLogDebug("Received goal request from user");
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse
+Pelican::handleTeleopDataCancellation(const std::shared_ptr<
+                                      rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>) {
+    this->sendLogWarning("Received goal cancel request");
+    return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void Pelican::handleAcceptedTeleopData(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>> goal_handle
+) {
+    this->sendLogDebug("Received accepted goal to handle");
+    // This needs to return quickly to avoid blocking the executor,
+    // so spin up a new thread for the actual handling
+    std::thread {std::bind(&Pelican::rogerWillCo, this, std::placeholders::_1), goal_handle}.detach(
+    );
+}

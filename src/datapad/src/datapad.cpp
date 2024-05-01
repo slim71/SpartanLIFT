@@ -15,7 +15,8 @@ Datapad::Datapad() : Node("Datapad"), logger_() {
     this->reentrant_opt_.callback_group = this->reentrant_group_;
 
     // Own setup
-    this->teleopdata_client_ = this->create_client<comms::srv::TeleopData>("contactLeader_service");
+    this->teleopdata_client_ =
+        rclcpp_action::create_client<comms::action::TeleopData>(this, "contactLeader");
 
     this->setup_timer_ = this->create_wall_timer(
         this->setup_timeout_,
@@ -51,4 +52,24 @@ void Datapad::signalHandler(int signum) {
 
         rclcpp::shutdown();
     }
+}
+
+void Datapad::analyzeTeleopDataResponse(
+    const rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::SharedPtr& goal_handle
+) {
+    if (!goal_handle) {
+        this->sendLogWarning("Goal was rejected by the server!");
+    } else {
+        this->sendLogDebug("Goal accepted by server, waiting for result...");
+    }
+}
+
+void Datapad::parseTeleopDataFeedback(
+    rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::SharedPtr,
+    const std::shared_ptr<const comms::action::TeleopData::Feedback> feedback
+) {
+    this->sendLogDebug(
+        "Feedback received: agents_involved: {}, last_joined: {}, command: {}, execution: {}",
+        feedback->agents_involved, feedback->last_joined, feedback->command, feedback->execution
+    );
 }

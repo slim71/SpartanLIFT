@@ -1,0 +1,23 @@
+# Request
+bool presence
+bool takeoff
+bool landing
+bool retrieval
+bool dropoff
+float32 x
+float32 y
+float32 z
+---
+# Result
+int64 leader_id
+bool presence
+bool taking_off
+bool landing
+bool retrieval
+bool dropoff
+---
+# Feedback
+uint32 agents_involved
+uint32 last_joined
+bool execution
+uint32 command  # 0=NO_COMMAND, 1=TAKEOFF_COMMAND, 2=LANDING_COMMAND, 3=EMERGENCY_LANDIN, 4=RENDEZVOUS, 5=FORMATION

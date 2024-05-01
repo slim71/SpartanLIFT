@@ -27,6 +27,8 @@ endif()
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -39,9 +41,11 @@ find_library(PUGIXML_DIR pugixml)
 
 # Create a library to allow separation of headers and sources
 add_library(Pelican_class src/PelicanModule/pelican.cpp)
-ament_target_dependencies(Pelican_class rclcpp px4_msgs comms tf2 nav_msgs geometry_msgs)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+target_compile_definitions(Pelican_class PRIVATE "TELEOPDATA__BUILDING_DLL")
+ament_target_dependencies(Pelican_class rclcpp rclcpp_action rclcpp_components px4_msgs comms tf2 nav_msgs geometry_msgs)
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt Eigen3::Eigen)
+rclcpp_components_register_node(Pelican_class PLUGIN "pelican::TeleopDataActionServer" EXECUTABLE teleopdata_action_server)
 
 set(MAIN
     src/main.cpp
@@ -129,7 +133,7 @@ if(BUILD_TESTING)
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
-  ament_target_dependencies(${PROJECT_NAME}_test rclcpp px4_msgs comms geometry_msgs)
+  ament_target_dependencies(${PROJECT_NAME}_test rclcpp rclcpp_action rclcpp_components px4_msgs comms geometry_msgs)
   # Link to local library
   target_link_libraries(${PROJECT_NAME}_test Pelican_class)
 

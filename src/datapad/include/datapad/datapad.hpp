@@ -28,8 +28,13 @@ class Datapad : public rclcpp::Node {
         void backToLZ();
         void payloadExtraction();
         void payloadDropoff();
-        void processFleetLeaderCommandAck(rclcpp::Client<comms::srv::TeleopData>::SharedFuture);
-        void teleopTaskServer(Flags);
+        void processFleetLeaderCommandAck(const rclcpp_action::ClientGoalHandle<
+                                          comms::action::TeleopData>::WrappedResult&);
+        void teleopTaskClient(Flags);
+        void analyzeTeleopDataResponse(const rclcpp_action::ClientGoalHandle<
+                                       comms::action::TeleopData>::SharedPtr&);
+        void
+        parseTeleopDataFeedback(rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::SharedPtr, const std::shared_ptr<const comms::action::TeleopData::Feedback>);
 
     private:                                     // Attributes
         LoggerModule logger_;
@@ -59,7 +64,7 @@ class Datapad : public rclcpp::Node {
         std::chrono::seconds setup_timeout_ {constants::SETUP_TIME_SECS};
         rclcpp::TimerBase::SharedPtr setup_timer_;
 
-        rclcpp::Client<comms::srv::TeleopData>::SharedPtr teleopdata_client_;
+        rclcpp_action::Client<comms::action::TeleopData>::SharedPtr teleopdata_client_;
 };
 
 // Including templates definitions

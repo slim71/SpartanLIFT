@@ -8,6 +8,7 @@ void Datapad::landingPage() {
     int choice;
     bool input_error = false;
     while (true) {
+        std::cout << std::endl;
         std::cout << "(1) Ensure leader is elected" << std::endl;
         std::cout << "(2) Initiate takeoff" << std::endl;
         std::cout << "(3) Send payload position" << std::endl;
@@ -22,10 +23,9 @@ void Datapad::landingPage() {
         this->sendLogDebug("(5) Initiate landing");
         this->sendLogDebug("(0) Exit");
 
+        // Handle user input
         std::cin >> str_choice;
-
-        auto ret = this->isRunning();
-        if (!ret)
+        if (!this->isRunning())
             break;
 
         input_error = false;
@@ -87,78 +87,91 @@ void Datapad::landingPage() {
 
 void Datapad::contactLeader() {
     this->sendLogDebug("Contacting leader...");
-    this->teleopTaskServer(Flags().SetPresence());
+    this->teleopTaskClient(Flags().SetPresence());
 }
 
+// Process the final result of the TeleopData goal
 void Datapad::processFleetLeaderCommandAck(
-    rclcpp::Client<comms::srv::TeleopData>::SharedFuture future
+    const rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::WrappedResult& result
 ) {
-    // Wait for the specified amount or until the result is available
-    this->sendLogDebug("Getting response...");
-    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+    this->sendLogDebug("Got response from the server");
 
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-
-        // Verify if there's a new leader in the fleet
-        if ((response->leader_id != this->leader_) && (this->leader_present_)) {
-            this->sendLogWarning(
-                "Leader must have changed without proper notifications! New leader: {}",
-                response->leader_id
-            );
-            this->leader_ = response->leader_id;
-        }
-
-        // Leader notification
-        if ((response->present) && (response->leader_id > 0)) {
-            this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
-            this->leader_present_ = true;
-            this->leader_ = response->leader_id;
-        }
-
-        // Fleet taking off
-        if (response->taking_off) {
-            if (response->success) {
-                this->sendLogInfo("Takeoff acknowledged");
-                this->fleet_fying_ = true;
-            } else {
-                this->sendLogWarning("Takeoff operations not successful");
-            }
-        }
-
-        // Fleet landing
-        if (response->landing) {
-            if (response->success) {
-                this->sendLogInfo("Land command acknowledged");
-                this->fleet_fying_ = false;
-            } else {
-                this->sendLogWarning("Landing operations not successful");
-            }
-        }
-
-        // Sending payload initial position
-        if (response->retrieval) {
-            if (response->success) {
-                this->sendLogInfo("Payload position acquired");
-                this->transport_wip_ = true;
-            } else {
-                this->sendLogWarning("Could not transmit payload position");
-            }
-        }
-
-        // Sending payload desired position
-        if (response->dropoff) {
-            if (response->success) {
-                this->sendLogInfo("Dropoff position acquired");
-                this->transport_wip_ = false;
-            } else {
-                this->sendLogWarning("Could not transmit dropoff position");
-            }
-        }
-
-    } else {
-        this->sendLogDebug("Service not ready yet...");
+    // Check if the server succeeded in handling the request
+    bool success = false;
+    switch (result.code) {
+        case rclcpp_action::ResultCode::SUCCEEDED:
+            success = true;
+            break;
+        case rclcpp_action::ResultCode::ABORTED:
+            this->sendLogWarning("Goal was aborted");
+            break;
+        case rclcpp_action::ResultCode::CANCELED:
+            this->sendLogWarning("Goal was canceled");
+            break;
+        default:
+            this->sendLogWarning("Unknown result code, but still not succesful");
+            break;
     }
+
+    auto response = result.result;
+
+    // Verify if there's a new leader in the fleet
+    if ((response->leader_id != this->leader_) && (this->leader_present_)) {
+        this->sendLogWarning(
+            "Leader must have changed without proper notifications! New leader: {}",
+            response->leader_id
+        );
+        this->leader_ = response->leader_id;
+    }
+
+    // Leader notification
+    if ((response->presence) && (response->leader_id > 0)) {
+        this->sendLogInfo("Agent {} is currently the fleet leader", response->leader_id);
+        this->leader_present_ = true;
+        this->leader_ = response->leader_id;
+    }
+
+    // Fleet taking off
+    if (response->taking_off) {
+        if (success) {
+            this->sendLogInfo("Takeoff acknowledged");
+            this->fleet_fying_ = true;
+        } else {
+            this->sendLogWarning("Takeoff operations not successful");
+        }
+    }
+
+    // Fleet landing
+    if (response->landing) {
+        if (success) {
+            this->sendLogInfo("Land command acknowledged");
+            this->fleet_fying_ = false;
+        } else {
+            this->sendLogWarning("Landing operations not successful");
+        }
+    }
+
+    // Sending payload initial position
+    if (response->retrieval) {
+        if (success) {
+            this->sendLogInfo("Payload position acquired");
+            this->transport_wip_ = true;
+        } else {
+            this->sendLogWarning("Could not transmit payload position");
+        }
+    }
+
+    // Sending payload desired position
+    if (response->dropoff) {
+        if (success) {
+            this->sendLogInfo("Dropoff position acquired");
+            this->transport_wip_ = false;
+        } else {
+            this->sendLogWarning("Could not transmit dropoff position");
+        }
+    }
+    // Only to have a clearer interface for the user
+    std::cout << " >>> ";
 }
 
 void Datapad::unitSortie() {
@@ -176,7 +189,7 @@ void Datapad::unitSortie() {
         return;
     }
 
-    this->teleopTaskServer(Flags().SetTakeoff());
+    this->teleopTaskClient(Flags().SetTakeoff());
 }
 
 void Datapad::backToLZ() {
@@ -193,7 +206,7 @@ void Datapad::backToLZ() {
         return;
     }
 
-    this->teleopTaskServer(Flags().SetLanding());
+    this->teleopTaskClient(Flags().SetLanding());
 }
 
 void Datapad::payloadExtraction() {
@@ -210,7 +223,7 @@ void Datapad::payloadExtraction() {
         return;
     }
 
-    this->teleopTaskServer(Flags().SetRetrieval());
+    this->teleopTaskClient(Flags().SetRetrieval());
 }
 
 void Datapad::payloadDropoff() {
@@ -227,16 +240,16 @@ void Datapad::payloadDropoff() {
         return;
     }
 
-    this->teleopTaskServer(Flags().SetDropoff());
+    this->teleopTaskClient(Flags().SetDropoff());
 }
 
-void Datapad::teleopTaskServer(Flags flags) { // Server side of TeleopData service
-    auto request = std::make_shared<comms::srv::TeleopData::Request>();
-    request->presence = flags.GetPresence();
-    request->takeoff = flags.GetTakeoff();
-    request->landing = flags.GetLanding();
-    request->retrieval = flags.GetRetrieval();
-    request->dropoff = flags.GetDropoff();
+void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData action
+    auto request = comms::action::TeleopData::Goal();
+    request.presence = flags.GetPresence();
+    request.takeoff = flags.GetTakeoff();
+    request.landing = flags.GetLanding();
+    request.retrieval = flags.GetRetrieval();
+    request.dropoff = flags.GetDropoff();
 
     float coordinates[3];
     char coord_names[] = {'x', 'y', 'z'};
@@ -259,14 +272,23 @@ void Datapad::teleopTaskServer(Flags flags) { // Server side of TeleopData servi
             }
         };
 
-        request->x = coordinates[0];
-        request->y = coordinates[1];
-        request->z = coordinates[2];
+        request.x = coordinates[0];
+        request.y = coordinates[1];
+        request.z = coordinates[2];
     }
+
+    auto send_goal_options = rclcpp_action::Client<comms::action::TeleopData>::SendGoalOptions();
+    send_goal_options.goal_response_callback =
+        std::bind(&Datapad::analyzeTeleopDataResponse, this, std::placeholders::_1);
+    send_goal_options.feedback_callback = std::bind(
+        &Datapad::parseTeleopDataFeedback, this, std::placeholders::_1, std::placeholders::_2
+    );
+    send_goal_options.result_callback =
+        std::bind(&Datapad::processFleetLeaderCommandAck, this, std::placeholders::_1);
 
     // Search for a second, then log and search again
     unsigned int total_search_time = 0;
-    while (!this->teleopdata_client_->wait_for_service(
+    while (!this->teleopdata_client_->wait_for_action_server(
                std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
@@ -281,22 +303,8 @@ void Datapad::teleopTaskServer(Flags flags) { // Server side of TeleopData servi
 
     if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogDebug("Server available");
-
         // Send request
-        auto result = this->teleopdata_client_->async_send_request(
-            request, std::bind(&Datapad::processFleetLeaderCommandAck, this, std::placeholders::_1)
-        );
-
-        // If the callback is never called, because we never got a reply for the service server,
-        // clean up pending requests to use less memory
-        auto future_status =
-            result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
-        if (!result.valid() || (future_status != std::future_status::ready)) {
-            this->sendLogWarning("Async request to the fleet leader could not be completed!");
-            this->teleopdata_client_->prune_pending_requests();
-            return;
-        }
-
+        auto result = this->teleopdata_client_->async_send_goal(request, send_goal_options);
     } else {
         this->sendLogWarning("The server seems to be down. Please try again.");
     }

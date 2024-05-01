@@ -59,6 +59,7 @@ class Pelican : public rclcpp::Node {
         bool isReady() const;
         bool isFlying() const;
         bool isCarrying() const;
+        bool isLastCmdExecuted() const;
 
         // Handle data exchange among modules
         heartbeat requestLastHb();
@@ -123,9 +124,19 @@ class Pelican : public rclcpp::Node {
         void unsetFlyingStatus();
         void setCarryingStatus();
         void unsetCarryingStatus();
+        void setLastCmdStatus();
+        void unsetLastCmdStatus();
 
-        void
-        rogerWillCo(const std::shared_ptr<comms::srv::TeleopData::Request>, const std::shared_ptr<comms::srv::TeleopData::Response>);
+        void rogerWillCo(const std::shared_ptr<
+                         rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
+        rclcpp_action::GoalResponse
+        handleTeleopDataGoal(const rclcpp_action::GoalUUID&, std::shared_ptr<const comms::action::TeleopData::Goal>);
+        rclcpp_action::CancelResponse
+        handleTeleopDataCancellation(const std::shared_ptr<
+                                     rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
+        void handleAcceptedTeleopData(const std::shared_ptr<
+                                      rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
+
         bool checkCommandMsgValidity(const comms::msg::Command);
         void handleCommandDispatch(uint16_t);
         void handleCommandReception(const comms::msg::Command);
@@ -164,6 +175,7 @@ class Pelican : public rclcpp::Node {
         bool flying_ {false};
         bool carrying_ {false};
         bool mission_in_progress_ {false};
+        bool last_cmd_result_ {false};
         std::string model_;
         possible_roles role_ {tbd};
         double actual_target_height_ {0}; // needed in order to stabilize height tracking
@@ -178,20 +190,25 @@ class Pelican : public rclcpp::Node {
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         std::vector<comms::msg::NetworkVertex> discovery_vector_;
         std::vector<comms::msg::Command> dispatch_vector_;
+        std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>
+            last_goal_handle_;
 
         mutable std::mutex id_mutex_;                // Used to access id_
         mutable std::mutex term_mutex_;              // Used to access current_term_
         mutable std::mutex flying_mutex_;            // Used to access flying_
         mutable std::mutex carrying_mutex_;          // Used to access carrying_
-        mutable std::mutex last_rpc_command_mutex_;  // Used to access carrying_
+        mutable std::mutex last_rpc_command_mutex_;  // Used to access last_rpc_command_stored_ and
+                                                     // last_occupied_index_
         mutable std::mutex setpoint_position_mutex_; // Used to access setpoint_position_
-        mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_position_
+        mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_velocity_
         mutable std::mutex target_position_mutex_;   // Used to access target_position_
         mutable std::mutex height_mutex_;            // Used to access actual_target_height_
         mutable std::mutex positions_mutex_;         // to be used with copters_positions_
         mutable std::mutex discovery_mutex_;         // To be used with discovery_vector_
         mutable std::mutex dispatch_mutex_;          // To be used with dispatch_vector_
         mutable std::mutex rpcs_mutex_;              // To be used with rpcs_vector_
+        mutable std::mutex last_cmd_result_mutex_;   // To be used with last_cmd_result_
+        mutable std::mutex last_goal_mutex_;         // To be used with last_goal_handle_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -212,7 +229,8 @@ class Pelican : public rclcpp::Node {
             rmw_qos_profile_sensor_data
         )};
 
-        rclcpp::Service<comms::srv::TeleopData>::SharedPtr teleopdata_server_;
+        rclcpp_action::Server<comms::action::TeleopData>::SharedPtr teleopdata_server_;
+
         rclcpp::Service<comms::srv::FleetInfo>::SharedPtr fleetinfo_server_;
         rclcpp::Client<comms::srv::FleetInfo>::SharedPtr fleetinfo_client_;
 

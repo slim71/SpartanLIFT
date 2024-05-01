@@ -1,5 +1,6 @@
-            # request is a blank line
+# Request is a blank line
 ---
+# Result
 bool rendezvous
 bool formation
 geometry_msgs/Point target
