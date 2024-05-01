@@ -11,7 +11,7 @@ class Datapad : public rclcpp::Node {
         ~Datapad();
 
         static void signalHandler(int);
-        static void setInstance(rclcpp::Node::SharedPtr instance);
+        static void setInstance(rclcpp::Node::SharedPtr);
         static std::shared_ptr<Datapad> getInstance();
 
         bool isRunning() const;
