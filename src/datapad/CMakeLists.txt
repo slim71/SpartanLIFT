@@ -22,14 +22,18 @@ endif()
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(comms REQUIRED)
 find_package(fmt)
 
 # Create a library to allow separation of headers and sources
 add_library(Datapad_class src/datapad.cpp)
-ament_target_dependencies(Datapad_class rclcpp comms)
 target_include_directories(Datapad_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
+target_compile_definitions(Datapad_class PRIVATE "TELEOPDATA__BUILDING_DLL")
+ament_target_dependencies(Datapad_class rclcpp rclcpp_action rclcpp_components comms)
 target_link_libraries(Datapad_class fmt::fmt)
+rclcpp_components_register_node(Datapad_class PLUGIN "pelican::TeleopDataActionServer" EXECUTABLE teleopdata_action_server)
 
 set(MAIN
   src/main.cpp

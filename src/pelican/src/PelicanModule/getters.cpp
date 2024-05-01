@@ -141,3 +141,8 @@ bool Pelican::isCarrying() const {
     std::lock_guard<std::mutex> lock(this->carrying_mutex_);
     return this->carrying_;
 }
+
+bool Pelican::isLastCmdExecuted() const {
+    std::lock_guard<std::mutex> lock(this->last_cmd_result_mutex_);
+    return this->last_cmd_result_;
+}

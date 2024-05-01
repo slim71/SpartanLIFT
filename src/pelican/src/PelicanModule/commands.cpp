@@ -1,19 +1,31 @@
 #include "PelicanModule/pelican.hpp"
 
 // TODO: make this work as a unique handling of whatever command, rendezvous and formation included
-// This is only executed by the leader; receiver of Teleop requests
+// This is only executed by the leader, receiver of TeleopData goals, to handle an accepted goal
 void Pelican::rogerWillCo(
-    const std::shared_ptr<comms::srv::TeleopData::Request> request,
-    const std::shared_ptr<comms::srv::TeleopData::Response> response
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>> goal_handle
 ) {
+    const auto request = goal_handle->get_goal();
+    this->sendLogDebug(
+        "Handling goal with request: presence={} takeoff={}, landing={} retrieval={}",
+        request->presence, request->takeoff, request->landing, request->retrieval
+    );
+
+    this->last_goal_mutex_.lock();
+    this->last_goal_handle_ = goal_handle;
+    this->last_goal_mutex_.unlock();
+
     // General all-purpose init
+    auto response = std::make_shared<comms::action::TeleopData::Result>();
     response->leader_id = this->getID();
-    response->present = false;
+    response->presence = false;
     response->taking_off = false;
     response->landing = false;
     response->retrieval = false;
     response->dropoff = false;
-    response->success = false;
+
+    // Make sure the result flag is not set
+    this->unsetLastCmdStatus();
 
     this->sendLogDebug(
         "RogerRoger present: {}, takeoff: {}, landing: {}, retrieval: {}, dropoff: {}",
@@ -23,8 +35,8 @@ void Pelican::rogerWillCo(
     // Handling leader ID request
     if (request->presence) {
         this->sendLogDebug("Notifying I'm the leader to the user!");
-        response->present = true;
-        response->success = true;
+        response->presence = true;
+        goal_handle->succeed(response);
     }
 
     // Handling takeoff command
@@ -33,29 +45,39 @@ void Pelican::rogerWillCo(
 
         if (!this->isFlying()) {
             this->sendLogDebug("Notifying start of takeoff operations!");
-            response->success = true;
 
             std::thread takeoff_thread(&Pelican::handleCommandDispatch, this, TAKEOFF_COMMAND);
-            takeoff_thread.detach();
+            takeoff_thread.join();
+            if (this->isLastCmdExecuted()) {
+                this->sendLogInfo("Fleet has taken off!");
+                goal_handle->succeed(response);
+            } else {
+                goal_handle->abort(response);
+            }
         } else {
             this->sendLogWarning("The fleet should already be flying!");
+            goal_handle->canceled(response);
         }
     }
 
     // Handling landing command
     if (request->landing) {
-        response->present = false;
-        response->taking_off = false;
         response->landing = true;
 
         if (this->isFlying()) {
             this->sendLogDebug("Notifying start of landing operations!");
-            response->success = true;
 
             std::thread landing_thread(&Pelican::handleCommandDispatch, this, LANDING_COMMAND);
-            landing_thread.detach();
+            landing_thread.join();
+            if (this->isLastCmdExecuted()) {
+                this->sendLogInfo("Fleet has landed!");
+                goal_handle->succeed(response);
+            } else {
+                goal_handle->abort(response);
+            }
         } else {
             this->sendLogWarning("The fleet is not flying!");
+            goal_handle->canceled(response);
         }
     }
 
@@ -69,7 +91,6 @@ void Pelican::rogerWillCo(
                 "Payload is at {}",
                 geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
-            response->success = true;
 
             this->setReferenceHeight(request->z);
             this->setTargetPosition(
@@ -77,9 +98,16 @@ void Pelican::rogerWillCo(
             );
 
             std::thread retrieval_thread(&Pelican::handleCommandDispatch, this, RENDEZVOUS);
-            retrieval_thread.detach();
+            retrieval_thread.join();
+            if (this->isLastCmdExecuted()) {
+                this->sendLogInfo("Rendezvous initiated!");
+                goal_handle->succeed(response);
+            } else {
+                goal_handle->abort(response);
+            }
         } else {
             this->sendLogWarning("The payload is already carrying the payload!");
+            goal_handle->canceled(response);
         }
     }
 }
@@ -137,16 +165,33 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
 
     // Index in AppendEntryRPC vector
     this->last_rpc_command_mutex_.lock();
-    unsigned int expected_cmd = this->last_rpc_command_stored_;
+    unsigned int last_rpc_store = this->last_rpc_command_stored_;
     unsigned int expected_index = this->last_occupied_index_;
     this->last_rpc_command_mutex_.unlock();
 
     // Valid previous command
-    if (msg.prev_command != expected_cmd) {
-        this->sendLogWarning(
-            "The last command is not coherent-> msg:{} expected:{}", msg.prev_command, expected_cmd
-        );
-        return false;
+    if (msg.apply) {
+        std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
+        if (this->rpcs_vector_.size() >= 2) {
+            unsigned int sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
+            if (msg.prev_command != sec2last) {
+                this->sendLogWarning(
+                    "The last command is not coherent-> msg:{} expected(sec2last):{}",
+                    msg.prev_command, sec2last
+                );
+                return false;
+            }
+        }
+        // If only one RPC is in the vector, it'll be the one in scope
+
+    } else {
+        if (msg.prev_command != last_rpc_store) {
+            this->sendLogWarning(
+                "The last command is not coherent-> msg:{} expected(last):{}", msg.prev_command,
+                last_rpc_store
+            );
+            return false;
+        }
     }
 
     // Valid index
@@ -233,8 +278,11 @@ void Pelican::handleCommandDispatch(uint16_t command) {
             default:
                 this->sendLogDebug("Handling operations for command {} unknown", command);
         };
-    } else
+        this->setLastCmdStatus();
+    } else {
         this->sendLogWarning("Fleet execution of command {} failed", commands_to_string(command));
+        this->unsetLastCmdStatus();
+    }
 }
 
 void Pelican::handleCommandReception(const comms::msg::Command msg) {
@@ -277,6 +325,20 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
             this->dispatch_mutex_.lock();
             this->dispatch_vector_.push_back(msg);
             this->dispatch_mutex_.unlock();
+
+            // Send feedback to Action client
+            auto feedback = std::make_shared<comms::action::TeleopData::Feedback>();
+            this->dispatch_mutex_.lock();
+            auto s = this->dispatch_vector_.size();
+            this->dispatch_mutex_.unlock();
+            feedback->agents_involved = msg.ack ? s : s + 1;
+            feedback->last_joined = msg.agent;
+            feedback->command = msg.command;
+            feedback->execution = msg.apply;
+
+            this->last_goal_mutex_.lock();
+            this->last_goal_handle_->publish_feedback(feedback);
+            this->last_goal_mutex_.unlock();
         }
         if (msg.apply)
             this->updateLastRPCCommandReceived();
@@ -311,7 +373,6 @@ void Pelican::sendRPCAck(unsigned int leader, uint16_t command, bool apply) {
 }
 
 bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
-    rclcpp::Time start = this->now();
     std::this_thread::sleep_for(this->rpcs_ack_timeout_);
 
     this->dispatch_mutex_.lock();
@@ -334,7 +395,7 @@ bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
 
     // A log entry is committed once the leader that created the entry has
     // replicated it on a majority of the servers
-    if (ack_received >= this->getNetworkSize() / 2) { // +1 deleted: this node is already considered
+    if (ack_received >= this->getNetworkSize() / 2) {
         this->sendLogInfo(
             "Enough acks received for command {}{}", commands_to_string(command),
             apply ? " execution" : ""
@@ -356,7 +417,7 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
-void Pelican::updateLastRPCCommandReceived() {
+void Pelican::updateLastRPCCommandReceived() { // CHECK: needed variables?
     std::lock_guard<std::mutex> lock_cmd(this->last_rpc_command_mutex_);
     std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
     this->last_rpc_command_stored_ = std::get<0>(this->rpcs_vector_.back());
@@ -402,7 +463,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
             if (!this->commenceCheckOffboardEngagement()) {
                 this->sendLogWarning("Rendezvous operations could not be accomplished!");
             } else {
-                this->sendLogInfo(("Rendezvous initiated"));
+                this->sendLogInfo("Rendezvous initiated");
                 return true;
             }
 

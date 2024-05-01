@@ -2,11 +2,11 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>comms</name>
-  <version>0.2.4</version>
+  <version>0.3.0</version>
   <description>Package for custom data exchange among agents in the fleet</description>
   <author email="slim71sv@gmail.com">Simone Vollaro</author>
   <maintainer email="slim71sv@gmail.com">slim71</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
@@ -18,6 +18,7 @@
 
   <depend>builtin_interfaces</depend>
   <depend>geometry_msgs</depend>
+  <depend>action_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

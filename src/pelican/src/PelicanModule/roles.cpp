@@ -18,9 +18,13 @@ void Pelican::becomeLeader() {
 
     // Service preparation
     resetSharedPointer(this->fleetinfo_client_);
-    this->teleopdata_server_ = this->create_service<comms::srv::TeleopData>(
-        "contactLeader_service",
-        std::bind(&Pelican::rogerWillCo, this, std::placeholders::_1, std::placeholders::_2)
+    this->teleopdata_server_ = rclcpp_action::create_server<comms::action::TeleopData>(
+        this, "contactLeader",
+        std::bind(
+            &Pelican::handleTeleopDataGoal, this, std::placeholders::_1, std::placeholders::_2
+        ),
+        std::bind(&Pelican::handleTeleopDataCancellation, this, std::placeholders::_1),
+        std::bind(&Pelican::handleAcceptedTeleopData, this, std::placeholders::_1)
     );
     this->fleetinfo_server_ = this->create_service<comms::srv::FleetInfo>(
         "shareinfo_service",

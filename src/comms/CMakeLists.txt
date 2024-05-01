@@ -37,13 +37,17 @@ set(MESSAGE_FILES
 )
 
 set(SERVICE_FILES
-    srv/TeleopData.srv
     srv/FleetInfo.srv
+)
+
+set(ACTION_FILES
+    action/TeleopData.action
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${MESSAGE_FILES}
   ${SERVICE_FILES}
+  ${ACTION_FILES}
   DEPENDENCIES builtin_interfaces geometry_msgs
 )
 

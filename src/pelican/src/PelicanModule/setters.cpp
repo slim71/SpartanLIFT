@@ -45,6 +45,16 @@ void Pelican::unsetCarryingStatus() {
     this->carrying_ = false;
 }
 
+void Pelican::setLastCmdStatus() {
+    std::lock_guard<std::mutex> lock(this->last_cmd_result_mutex_);
+    this->last_cmd_result_ = true;
+}
+
+void Pelican::unsetLastCmdStatus() {
+    std::lock_guard<std::mutex> lock(this->last_cmd_result_mutex_);
+    this->last_cmd_result_ = false;
+}
+
 void Pelican::setSetpointPosition(geometry_msgs::msg::Point p) {
     std::lock_guard<std::mutex> lock(this->setpoint_position_mutex_);
     this->setpoint_position_ = p;

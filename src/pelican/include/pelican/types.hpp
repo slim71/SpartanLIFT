@@ -1,6 +1,7 @@
 #ifndef _TYPES_HPP_
 #define _TYPES_HPP_
 
+#include "comms/action/teleop_data.hpp"
 #include "comms/msg/command.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/network_vertex.hpp"
@@ -8,7 +9,6 @@
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"
 #include "comms/srv/fleet_info.hpp"
-#include "comms/srv/teleop_data.hpp"
 #include "constants.hpp"
 #include "pugixml.hpp"
 #include "px4_msgs/msg/failsafe_flags.hpp"
@@ -38,6 +38,7 @@
 #include <random>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <signal.h>
 #include <string>
 #include <tf2/LinearMath/Matrix3x3.h>

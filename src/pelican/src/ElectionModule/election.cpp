@@ -116,6 +116,12 @@ void ElectionModule::leaderElection() {
             std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
                 return v.candidate_id == this->gatherAgentID();
             });
+
+        if (cluster_for_this_node == ballot.end()) {
+            this->sendLogWarning("No votes accumulated!");
+            return;
+        }
+
         this->sendLogDebug(
             "Cluster for this node: candidate_id={} total={}",
             (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total
@@ -195,11 +201,11 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
             return first->candidate_mass > second->candidate_mass;
         }
     );
-    this->sendLogDebug("Decided to vote for {}", (*heavier)->proposed_leader);
     if ((heavier == this->received_votes_.end()) || ((*heavier)->proposed_leader <= 0)) {
         this->sendLogWarning("No valid ID to vote!");
         return;
     }
+    this->sendLogDebug("Decided to vote for {}", (*heavier)->proposed_leader);
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 

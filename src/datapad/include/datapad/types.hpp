@@ -1,12 +1,13 @@
 #ifndef _TYPES_HPP_
 #define _TYPES_HPP_
 
-#include "comms/srv/teleop_data.hpp"
+#include "comms/action/teleop_data.hpp"
 #include <chrono>
 #include <fmt/core.h>
 #include <iostream>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
 #include <signal.h>
 #include <string>
 
