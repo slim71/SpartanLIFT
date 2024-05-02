@@ -147,7 +147,6 @@ class Pelican : public rclcpp::Node {
         void appendEntry(uint16_t, unsigned int);
         bool executeRPCCommand(uint16_t);
         void rendezvousFleet();
-        void updateLastRPCCommandReceived();
         void sharePosition(geometry_msgs::msg::Point);
         void recordCopterPosition(comms::msg::NetworkVertex::SharedPtr);
         unsigned int initiateGetLeaderID();
@@ -184,8 +183,6 @@ class Pelican : public rclcpp::Node {
         geometry_msgs::msg::Point
             setpoint_velocity_;           // referring to temporary setpoint along a trajectory
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
-        unsigned int last_rpc_command_stored_ {0};
-        unsigned int last_occupied_index_ {0};
         std::vector<geometry_msgs::msg::Point> copters_positions_;
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         std::vector<comms::msg::NetworkVertex> discovery_vector_;
@@ -197,8 +194,6 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex term_mutex_;              // Used to access current_term_
         mutable std::mutex flying_mutex_;            // Used to access flying_
         mutable std::mutex carrying_mutex_;          // Used to access carrying_
-        mutable std::mutex last_rpc_command_mutex_;  // Used to access last_rpc_command_stored_ and
-                                                     // last_occupied_index_
         mutable std::mutex setpoint_position_mutex_; // Used to access setpoint_position_
         mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_velocity_
         mutable std::mutex target_position_mutex_;   // Used to access target_position_

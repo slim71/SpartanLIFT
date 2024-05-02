@@ -164,16 +164,16 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     }
 
     // Index in AppendEntryRPC vector
-    this->last_rpc_command_mutex_.lock();
-    unsigned int last_rpc_store = this->last_rpc_command_stored_;
-    unsigned int expected_index = this->last_occupied_index_;
-    this->last_rpc_command_mutex_.unlock();
+    this->rpcs_mutex_.lock();
+    unsigned int last_rpc_store = std::get<0>(this->rpcs_vector_.back());
+    unsigned int expected_index = this->rpcs_vector_.size();
+    unsigned int sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
+    auto rpc_size = this->rpcs_vector_.size();
+    this->rpcs_mutex_.unlock();
 
     // Valid previous command
     if (msg.apply) {
-        std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
-        if (this->rpcs_vector_.size() >= 2) {
-            unsigned int sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
+        if (rpc_size >= 2) {
             if (msg.prev_command != sec2last) {
                 this->sendLogWarning(
                     "The last command is not coherent-> msg:{} expected(sec2last):{}",
@@ -202,10 +202,6 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
         );
         // TODO request Logs if follower
     };
-
-    // TODO: check if I'm a leader and I receive a command from another leader:
-    // if previous term, reject (and let them know?)
-    // if next/equal term, step down if last command is not committed
 
     return true;
 }
@@ -309,26 +305,25 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
 
             this->sendRPCAck(msg.leader_id, msg.command, msg.apply);
 
-            // Append Entry RPC
             if (!msg.apply) {
                 this->appendEntry(msg.command, msg.term_id);
-
-            } else { // Commit and execute command entry
-                this->updateLastRPCCommandReceived();
+            } else {
                 this->executeRPCCommand(msg.command);
             }
         }
 
     } else { // For the leader agent
+
+        // TODO: check if I'm a leader and I receive a command from another leader:
+        // if previous term, reject (and let them know?)
+        // if next/equal term, step down if last command is not committed
+
         // The leader should only consider ack messages
         if (msg.ack) {
-            this->dispatch_mutex_.lock();
-            this->dispatch_vector_.push_back(msg);
-            this->dispatch_mutex_.unlock();
-
             // Send feedback to Action client
             auto feedback = std::make_shared<comms::action::TeleopData::Feedback>();
             this->dispatch_mutex_.lock();
+            this->dispatch_vector_.push_back(msg);
             auto s = this->dispatch_vector_.size();
             this->dispatch_mutex_.unlock();
             feedback->agents_involved = msg.ack ? s : s + 1;
@@ -340,8 +335,6 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
             this->last_goal_handle_->publish_feedback(feedback);
             this->last_goal_mutex_.unlock();
         }
-        if (msg.apply)
-            this->updateLastRPCCommandReceived();
     }
 }
 
@@ -356,10 +349,10 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, uint16_t command, bool ack
     cmd_msg.ack = ack;
     cmd_msg.apply = apply;
 
-    this->last_rpc_command_mutex_.lock();
-    cmd_msg.prev_command = this->last_rpc_command_stored_;
-    cmd_msg.index = this->last_occupied_index_;
-    this->last_rpc_command_mutex_.unlock();
+    this->rpcs_mutex_.lock();
+    cmd_msg.prev_command = std::get<0>(this->rpcs_vector_.back());
+    cmd_msg.index = this->rpcs_vector_.size();
+    this->rpcs_mutex_.unlock();
 
     this->pub_to_dispatch_->publish(cmd_msg);
 }
@@ -417,15 +410,7 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
-void Pelican::updateLastRPCCommandReceived() { // CHECK: needed variables?
-    std::lock_guard<std::mutex> lock_cmd(this->last_rpc_command_mutex_);
-    std::lock_guard<std::mutex> lock_rpc(this->rpcs_mutex_);
-    this->last_rpc_command_stored_ = std::get<0>(this->rpcs_vector_.back());
-    this->last_occupied_index_ = this->rpcs_vector_.size();
-}
-
 bool Pelican::executeRPCCommand(uint16_t command) {
-    // TODO: signal to datapad in case of operation failed
     switch (command) {
         case TAKEOFF_COMMAND:
             if (this->initiateSetHome() && this->initiateArm() && this->initiateTakeoff()) {
@@ -457,8 +442,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
         case RENDEZVOUS:
             this->rendezvousFleet();
 
-            // Give the mode switch some time to activate // CHECK maybe another way instead of
-            // sleeping?
+            // Give the mode switch some time to activate
             std::this_thread::sleep_for(std::chrono::seconds(constants::RENDEZVOUS_WAIT_TIME_SECS));
             if (!this->commenceCheckOffboardEngagement()) {
                 this->sendLogWarning("Rendezvous operations could not be accomplished!");
