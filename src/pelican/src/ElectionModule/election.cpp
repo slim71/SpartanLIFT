@@ -382,4 +382,7 @@ void ElectionModule::candidateActions() {
 }
 
 /************* Both from outside and inside the module *************/
-void ElectionModule::stopService() {}
+void ElectionModule::stopService() {
+    this->sendLogDebug("Stopping election module");
+    this->setVotingCompleted();
+}

@@ -31,6 +31,7 @@ void UNSCModule::initSetup(LoggerModule* logger) {
 }
 
 void UNSCModule::stopService() {
+    this->sendLogDebug("Stopping unsc module");
     std::lock_guard<std::mutex> lock(this->running_mutex_);
     this->running_ = false;
 }
