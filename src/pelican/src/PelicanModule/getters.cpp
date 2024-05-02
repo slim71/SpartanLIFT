@@ -60,9 +60,8 @@ double Pelican::getCollisionRadius() const {
 }
 
 unsigned int Pelican::getNetworkSize() const {
-    this->discovery_mutex_.lock();
+    std::lock_guard<std::mutex> lock(this->discovery_mutex_);
     int s = this->discovery_vector_.size() + 1;
-    this->discovery_mutex_.unlock();
     return s;
 }
 
