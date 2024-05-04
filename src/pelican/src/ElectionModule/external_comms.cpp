@@ -6,7 +6,6 @@ unsigned int ElectionModule::gatherAgentID() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
-    this->sendLogDebug("gathering id");
 
     return this->node_->getID();
 }
@@ -31,7 +30,6 @@ unsigned int ElectionModule::gatherCurrentTerm() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
-    this->sendLogDebug("gathering term");
 
     return this->node_->getCurrentTerm();
 }
