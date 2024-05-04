@@ -151,7 +151,7 @@ void ElectionModule::triggerVotes() {
     }
 
     // Do not send request in case another leader has been already chosen
-    if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
+    if (!this->confirmAgentIsCandidate() || this->checkExternalLeaderElected()) {
         this->sendLogWarning(
             "It appears another leader has been already chosen, so I won't trigger the vote request"
         );

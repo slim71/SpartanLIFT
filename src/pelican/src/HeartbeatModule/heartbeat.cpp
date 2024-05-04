@@ -167,7 +167,8 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
         case leader:
             if (msg.leader_id != this->gatherAgentID()) {
                 this->sendLogWarning(
-                    "As a leader, I've received a heartbeat from some other leader agent"
+                    "As a leader, I've received a heartbeat from some other leader agent ({})",
+                    msg.leader_id
                 );
                 this->signalSetElectionStatus(msg.leader_id);
                 this->signalTransitionToFollower();

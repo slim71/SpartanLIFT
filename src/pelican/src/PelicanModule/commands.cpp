@@ -165,27 +165,29 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
 
     // Index in AppendEntryRPC vector
     this->rpcs_mutex_.lock();
-    unsigned int last_rpc_store = std::get<0>(this->rpcs_vector_.back());
-    unsigned int expected_index = this->rpcs_vector_.size();
-    unsigned int sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
+    unsigned int last_rpc_store = 0;
+    unsigned int sec2last = 0;
     auto rpc_size = this->rpcs_vector_.size();
+    unsigned int expected_index = rpc_size;
+    if (rpc_size > 0)
+        last_rpc_store = std::get<0>(this->rpcs_vector_.back());
+    if (rpc_size > 2)
+        sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
     this->rpcs_mutex_.unlock();
 
     // Valid previous command
     if (msg.apply) {
-        if (rpc_size >= 2) {
-            if (msg.prev_command != sec2last) {
-                this->sendLogWarning(
-                    "The last command is not coherent-> msg:{} expected(sec2last):{}",
-                    msg.prev_command, sec2last
-                );
-                return false;
-            }
+        if ((sec2last != 0) && (msg.prev_command != sec2last)) {
+            this->sendLogWarning(
+                "The last command is not coherent-> msg:{} expected(sec2last):{}", msg.prev_command,
+                sec2last
+            );
+            return false;
         }
         // If only one RPC is in the vector, it'll be the one in scope
 
     } else {
-        if (msg.prev_command != last_rpc_store) {
+        if ((last_rpc_store != 0) && (msg.prev_command != last_rpc_store)) {
             this->sendLogWarning(
                 "The last command is not coherent-> msg:{} expected(last):{}", msg.prev_command,
                 last_rpc_store
@@ -207,8 +209,6 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
 }
 
 bool Pelican::broadcastCommand(uint16_t command) {
-    this->appendEntry(command, this->getCurrentTerm());
-
     // Send command to other agents
     unsigned int attempt = 0;
     bool command_successful = false;
@@ -250,6 +250,7 @@ bool Pelican::broadcastCommand(uint16_t command) {
         this->sendLogWarning("Max retries reached while waiting for command application's acks");
         return false;
     } else {
+        this->appendEntry(command, this->getCurrentTerm());
         this->sendLogDebug(
             "Successfully sent confirmation to execute command {}", commands_to_string(command)
         );
@@ -282,6 +283,12 @@ void Pelican::handleCommandDispatch(uint16_t command) {
 }
 
 void Pelican::handleCommandReception(const comms::msg::Command msg) {
+    // Do not even consider handling acks if I'm not the leader
+    if (!this->isLeader() && msg.ack) {
+        this->sendLogDebug("Not handling ack from agent {} since I'm not the leader", msg.agent);
+        return;
+    }
+
     this->sendLogDebug(
         "Handling command {}{}{} received from agent {} for term {} (prev_cmd:{}, prev_term:{}, "
         "index:{})",
@@ -348,9 +355,11 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, uint16_t command, bool ack
     cmd_msg.prev_term = cmd_msg.term_id - 1;
     cmd_msg.ack = ack;
     cmd_msg.apply = apply;
+    cmd_msg.prev_command = 0; // default init
 
     this->rpcs_mutex_.lock();
-    cmd_msg.prev_command = std::get<0>(this->rpcs_vector_.back());
+    if (!this->rpcs_vector_.empty())
+        cmd_msg.prev_command = std::get<0>(this->rpcs_vector_.back());
     cmd_msg.index = this->rpcs_vector_.size();
     this->rpcs_mutex_.unlock();
 
