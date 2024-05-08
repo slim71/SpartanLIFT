@@ -181,10 +181,10 @@ class Pelican : public rclcpp::Node {
         std::string model_;
         possible_roles role_ {tbd};
         double actual_target_height_ {0}; // needed in order to stabilize height tracking
-        geometry_msgs::msg::Point setpoint_position_ =
-            NAN_point;                    // referring to temporary setpoint along a trajectory
-        geometry_msgs::msg::Point
-            setpoint_velocity_;           // referring to temporary setpoint along a trajectory
+        // referring to temporary setpoint along a trajectory
+        geometry_msgs::msg::Point setpoint_position_ = NAN_point; // CHECK: move to UNSC?
+        // referring to temporary setpoint along a trajectory
+        geometry_msgs::msg::Point setpoint_velocity_;
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
         std::vector<geometry_msgs::msg::Point> copters_positions_;
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;

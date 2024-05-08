@@ -14,7 +14,6 @@ TacMapModule::~TacMapModule() {
     resetSharedPointer(this->sub_to_flags_topic_);
     resetSharedPointer(this->sub_to_attitude_topic_);
     resetSharedPointer(this->sub_to_control_mode_topic_);
-    resetSharedPointer(this->sub_to_odometry_topic_);
     resetSharedPointer(this->sub_to_status_topic_);
 
     this->node_ = nullptr;
@@ -35,7 +34,6 @@ void TacMapModule::initTopics() {
     this->flags_topic_ = px4_header + "/fmu/out/failsafe_flags"s;
     this->attitude_topic_ = px4_header + "/fmu/out/vehicle_attitude"s;
     this->control_mode_topic_ = px4_header + "/fmu/out/vehicle_control_mode"s;
-    this->ned_odometry_topic_ = px4_header + "/fmu/out/vehicle_odometry"s;
     this->command_ack_topic_ = px4_header + "/fmu/out/vehicle_command_ack"s;
     this->status_topic_ = px4_header + "/fmu/out/vehicle_status"s;
 
@@ -57,12 +55,6 @@ void TacMapModule::initSubscribers() {
     if (!this->node_) {
         throw MissingExternModule();
     }
-
-    this->sub_to_odometry_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleOdometry>(
-        this->ned_odometry_topic_, this->px4_qos_,
-        std::bind(&TacMapModule::storeNEDOdometry, this, std::placeholders::_1),
-        this->gatherReentrantOptions()
-    );
 
     this->sub_to_status_topic_ = this->node_->create_subscription<px4_msgs::msg::VehicleStatus>(
         this->status_topic_, this->px4_qos_,
