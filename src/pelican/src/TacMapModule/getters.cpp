@@ -1,15 +1,6 @@
 #include "TacMapModule/tacmap.hpp"
 
 /*************************** Get methods ***************************/
-std::optional<px4_msgs::msg::VehicleOdometry> TacMapModule::getNEDOdometry() const {
-    std::lock_guard<std::mutex> lock(this->ned_odometry_mutex_);
-
-    if (this->ned_odometry_buffer_.empty())
-        return std::nullopt;
-
-    return ned_odometry_buffer_.back();
-}
-
 std::optional<nav_msgs::msg::Odometry> TacMapModule::getENUOdometry() const {
     std::lock_guard<std::mutex> lock(this->enu_odometry_mutex_);
 

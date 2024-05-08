@@ -29,7 +29,6 @@ class TacMapModule {
         );
         bool waitForCommanderAck(uint16_t);
 
-        std::optional<px4_msgs::msg::VehicleOdometry> getNEDOdometry() const;
         std::optional<nav_msgs::msg::Odometry> getENUOdometry() const;
         std::optional<px4_msgs::msg::VehicleCommandAck> getCommanderAck() const;
         std::optional<px4_msgs::msg::VehicleStatus> getStatus() const;
@@ -52,7 +51,6 @@ class TacMapModule {
         void initPublishers();
 
         // Receiving data
-        void storeNEDOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr);
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);
         void storeENUOdometry(const nav_msgs::msg::Odometry::SharedPtr);
@@ -78,8 +76,6 @@ class TacMapModule {
         // Only one ack memorized because messages from that topic should be sparse
         std::optional<px4_msgs::msg::VehicleCommandAck> last_commander_ack_;
 
-        boost::circular_buffer<px4_msgs::msg::VehicleOdometry> ned_odometry_buffer_ {
-            constants::NED_ODOMETRY_BUFFER_SIZE};
         boost::circular_buffer<nav_msgs::msg::Odometry> enu_odometry_buffer_ {
             constants::ENU_ODOMETRY_BUFFER_SIZE};
         boost::circular_buffer<px4_msgs::msg::VehicleStatus> status_buffer_ {
@@ -88,7 +84,6 @@ class TacMapModule {
         mutable std::mutex running_mutex_;       // to be used with running_
         mutable std::mutex commander_ack_mutex_; // to be used with last_commander_ack_
         mutable std::mutex globalpos_mutex_;     // to be used with gps_buffer_
-        mutable std::mutex ned_odometry_mutex_;  // to be used with ned_odometry_buffer_
         mutable std::mutex enu_odometry_mutex_;  // to be used with enu_odometry_buffer_
         mutable std::mutex status_mutex_;        // to be used with status_buffer_
         mutable std::mutex system_id_mutex_;     // to be used with system_id_
@@ -114,9 +109,6 @@ class TacMapModule {
         std::string control_mode_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_control_mode";
         rclcpp::Subscription<px4_msgs::msg::VehicleControlMode>::SharedPtr
             sub_to_control_mode_topic_;
-
-        std::string ned_odometry_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_odometry";
-        rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr sub_to_odometry_topic_;
 
         std::string status_topic_; // i.e. "/px4_{id}/fmu/out/vehicle_status";
         rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr sub_to_status_topic_;

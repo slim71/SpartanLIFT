@@ -1,14 +1,5 @@
 #include "TacMapModule/tacmap.hpp"
 
-void TacMapModule::storeNEDOdometry(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock(this->ned_odometry_mutex_);
-    this->ned_odometry_buffer_.push_back(px4_msgs::msg::VehicleOdometry()
-                                             .set__timestamp(msg->timestamp)
-                                             .set__position(msg->position)
-                                             .set__q(msg->q));
-    // Other fields not needed
-}
-
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
     px4_msgs::msg::VehicleStatus status_data;
     status_data.timestamp = msg->timestamp;       // [us]
