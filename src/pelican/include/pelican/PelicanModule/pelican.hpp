@@ -65,6 +65,7 @@ class Pelican : public rclcpp::Node {
         heartbeat requestLastHb();
         int requestNumberOfHbs();
         std::optional<px4_msgs::msg::VehicleOdometry> requestNEDOdometry();
+        std::optional<nav_msgs::msg::Odometry> requestENUOdometry();
         std::optional<px4_msgs::msg::VehicleStatus> requestStatus();
 
         // Actions initiated from outside the module
@@ -126,6 +127,8 @@ class Pelican : public rclcpp::Node {
         void unsetCarryingStatus();
         void setLastCmdStatus();
         void unsetLastCmdStatus();
+        void setAndNotifyRendezvousHandled();
+        void unsetAndNotifyRendezvousHandled();
 
         void rogerWillCo(const std::shared_ptr<
                          rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
@@ -189,6 +192,8 @@ class Pelican : public rclcpp::Node {
         std::vector<comms::msg::Command> dispatch_vector_;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>
             last_goal_handle_;
+        TriState rendezvous_handled_ {TriState::Floating};
+        std::condition_variable rend_handled_cv_;
 
         mutable std::mutex id_mutex_;                // Used to access id_
         mutable std::mutex term_mutex_;              // Used to access current_term_
@@ -204,6 +209,7 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex rpcs_mutex_;              // To be used with rpcs_vector_
         mutable std::mutex last_cmd_result_mutex_;   // To be used with last_cmd_result_
         mutable std::mutex last_goal_mutex_;         // To be used with last_goal_handle_
+        mutable std::mutex rendez_tristate_mutex_;   // to be used with rendezvous_handled_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;

@@ -106,10 +106,6 @@ heartbeat PelicanTest::RequestLastHbTester() {
     return this->node_->requestLastHb();
 }
 
-std::optional<px4_msgs::msg::VehicleOdometry> PelicanTest::RequestNEDOdometryTester() {
-    return this->node_->requestNEDOdometry();
-}
-
 std::optional<px4_msgs::msg::VehicleStatus> PelicanTest::RequestStatusTester() {
     return this->node_->requestStatus();
 }

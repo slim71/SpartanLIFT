@@ -19,7 +19,6 @@ class PelicanTest : public ::testing::Test {
         void ProposalPublisherTester();
         int RequestNumberOfHbsTester();
         heartbeat RequestLastHbTester();
-        std::optional<px4_msgs::msg::VehicleOdometry> RequestNEDOdometryTester();
         std::optional<px4_msgs::msg::VehicleStatus> RequestStatusTester();
         void CommenceFollowerOperationsTester();
         void CommenceCandidateOperationsTester();

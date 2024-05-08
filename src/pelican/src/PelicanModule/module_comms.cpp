@@ -79,8 +79,8 @@ void Pelican::commencePublishTrajectorySetpoint(
     this->tac_core_.publishTrajectorySetpoint(pos, vel);
 }
 
-std::optional<px4_msgs::msg::VehicleOdometry> Pelican::requestNEDOdometry() {
-    return this->tac_core_.getNEDOdometry();
+std::optional<nav_msgs::msg::Odometry> Pelican::requestENUOdometry() {
+    return this->tac_core_.getENUOdometry();
 }
 
 std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() {
@@ -129,7 +129,7 @@ void Pelican::commenceHeightCompensation(double odom_height) {
 
     if (this->commenceCheckOffboardEngagement() && maybe_target) {
         auto current_target = maybe_target.value();
-        auto compensated_height = current_target.z + (target_height - odom_height);
+        double compensated_height = current_target.z + (target_height - odom_height);
         this->sendLogDebug(
             "Height| current: {:.4f}, target: {:.4f}, odom: {:.4f}, compensated: {:.4f}",
             current_target.z, target_height, odom_height, compensated_height

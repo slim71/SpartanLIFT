@@ -448,20 +448,21 @@ bool Pelican::executeRPCCommand(uint16_t command) {
                 return false;
             }
             break;
-        case RENDEZVOUS:
-            this->rendezvousFleet();
+        case RENDEZVOUS: { // Brackets/Block needed because of the local variable
+            std::thread rend_thread(&Pelican::rendezvousFleet, this);
+            rend_thread.detach();
 
-            // Give the mode switch some time to activate
-            std::this_thread::sleep_for(std::chrono::seconds(constants::RENDEZVOUS_WAIT_TIME_SECS));
-            if (!this->commenceCheckOffboardEngagement()) {
-                this->sendLogWarning("Rendezvous operations could not be accomplished!");
-            } else {
-                this->sendLogInfo("Rendezvous initiated");
-                return true;
-            }
+            this->sendLogDebug("Waiting for the rendezvous to start...");
+            std::unique_lock lock(this->rendez_tristate_mutex_);
+            this->rend_handled_cv_.wait(lock, [this] {
+                return this->rendezvous_handled_ != TriState::Floating;
+            });
 
-            return false;
+            bool res = static_cast<bool>(this->rendezvous_handled_);
+            this->sendLogInfo("Rendezvous operations {}accomplished!", res ? "" : "could not be ");
+            return res;
             break;
+        }
         default:
             this->sendLogWarning("Command received is not supported!");
             return false;
@@ -501,14 +502,17 @@ void Pelican::rendezvousFleet() { // non-leader side; request for FleetInfo data
             if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
                 this->sendLogWarning("Failed to receive a target position from the leader!");
                 this->fleetinfo_client_->prune_pending_requests();
+                this->unsetAndNotifyRendezvousHandled();
                 return;
             }
         } else {
             this->sendLogWarning("The server seems to be down. Please try again.");
+            this->unsetAndNotifyRendezvousHandled();
             return;
         }
     }
 
+    this->setAndNotifyRendezvousHandled();
     this->initiateOffboardMode();
 }
 
