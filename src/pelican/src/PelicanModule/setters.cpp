@@ -74,3 +74,15 @@ void Pelican::setReferenceHeight(double height) {
     std::lock_guard<std::mutex> lock(this->height_mutex_);
     this->actual_target_height_ = height;
 }
+
+void Pelican::setAndNotifyRendezvousHandled() {
+    std::lock_guard<std::mutex> rd_lock(this->rendez_tristate_mutex_);
+    this->rendezvous_handled_ = TriState::True;
+    this->rend_handled_cv_.notify_all();
+}
+
+void Pelican::unsetAndNotifyRendezvousHandled() {
+    std::lock_guard<std::mutex> rd_lock(this->rendez_tristate_mutex_);
+    this->rendezvous_handled_ = TriState::False;
+    this->rend_handled_cv_.notify_all();
+}

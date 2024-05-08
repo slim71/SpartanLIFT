@@ -108,7 +108,7 @@ void UNSCModule::activateOffboardMode() {
 }
 
 void UNSCModule::setAndMaintainOffboardMode() {
-    auto opt_target = this->gatherTargetPosition();
+    auto opt_target = this->gatherSetpointPosition();
     if (!opt_target) {
         this->sendLogDebug("No target pose found");
         return;
@@ -159,6 +159,7 @@ bool UNSCModule::sendToCommanderUnit(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
     float param6, float param7
 ) {
+    // Send command to PX4 commander and wait for it to acknoledge it
     unsigned int attempt = 1;
     do {
         this->sendLogDebug("Trying to send command {} and to get an ack", command);
@@ -176,6 +177,15 @@ bool UNSCModule::sendToCommanderUnit(
 
     this->sendLogInfo("Command {} sent", command);
     return true;
+}
+
+bool UNSCModule::loiter() {
+    cancelTimer(this->offboard_timer_);
+    return this->sendToCommanderUnit(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
+        constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_CUSTOM_MAIN_MODE,
+        constants::PX4_LOITER_SUB_MODE
+    );
 }
 
 /**************************************************************************************/
@@ -226,14 +236,65 @@ void UNSCModule::consensusToRendezvous() {
                                         );
     this->sendLogDebug("Computed velocity for next setpoint: {}", vel);
 
-    // TODO: stop offboard altogether? move to pose mode
+    // Stop offboard mode
     if (updated_pos == init_pos) {
-        cancelTimer(this->rendezvous_timer_);
+        this->sendLogDebug("Stop position updates during rendezvous");
+        cancelTimer(this->rendezvous_timer_); // Stop updating the setpoint
+
+        // Timer for additional check in order to stop the
+        // velocity setpoints update
+        this->rend_check_timer_ = this->node_->create_wall_timer(
+            this->rend_check_period_, std::bind(&UNSCModule::rendezvousClosure, this),
+            this->gatherRendezvousExclusiveGroup()
+        );
     }
 
     // Not changing the z component, so the current one is kept
     this->signalSetSetpointPosition(updated_pos);
     this->signalSetSetpointVelocity(vel);
+}
+
+void UNSCModule::rendezvousClosure() {
+    auto maybe_setpoint = this->gatherSetpointPosition(); // target setpoint
+    auto maybe_odom = this->gatherENUOdometry();          // Latest odometry data in ENU frame
+
+    // If all data is available
+    if (maybe_odom && maybe_setpoint) {
+        geometry_msgs::msg::Point setpoint = maybe_setpoint.value();
+        nav_msgs::msg::Odometry last_enu_odom = maybe_odom.value();
+        auto target_height = this->gatherActualTargetHeight();
+        this->sendLogDebug("target: {} current:{}", setpoint, last_enu_odom.pose.pose.position);
+
+        // Compute distance from setpoint
+        auto x_diff = abs(setpoint.x - last_enu_odom.pose.pose.position.x);
+        auto y_diff = abs(setpoint.y - last_enu_odom.pose.pose.position.y);
+        auto z_diff = abs(target_height - last_enu_odom.pose.pose.position.z);
+
+        // If near target, stops Offboard mode for Rendezvous
+        if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
+            (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
+            (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
+            this->sendLogDebug("Finished rendezvous succesfully");
+            cancelTimer(this->rend_check_timer_);
+            std::lock_guard lock(this->rendezvous_cv_mutex_);
+            this->rendezvous_done_ = true;
+            this->rendezvous_cv_.notify_all();
+            this->offboard_setpoint_counter_ = 0;
+
+        } else {
+            // Compute new velocity to aid movements towards target
+            this->sendLogDebug(
+                "still not finished -> x:{:.4f} y:{:.4f} z:{:.4f}", x_diff, y_diff, z_diff
+            );
+
+            geometry_msgs::msg::Point vel =
+                geometry_msgs::msg::Point()
+                    .set__x((setpoint.x - last_enu_odom.pose.pose.position.x) / 2)
+                    .set__y((setpoint.y - last_enu_odom.pose.pose.position.y) / 2);
+            this->sendLogDebug("Updated velocity for last setpoint: {}", vel);
+            this->signalSetSetpointVelocity(vel);
+        }
+    }
 }
 
 geometry_msgs::msg::Point

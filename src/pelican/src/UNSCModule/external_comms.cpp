@@ -34,12 +34,12 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherRendezvousExclusiveGroup() co
     return this->node_->getRendezvousExclusiveGroup();
 }
 
-std::optional<px4_msgs::msg::VehicleOdometry> UNSCModule::gatherOdometry() const {
+std::optional<nav_msgs::msg::Odometry> UNSCModule::gatherENUOdometry() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->requestNEDOdometry();
+    return this->node_->requestENUOdometry();
 }
 
 std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
@@ -50,7 +50,7 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     return this->node_->requestStatus();
 }
 
-std::optional<geometry_msgs::msg::Point> UNSCModule::gatherTargetPosition() const {
+std::optional<geometry_msgs::msg::Point> UNSCModule::gatherSetpointPosition() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -112,6 +112,14 @@ double UNSCModule::gatherCollisionRadius() const {
     }
 
     return this->node_->getCollisionRadius();
+}
+
+double UNSCModule::gatherActualTargetHeight() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getActualTargetHeight();
 }
 
 /************* To make other modules carry on an action ************/

@@ -23,6 +23,7 @@ class UNSCModule {
         bool takeoff(unsigned int = 0);
         bool land();
         bool setHome();
+        bool loiter();
         bool returnToLaunchPosition();
         void activateOffboardMode();
 
@@ -40,6 +41,7 @@ class UNSCModule {
         void setAndMaintainOffboardMode();
         void consensusToRendezvous();
         geometry_msgs::msg::Point adjustmentForCollisionAvoidance(geometry_msgs::msg::Point);
+        void rendezvousClosure();
 
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -51,13 +53,15 @@ class UNSCModule {
         unsigned int gatherAgentID() const;
         double gatherROI() const;
         double gatherCollisionRadius() const;
-        std::optional<px4_msgs::msg::VehicleOdometry> gatherOdometry() const;
+        std::optional<px4_msgs::msg::VehicleOdometry> gatherNEDOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
-        std::optional<geometry_msgs::msg::Point> gatherTargetPosition() const;
+        std::optional<geometry_msgs::msg::Point> gatherSetpointPosition() const;
         std::optional<geometry_msgs::msg::Point> gatherSetpointVelocity() const;
         std::optional<geometry_msgs::msg::Point> gatherDesiredPosition() const;
         unsigned int gatherNetworkSize() const;
         geometry_msgs::msg::Point gatherCopterPosition(unsigned int) const;
+        std::optional<nav_msgs::msg::Odometry> gatherENUOdometry() const;
+        double gatherActualTargetHeight() const;
         // For callback groups
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
@@ -84,10 +88,13 @@ class UNSCModule {
         Eigen::Vector3d offset_ {0, 0, 0}; // [m, m, m]
         std::atomic<bool> running_ {true};
         bool sitl_ready_ {false};
+        bool rendezvous_done_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
+        std::condition_variable rendezvous_cv_;
 
-        mutable std::mutex offset_mutex_;        // to be used with offset_ and yaw_
-        mutable std::mutex running_mutex_;       // to be used with running_
+        mutable std::mutex offset_mutex_;  // to be used with offset_ and yaw_
+        mutable std::mutex running_mutex_; // to be used with running_
+        mutable std::mutex rendezvous_cv_mutex_;
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
@@ -98,6 +105,9 @@ class UNSCModule {
         rclcpp::TimerBase::SharedPtr rendezvous_timer_;
         std::chrono::milliseconds rendezvous_period_ {
             std::chrono::milliseconds(constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS)};
+
+        rclcpp::TimerBase::SharedPtr rend_check_timer_;
+        std::chrono::milliseconds rend_check_period_ {std::chrono::seconds(1)};
 };
 
 #include "unsc_template.tpp"

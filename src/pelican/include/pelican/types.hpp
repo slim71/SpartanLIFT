@@ -63,6 +63,8 @@ struct heartbeat {
         rclcpp::Time timestamp;
 };
 
+enum class TriState { False, True, Floating };
+
 std::ostream& operator<<(std::ostream&, const heartbeat&);
 
 extern heartbeat ERROR_HB;
