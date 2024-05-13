@@ -45,5 +45,5 @@ namespace constants {
     static constexpr double ALPHA_REND = 0.2;
     static constexpr double BETA_REND = 1.0;
     static constexpr double AVOIDANCE_DISTANCE = 1.0;
-    static constexpr double SETPOINT_REACHED_DISTANCE = 0.2;
+    static constexpr double SETPOINT_REACHED_DISTANCE = 0.4;
 } // namespace constants

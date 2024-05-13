@@ -77,8 +77,11 @@ class UNSCModule {
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
-        void signalSetSetpointPosition(geometry_msgs::msg::Point) const;
-        void signalSetSetpointVelocity(geometry_msgs::msg::Point) const;
+        void signalSetSetpointPosition(geometry_msgs::msg::Point);
+        void signalSetSetpointVelocity(geometry_msgs::msg::Point);
+        void signalSetReferenceHeight(double);
+
+        bool confirmAgentIsLeader() const;
 
     private: // Attributes
         Pelican* node_;
@@ -88,13 +91,11 @@ class UNSCModule {
         Eigen::Vector3d offset_ {0, 0, 0}; // [m, m, m]
         std::atomic<bool> running_ {true};
         bool sitl_ready_ {false};
-        bool rendezvous_done_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
-        std::condition_variable rendezvous_cv_;
+        bool move_to_center_ {false};
 
         mutable std::mutex offset_mutex_;  // to be used with offset_ and yaw_
         mutable std::mutex running_mutex_; // to be used with running_
-        mutable std::mutex rendezvous_cv_mutex_;
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};

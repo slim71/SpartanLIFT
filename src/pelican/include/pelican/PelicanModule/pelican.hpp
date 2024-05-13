@@ -86,6 +86,7 @@ class Pelican : public rclcpp::Node {
         );                                                           // UNSC module
         void commenceSetSetpointPosition(geometry_msgs::msg::Point); // UNSC module
         void commenceSetSetpointVelocity(geometry_msgs::msg::Point); // UNSC module
+        void commenceSetReferenceHeight(double);                     // UNSC module
         bool commenceCheckOffboardEngagement();                      // TacMap and UNSC modules
         bool commenceWaitForCommanderAck(uint16_t);                  // TacMap module
         void commenceHeightCompensation(double);                     // TacMap module

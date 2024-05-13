@@ -96,6 +96,15 @@ void UNSCModule::runPreChecks() {
     this->sendLogError("Errors in the simulation detected!");
 }
 
+bool UNSCModule::loiter() {
+    cancelTimer(this->offboard_timer_);
+    return this->sendToCommanderUnit(
+        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
+        constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_CUSTOM_MAIN_MODE,
+        constants::PX4_LOITER_SUB_MODE
+    );
+}
+
 void UNSCModule::activateOffboardMode() {
     this->offboard_timer_ = this->node_->create_wall_timer(
         this->offboard_period_, std::bind(&UNSCModule::setAndMaintainOffboardMode, this),
@@ -179,15 +188,6 @@ bool UNSCModule::sendToCommanderUnit(
     return true;
 }
 
-bool UNSCModule::loiter() {
-    cancelTimer(this->offboard_timer_);
-    return this->sendToCommanderUnit(
-        px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
-        constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_CUSTOM_MAIN_MODE,
-        constants::PX4_LOITER_SUB_MODE
-    );
-}
-
 /**************************************************************************************/
 // collision avoidance is included in the updating algorithm
 void UNSCModule::consensusToRendezvous() {
@@ -225,17 +225,6 @@ void UNSCModule::consensusToRendezvous() {
     updated_pos.y += constants::BETA_REND * collision_adjustment.y;
     this->sendLogDebug("Updated position after collision adjustments: {}", updated_pos);
 
-    geometry_msgs::msg::Point vel = geometry_msgs::msg::Point()
-                                        .set__x(
-                                            (updated_pos.x - init_pos.x) /
-                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
-                                        )
-                                        .set__y(
-                                            (updated_pos.y - init_pos.y) /
-                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
-                                        );
-    this->sendLogDebug("Computed velocity for next setpoint: {}", vel);
-
     // Stop offboard mode
     if (updated_pos == init_pos) {
         this->sendLogDebug("Stop position updates during rendezvous");
@@ -248,6 +237,17 @@ void UNSCModule::consensusToRendezvous() {
             this->gatherRendezvousExclusiveGroup()
         );
     }
+
+    geometry_msgs::msg::Point vel = geometry_msgs::msg::Point()
+                                        .set__x(
+                                            (updated_pos.x - init_pos.x) /
+                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
+                                        )
+                                        .set__y(
+                                            (updated_pos.y - init_pos.y) /
+                                            (constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS / 1000.0)
+                                        );
+    this->sendLogDebug("Computed velocity for next setpoint: {}", vel);
 
     // Not changing the z component, so the current one is kept
     this->signalSetSetpointPosition(updated_pos);
@@ -274,19 +274,32 @@ void UNSCModule::rendezvousClosure() {
         if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
             (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
             (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
-            this->sendLogDebug("Finished rendezvous succesfully");
-            cancelTimer(this->rend_check_timer_);
-            std::lock_guard lock(this->rendezvous_cv_mutex_);
-            this->rendezvous_done_ = true;
-            this->rendezvous_cv_.notify_all();
-            this->offboard_setpoint_counter_ = 0;
+            if (!this->confirmAgentIsLeader() ||
+                this->move_to_center_) { // CHECK: "stabilize" formation?
+                // Finally, stop offboard
+                this->offboard_setpoint_counter_ = 0;
+                this->sendLogInfo("Finished rendezvous succesfully");
+                cancelTimer(this->rend_check_timer_);
+                this->signalSetReferenceHeight(2.0);
+            } else {
+                this->move_to_center_ = true;
+                auto maybe_target = this->gatherDesiredPosition();
+                if (!maybe_target) {
+                    this->sendLogError("No target found!");
+                    return;
+                }
+
+                this->sendLogDebug("Positioning to the target position: {}", maybe_target.value());
+                this->signalSetSetpointPosition(maybe_target.value());
+            }
 
         } else {
-            // Compute new velocity to aid movements towards target
+            // Compute new velocity to aid movement towards target
             this->sendLogDebug(
-                "still not finished -> x:{:.4f} y:{:.4f} z:{:.4f}", x_diff, y_diff, z_diff
+                "Not close enough -> x:{:.4f} y:{:.4f} z:{:.4f}", x_diff, y_diff, z_diff
             );
 
+            // Small velocity to help a more precise tracking (if needed)
             geometry_msgs::msg::Point vel =
                 geometry_msgs::msg::Point()
                     .set__x((setpoint.x - last_enu_odom.pose.pose.position.x) / 2)
