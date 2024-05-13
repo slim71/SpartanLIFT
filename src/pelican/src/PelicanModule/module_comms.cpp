@@ -149,3 +149,7 @@ void Pelican::commenceSetSetpointPosition(geometry_msgs::msg::Point p) {
 void Pelican::commenceSetSetpointVelocity(geometry_msgs::msg::Point v) {
     this->setSetpointVelocity(v);
 }
+
+void Pelican::commenceSetReferenceHeight(double height) {
+    this->setReferenceHeight(height);
+}
