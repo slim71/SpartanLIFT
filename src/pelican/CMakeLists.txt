@@ -89,6 +89,8 @@ set(TACMAP_SOURCES
 
 set(UNSC_SOURCES
     src/UNSCModule/unsc.cpp
+    src/UNSCModule/getters.cpp
+    src/UNSCModule/setters.cpp
     src/UNSCModule/external_comms.cpp
     src/UNSCModule/control.cpp
 )

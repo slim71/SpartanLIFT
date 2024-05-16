@@ -1,5 +1,6 @@
 #include "PelicanModule/pelican.hpp"
 
+/*************** Service- and action server- related ***************/
 // TODO: make this work as a unique handling of whatever command, rendezvous and formation included
 // This is only executed by the leader, receiver of TeleopData goals, to handle an accepted goal
 void Pelican::rogerWillCo(
@@ -56,7 +57,7 @@ void Pelican::rogerWillCo(
             }
         } else {
             this->sendLogWarning("The fleet should already be flying!");
-            goal_handle->canceled(response);
+            goal_handle->abort(response);
         }
     }
 
@@ -77,7 +78,7 @@ void Pelican::rogerWillCo(
             }
         } else {
             this->sendLogWarning("The fleet is not flying!");
-            goal_handle->canceled(response);
+            goal_handle->abort(response);
         }
     }
 
@@ -92,8 +93,8 @@ void Pelican::rogerWillCo(
                 geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
 
-            this->setReferenceHeight(request->z);
-            this->setTargetPosition(
+            this->initiateSetActualTargetHeight(request->z);
+            this->initiateSetTargetPosition(
                 geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
 
@@ -107,7 +108,7 @@ void Pelican::rogerWillCo(
             }
         } else {
             this->sendLogWarning("The payload is already carrying the payload!");
-            goal_handle->canceled(response);
+            goal_handle->abort(response);
         }
     }
 }
@@ -116,8 +117,8 @@ void Pelican::targetNotification( // Leader-side, receiver of FleetInfo requests
     const std::shared_ptr<comms::srv::FleetInfo::Request>,
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
 ) {
-    auto maybe_pos = this->getTargetPosition();
-    double target_height = this->getActualTargetHeight();
+    auto maybe_pos = this->requestTargetPosition();
+    double target_height = this->requestActualTargetHeight();
     if (maybe_pos) {
         geometry_msgs::msg::Point pos = maybe_pos.value();
         response->target.x = pos.x;
@@ -126,6 +127,71 @@ void Pelican::targetNotification( // Leader-side, receiver of FleetInfo requests
     }
 }
 
+void Pelican::rendezvousFleet() { // non-leader side; request for FleetInfo data
+    // The leader has already set the target position before calling this
+    if (!this->isLeader()) {
+        // Search for a second, then log and search again if needed
+        unsigned int total_search_time = 0;
+        while (!this->fleetinfo_client_->wait_for_service(
+                   std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
+               ) &&
+               total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+            if (!rclcpp::ok()) {
+                this->sendLogError("Client interrupted while waiting for service. Terminating...");
+                return;
+            }
+
+            this->sendLogDebug("Service not available; waiting some more...");
+            total_search_time += constants::SEARCH_LEADER_STEP_SECS;
+        };
+
+        if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+            this->sendLogDebug("Rendezvous server available");
+
+            auto request = std::make_shared<comms::srv::FleetInfo::Request>();
+            // Send request
+            auto async_request_result = this->fleetinfo_client_->async_send_request(
+                request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
+            );
+
+            auto future_status = async_request_result.wait_for(
+                std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
+            );
+            if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+                this->sendLogWarning("Failed to receive a target position from the leader!");
+                this->fleetinfo_client_->prune_pending_requests();
+                this->unsetAndNotifyRendezvousHandled();
+                return;
+            }
+        } else {
+            this->sendLogWarning("The server seems to be down. Please try again.");
+            this->unsetAndNotifyRendezvousHandled();
+            return;
+        }
+    }
+
+    this->setAndNotifyRendezvousHandled();
+    this->initiateOffboardMode();
+}
+
+// This is only executed by non-leaders; response handling for FleetInfo data
+void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
+    // Wait for the specified amount or until the result is available
+    this->sendLogDebug("Getting response...");
+    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+
+    if (status == std::future_status::ready) {
+        auto response = future.get();
+        this->sendLogInfo("Target received: {}", response->target);
+
+        this->initiateSetActualTargetHeight(response->target.z);
+        this->initiateSetTargetPosition(response->target);
+    } else {
+        this->sendLogDebug("Service not ready yet...");
+    }
+}
+
+/************************* Command-related *************************/
 bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     // Valid agent ID
     if (msg.agent <= 0) {
@@ -285,7 +351,6 @@ void Pelican::handleCommandDispatch(uint16_t command) {
 void Pelican::handleCommandReception(const comms::msg::Command msg) {
     // Do not even consider handling acks if I'm not the leader
     if (!this->isLeader() && msg.ack) {
-        this->sendLogDebug("Not handling ack from agent {} since I'm not the leader", msg.agent);
         return;
     }
 
@@ -415,7 +480,7 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->sendLogInfo(
         "Appending entry for command {} for term {}", commands_to_string(command), term
     );
-    std::lock_guard<std::mutex> lock(this->rpcs_mutex_);
+    std::lock_guard lock(this->rpcs_mutex_);
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
@@ -448,7 +513,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
                 return false;
             }
             break;
-        case RENDEZVOUS: { // Brackets/Block needed because of the local variable
+        case RENDEZVOUS: {
             std::thread rend_thread(&Pelican::rendezvousFleet, this);
             rend_thread.detach();
 
@@ -459,76 +524,12 @@ bool Pelican::executeRPCCommand(uint16_t command) {
             });
 
             bool res = static_cast<bool>(this->rendezvous_handled_);
-            this->sendLogInfo("Rendezvous operations {}accomplished!", res ? "" : "could not be ");
+            this->sendLogInfo("Rendezvous operations {}initiated!", res ? "" : "could not be ");
             return res;
             break;
         }
         default:
             this->sendLogWarning("Command received is not supported!");
             return false;
-    }
-}
-
-void Pelican::rendezvousFleet() { // non-leader side; request for FleetInfo data
-    // The leader has already set the target position before calling this
-    if (!this->isLeader()) {
-        // Search for a second, then log and search again if needed
-        unsigned int total_search_time = 0;
-        while (!this->fleetinfo_client_->wait_for_service(
-                   std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
-               ) &&
-               total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-            if (!rclcpp::ok()) {
-                this->sendLogError("Client interrupted while waiting for service. Terminating...");
-                return;
-            }
-
-            this->sendLogDebug("Service not available; waiting some more...");
-            total_search_time += constants::SEARCH_LEADER_STEP_SECS;
-        };
-
-        if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-            this->sendLogDebug("Rendezvous server available");
-
-            auto request = std::make_shared<comms::srv::FleetInfo::Request>();
-            // Send request
-            auto async_request_result = this->fleetinfo_client_->async_send_request(
-                request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
-            );
-
-            auto future_status = async_request_result.wait_for(
-                std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
-            );
-            if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-                this->sendLogWarning("Failed to receive a target position from the leader!");
-                this->fleetinfo_client_->prune_pending_requests();
-                this->unsetAndNotifyRendezvousHandled();
-                return;
-            }
-        } else {
-            this->sendLogWarning("The server seems to be down. Please try again.");
-            this->unsetAndNotifyRendezvousHandled();
-            return;
-        }
-    }
-
-    this->setAndNotifyRendezvousHandled();
-    this->initiateOffboardMode();
-}
-
-// This is only executed by non-leaders; response handling for FleetInfo data
-void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
-    // Wait for the specified amount or until the result is available
-    this->sendLogDebug("Getting response...");
-    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
-
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-        this->sendLogInfo("Target received: {}", response->target);
-
-        this->setReferenceHeight(response->target.z);
-        this->setTargetPosition(response->target);
-    } else {
-        this->sendLogDebug("Service not ready yet...");
     }
 }

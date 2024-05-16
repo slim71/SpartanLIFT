@@ -117,13 +117,13 @@ void UNSCModule::activateOffboardMode() {
 }
 
 void UNSCModule::setAndMaintainOffboardMode() {
-    auto opt_target = this->gatherSetpointPosition();
+    auto opt_target = this->getSetpointPosition();
     if (!opt_target) {
         this->sendLogDebug("No target pose found");
         return;
     }
     auto target_pos = opt_target.value();
-    auto maybe_vel = this->gatherSetpointVelocity();
+    auto maybe_vel = this->getSetpointVelocity();
     if (!maybe_vel) {
         this->sendLogDebug("No target vel found");
         return;
@@ -188,10 +188,10 @@ bool UNSCModule::sendToCommanderUnit(
     return true;
 }
 
-/**************************************************************************************/
-// collision avoidance is included in the updating algorithm
+/*************************** Rendezvous ****************************/
+// Collision avoidance is included in the updating algorithm
 void UNSCModule::consensusToRendezvous() {
-    auto maybe_des_pos = this->gatherDesiredPosition();
+    auto maybe_des_pos = this->getTargetPosition();
     if (!maybe_des_pos) {
         this->sendLogWarning("Desired not set!");
         return;
@@ -250,19 +250,19 @@ void UNSCModule::consensusToRendezvous() {
     this->sendLogDebug("Computed velocity for next setpoint: {}", vel);
 
     // Not changing the z component, so the current one is kept
-    this->signalSetSetpointPosition(updated_pos);
-    this->signalSetSetpointVelocity(vel);
+    this->setSetpointPosition(updated_pos);
+    this->setSetpointVelocity(vel);
 }
 
 void UNSCModule::rendezvousClosure() {
-    auto maybe_setpoint = this->gatherSetpointPosition(); // target setpoint
-    auto maybe_odom = this->gatherENUOdometry();          // Latest odometry data in ENU frame
+    auto maybe_setpoint = this->getSetpointPosition(); // Target setpoint
+    auto maybe_odom = this->gatherENUOdometry();       // Latest odometry data in ENU frame
 
     // If all data is available
     if (maybe_odom && maybe_setpoint) {
         geometry_msgs::msg::Point setpoint = maybe_setpoint.value();
         nav_msgs::msg::Odometry last_enu_odom = maybe_odom.value();
-        auto target_height = this->gatherActualTargetHeight();
+        auto target_height = this->getActualTargetHeight();
         this->sendLogDebug("target: {} current:{}", setpoint, last_enu_odom.pose.pose.position);
 
         // Compute distance from setpoint
@@ -283,14 +283,14 @@ void UNSCModule::rendezvousClosure() {
                 this->signalSetReferenceHeight(2.0);
             } else {
                 this->move_to_center_ = true;
-                auto maybe_target = this->gatherDesiredPosition();
+                auto maybe_target = this->getTargetPosition();
                 if (!maybe_target) {
                     this->sendLogError("No target found!");
                     return;
                 }
 
                 this->sendLogDebug("Positioning to the target position: {}", maybe_target.value());
-                this->signalSetSetpointPosition(maybe_target.value());
+                this->setSetpointPosition(maybe_target.value());
             }
 
         } else {
@@ -305,7 +305,7 @@ void UNSCModule::rendezvousClosure() {
                     .set__x((setpoint.x - last_enu_odom.pose.pose.position.x) / 2)
                     .set__y((setpoint.y - last_enu_odom.pose.pose.position.y) / 2);
             this->sendLogDebug("Updated velocity for last setpoint: {}", vel);
-            this->signalSetSetpointVelocity(vel);
+            this->setSetpointVelocity(vel);
         }
     }
 }

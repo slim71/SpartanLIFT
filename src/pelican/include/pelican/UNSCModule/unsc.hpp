@@ -26,10 +26,21 @@ class UNSCModule {
         bool loiter();
         bool returnToLaunchPosition();
         void activateOffboardMode();
+        void heightCompensation(double);
 
         // Getters
         bool getRunningStatus() const;
         Eigen::Vector3d getOffset() const;
+        std::optional<geometry_msgs::msg::Point> getSetpointPosition() const;
+        std::optional<geometry_msgs::msg::Point> getSetpointVelocity() const;
+        double getActualTargetHeight() const;
+        std::optional<geometry_msgs::msg::Point> getTargetPosition() const;
+
+        // Setters
+        void setSetpointPosition(geometry_msgs::msg::Point);
+        void setSetpointVelocity(geometry_msgs::msg::Point);
+        void setActualTargetHeight(double);
+        void setTargetPosition(geometry_msgs::msg::Point);
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -39,8 +50,8 @@ class UNSCModule {
 
         void runPreChecks();
         void setAndMaintainOffboardMode();
-        void consensusToRendezvous();
         geometry_msgs::msg::Point adjustmentForCollisionAvoidance(geometry_msgs::msg::Point);
+        void consensusToRendezvous();
         void rendezvousClosure();
 
         bool sendToCommanderUnit(
@@ -53,15 +64,11 @@ class UNSCModule {
         unsigned int gatherAgentID() const;
         double gatherROI() const;
         double gatherCollisionRadius() const;
-        std::optional<px4_msgs::msg::VehicleOdometry> gatherNEDOdometry() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
-        std::optional<geometry_msgs::msg::Point> gatherSetpointPosition() const;
-        std::optional<geometry_msgs::msg::Point> gatherSetpointVelocity() const;
-        std::optional<geometry_msgs::msg::Point> gatherDesiredPosition() const;
         unsigned int gatherNetworkSize() const;
         geometry_msgs::msg::Point gatherCopterPosition(unsigned int) const;
         std::optional<nav_msgs::msg::Odometry> gatherENUOdometry() const;
-        double gatherActualTargetHeight() const;
+
         // For callback groups
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
@@ -77,10 +84,9 @@ class UNSCModule {
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
-        void signalSetSetpointPosition(geometry_msgs::msg::Point);
-        void signalSetSetpointVelocity(geometry_msgs::msg::Point);
         void signalSetReferenceHeight(double);
 
+        // Flag checks
         bool confirmAgentIsLeader() const;
 
     private: // Attributes
@@ -88,14 +94,24 @@ class UNSCModule {
         LoggerModule* logger_;
 
         // For possible future use
-        Eigen::Vector3d offset_ {0, 0, 0}; // [m, m, m]
-        std::atomic<bool> running_ {true};
+        bool running_ {true};
         bool sitl_ready_ {false};
-        uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
         bool move_to_center_ {false};
+        uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
+        double actual_target_height_ {0};        // needed in order to stabilize height tracking
+        Eigen::Vector3d offset_ {0, 0, 0};       // [m, m, m]
+        geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
+        // referring to temporary setpoint along a trajectory
+        geometry_msgs::msg::Point setpoint_position_ = NAN_point;
+        // referring to temporary setpoint along a trajectory
+        geometry_msgs::msg::Point setpoint_velocity_;
 
-        mutable std::mutex offset_mutex_;  // to be used with offset_ and yaw_
-        mutable std::mutex running_mutex_; // to be used with running_
+        mutable std::mutex offset_mutex_;            // to be used with offset_ and yaw_
+        mutable std::mutex running_mutex_;           // to be used with running_
+        mutable std::mutex setpoint_position_mutex_; // Used to access setpoint_position_
+        mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_velocity_
+        mutable std::mutex height_mutex_;            // Used to access actual_target_height_
+        mutable std::mutex target_position_mutex_;   // Used to access target_position_
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};

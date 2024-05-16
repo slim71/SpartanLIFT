@@ -19,24 +19,22 @@ void ElectionModule::setElectionStatus(int id) {
 
 /************************* Private methods *************************/
 void ElectionModule::setElectionCompleted() {
-    cancelTimer(this->voting_timer_);
-    std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
+    std::lock_guard lock(this->election_completed_mutex_);
     this->election_completed_ = true;
 }
 
 void ElectionModule::unsetElectionCompleted() {
-    std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
+    std::lock_guard lock(this->election_completed_mutex_);
     this->election_completed_ = false;
 }
 
 void ElectionModule::setVotingCompleted() {
-    cancelTimer(this->voting_timer_);
-    std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
+    std::lock_guard lock(this->voting_completed_mutex_);
     this->voting_completed_ = true;
 }
 
 void ElectionModule::unsetVotingCompleted() {
-    std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
+    std::lock_guard lock(this->voting_completed_mutex_);
     this->voting_completed_ = false;
 }
 
@@ -55,12 +53,12 @@ void ElectionModule::clearElectionStatus() {
 }
 
 void ElectionModule::setExternalLeaderElected() {
-    std::lock_guard<std::mutex> lock(this->external_leader_mutex_);
+    std::lock_guard lock(this->external_leader_mutex_);
     this->external_leader_elected_ = true;
 }
 
 void ElectionModule::unsetExternalLeaderElected() {
-    std::lock_guard<std::mutex> lock(this->external_leader_mutex_);
+    std::lock_guard lock(this->external_leader_mutex_);
     this->external_leader_elected_ = false;
 }
 
@@ -75,11 +73,11 @@ void ElectionModule::setLeader(int id) {
 }
 
 void ElectionModule::setLeaderElected() {
-    std::lock_guard<std::mutex> lock(this->leader_mutex_);
+    std::lock_guard lock(this->leader_mutex_);
     this->leader_elected_ = true;
 }
 
 void ElectionModule::unsetLeaderElected() {
-    std::lock_guard<std::mutex> lock(this->leader_mutex_);
+    std::lock_guard lock(this->leader_mutex_);
     this->leader_elected_ = false;
 }

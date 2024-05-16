@@ -135,7 +135,7 @@ void TacMapModule::initSetup(LoggerModule* logger) {
 
 void TacMapModule::stopService() {
     this->sendLogDebug("Stopping tacmap module");
-    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    std::lock_guard lock(this->running_mutex_);
     this->running_ = false;
 }
 

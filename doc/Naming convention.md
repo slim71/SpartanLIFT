@@ -24,9 +24,6 @@ The main module actually initiates operations triggered by another module.
 `initiate[...]`
 The main module itself activates a functionality carried on by another module.
 
-`is[...]`
-The main module computes and returns a flag to the requiring module.
-
 `request[...]`
 The main module asks data to a secondary module.
 
@@ -35,12 +32,18 @@ The main module asks data to a secondary module.
 `get[...]`
 The module owning the requested data returns it to the requiring module or to the pass-through method of the main module.
 
+`is[...]`
+The module owning a flag returns said flag to the requiring module (another one or itself).
+
 ## Response patterns
 
-| Initiator |     Receiver    |
-|-----------|-----------------|
-| `signal`  |     `commence`  |
-| `request` |      `get`      |
-| `confirm` |      `is`       |
-| `gather`  | `request`/`get` |
-|   N/A     |    `initiate`   |
+|    Source (Initiator)     | Passthrough (main) |     Destination     |
+|---------------------------|--------------------|---------------------|
+|  `signal[action]` (ext)   | `commence[action]` |  '[action]' (ext)   |
+|   `gather[data]`  (ext)   |  `request[data]`   |  `get[data]` (ext)  |
+|   `confirm[flag]` (ext)   |        N/A         |  `is[flag]` (any)   |
+|  `request[data]` (main)   |        N/A         |  `get[data]` (ext)  |
+| `initiate[action]` (main) |        N/A         |  '[action]' (ext)   |
+
+ext: external module
+main: main module (PelicanModule)

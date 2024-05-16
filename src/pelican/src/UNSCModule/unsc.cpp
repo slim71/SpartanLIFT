@@ -32,18 +32,21 @@ void UNSCModule::initSetup(LoggerModule* logger) {
 
 void UNSCModule::stopService() {
     this->sendLogDebug("Stopping unsc module");
-    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    std::lock_guard lock(this->running_mutex_);
     this->running_ = false;
 }
 
-/***************************** Getters *****************************/
+void UNSCModule::heightCompensation(double odom_height) {
+    auto maybe_target = this->getSetpointPosition();
+    double target_height = this->getActualTargetHeight();
 
-bool UNSCModule::getRunningStatus() const {
-    std::lock_guard<std::mutex> lock(this->running_mutex_);
-    return this->running_;
-}
-
-Eigen::Vector3d UNSCModule::getOffset() const {
-    std::lock_guard<std::mutex> lock(this->offset_mutex_);
-    return this->offset_;
+    if (this->signalCheckOffboardEngagement() && maybe_target) {
+        auto current_target = maybe_target.value();
+        double compensated_height = current_target.z + (target_height - odom_height);
+        this->sendLogDebug(
+            "Height| current: {:.4f}, target: {:.4f}, odom: {:.4f}, compensated: {:.4f}",
+            current_target.z, target_height, odom_height, compensated_height
+        );
+        this->setSetpointPosition(current_target.set__z(compensated_height));
+    }
 }

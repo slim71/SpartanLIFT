@@ -3,8 +3,10 @@ import sys
 import yaml
 from odst.logs import LogDebug
 from launch import LaunchDescription
+from launch.event_handlers import OnShutdown
+from launch.substitutions import LocalSubstitution
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import ExecuteProcess
+from launch.actions import ExecuteProcess, RegisterEventHandler, LogInfo
 
 
 def generate_launch_description():

@@ -15,14 +15,15 @@ ElectionModule::~ElectionModule() {
 
     // Cancel active timers
     cancelTimer(this->election_timer_);
-    cancelTimer(this->voting_timer_);
+    this->setElectionCompleted();
+    this->setVotingCompleted();
 
     // Release mutexes
-    std::lock_guard<std::mutex> lock_votes(this->votes_mutex_);
-    std::lock_guard<std::mutex> lock_election_completed(this->election_completed_mutex_);
-    std::lock_guard<std::mutex> lock_voting_completed(this->voting_completed_mutex_);
-    std::lock_guard<std::mutex> lock_external_leader(this->external_leader_mutex_);
-    std::lock_guard<std::mutex> lock_leader(this->leader_mutex_);
+    std::lock_guard lock_votes(this->votes_mutex_);
+    std::lock_guard lock_election_completed(this->election_completed_mutex_);
+    std::lock_guard lock_voting_completed(this->voting_completed_mutex_);
+    std::lock_guard lock_external_leader(this->external_leader_mutex_);
+    std::lock_guard lock_leader(this->leader_mutex_);
 
     // Clear shared resources
     this->received_votes_.clear();
@@ -70,7 +71,7 @@ void ElectionModule::leaderElection() {
     auto app_votes = this->received_votes_;
     this->votes_mutex_.unlock();
 
-    if (!this->checkVotingCompleted() && !app_votes.empty()) {
+    if (!this->isVotingCompleted() && !app_votes.empty()) {
         // Sort votes based on the proposed leader
         std::sort(
             app_votes.begin(), app_votes.end(),
@@ -128,7 +129,7 @@ void ElectionModule::leaderElection() {
         );
 
         // If favorable votes >= network size/2, I'm the new leader
-        if (!this->checkLeaderElected() && !this->checkExternalLeaderElected()) {
+        if (!this->isLeaderElected() && !this->isExternalLeaderElected()) {
             if (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1)) {
                 cancelTimer(this->election_timer_);
                 this->sendLogInfo("Majority acquired!");
@@ -151,7 +152,7 @@ void ElectionModule::triggerVotes() {
     }
 
     // Do not send request in case another leader has been already chosen
-    if (!this->confirmAgentIsCandidate() || this->checkExternalLeaderElected()) {
+    if (!this->confirmAgentIsCandidate() || this->isExternalLeaderElected()) {
         this->sendLogWarning(
             "It appears another leader has been already chosen, so I won't trigger the vote request"
         );
@@ -211,7 +212,7 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
 
 void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
-    if (this->confirmAgentIsCandidate() && this->checkExternalLeaderElected()) {
+    if (this->confirmAgentIsCandidate() && this->isExternalLeaderElected()) {
         this->sendLogWarning(
             "Not going to vote, because I'm a candidate but there's an external leader"
         );
@@ -284,7 +285,7 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
 }
 
 void ElectionModule::flushVotes() {
-    std::lock_guard<std::mutex> lock(this->votes_mutex_);
+    std::lock_guard lock(this->votes_mutex_);
     this->received_votes_.clear();
 }
 
@@ -330,7 +331,7 @@ void ElectionModule::candidateActions() {
     resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // Unsubscribe from topic
     this->clearElectionStatus();
 
-    while (!this->checkElectionCompleted()) {
+    while (!this->isElectionCompleted()) {
         this->flushVotes(); // Clear received votes
 
         this->sendLogInfo("Setting a new election timeout");
@@ -353,7 +354,7 @@ void ElectionModule::candidateActions() {
         this->triggerVotes();
 
         // Wait for the ballot completion or the expiration of the election timeout
-        while (!this->checkVotingCompleted()) {
+        while (!this->isVotingCompleted()) {
             this->sendLogDebug("Ballot checking...");
             // Simulate some delay between checks
             std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
@@ -361,7 +362,7 @@ void ElectionModule::candidateActions() {
         this->sendLogDebug("Ballot finished");
 
         // Stop if a leader is elected
-        if (this->checkLeaderElected() || this->checkExternalLeaderElected()) {
+        if (this->isLeaderElected() || this->isExternalLeaderElected()) {
             this->setElectionCompleted();
         }
     }
@@ -371,12 +372,12 @@ void ElectionModule::candidateActions() {
         return;
 
     // Handle external leader
-    if (this->checkExternalLeaderElected()) {
+    if (this->isExternalLeaderElected()) {
         this->signalTransitionToFollower();
     }
 
     // Switch to leader in case of won election
-    if (this->checkLeaderElected()) {
+    if (this->isLeaderElected()) {
         this->signalTransitionToLeader();
     }
 }

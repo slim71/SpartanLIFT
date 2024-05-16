@@ -80,7 +80,7 @@ void PelicanTest::HeartbeatPublisherTester() {
     this->hb_sub_ = this->node_->create_subscription<comms::msg::Heartbeat>(
         "/fleet/heartbeat", this->standard_qos_,
         [this](const comms::msg::Heartbeat::SharedPtr) {
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            std::lock_guard lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
         this->node_->getReentrantOptions()
@@ -91,7 +91,7 @@ void PelicanTest::ProposalPublisherTester() {
     this->data_sub_ = this->node_->create_subscription<comms::msg::Proposal>(
         "/fleet/leader_election", this->standard_qos_,
         [this](const comms::msg::Proposal::SharedPtr) {
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            std::lock_guard lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
         this->node_->getReentrantOptions()
@@ -133,7 +133,7 @@ void TacMapTest::VehicleCommandPublisherTester() {
     this->command_sub_ = this->node_->create_subscription<px4_msgs::msg::VehicleCommand>(
         "/px4_1/fmu/in/vehicle_command", this->px4_qos_,
         [this](const px4_msgs::msg::VehicleCommand::SharedPtr) {
-            std::lock_guard<std::mutex> lock(this->data_ok_mutex_);
+            std::lock_guard lock(this->data_ok_mutex_);
             this->data_ok_ = true;
         },
         this->reentrant_opt_
