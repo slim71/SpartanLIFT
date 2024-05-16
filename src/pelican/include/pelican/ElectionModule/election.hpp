@@ -18,6 +18,9 @@ class ElectionModule {
         void initSetup(LoggerModule*);
         void prepareTopics();
 
+        // Getters
+        unsigned int getLeaderID() const;
+
         // Actions initiated from outside the module
         void resetElectionTimer();
         void resetSubscriptions();
@@ -26,10 +29,8 @@ class ElectionModule {
         void candidateActions();
 
         // Both from outside and inside the module
-        void stopService();
         void flushVotes();
-
-        unsigned int getLeaderID() const;
+        void stopService();
 
     private: // Member functions
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -40,30 +41,32 @@ class ElectionModule {
         // Core functionalities
         void leaderElection();
         void triggerVotes();
-        void vote(int id_to_vote, double candidate_mass) const;
-        void serveVoteRequest(const comms::msg::RequestVoteRPC msg);
-        void storeVotes(const comms::msg::Proposal::SharedPtr msg);
+        void vote(int, double) const;
+        void serveVoteRequest(const comms::msg::RequestVoteRPC);
+        void storeVotes(const comms::msg::Proposal::SharedPtr);
 
-        bool checkElectionCompleted() const;
+        // Other functionalities
+        void setRandomElectionTimeout();
+        void clearElectionStatus();
+
+        // Flag handling
+        bool isElectionCompleted() const;
         void setElectionCompleted();
         void unsetElectionCompleted();
 
-        bool checkVotingCompleted() const;
+        bool isVotingCompleted() const;
         void setVotingCompleted();
         void unsetVotingCompleted();
 
-        void setRandomElectionTimeout();
-
-        void clearElectionStatus();
-
         bool checkForExternalLeader();
-        bool checkExternalLeaderElected() const;
+        bool isExternalLeaderElected() const;
         void setExternalLeaderElected();
         void unsetExternalLeaderElected();
-        bool checkLeaderElected() const;
+
+        bool isLeaderElected() const;
         void setLeaderElected();
         void unsetLeaderElected();
-        void setLeader(int id = 0);
+        void setLeader(int = 0);
 
         // External communications
         unsigned int gatherAgentID() const;
@@ -75,7 +78,11 @@ class ElectionModule {
         unsigned int gatherNetworkSize() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
+
+        // Check flags owned by other modules
         bool confirmAgentIsCandidate() const;
+
+        // Initiate actions outside of this module
         void signalIncreaseTerm() const;
         void signalSetTerm(uint64_t);
         void signalTransitionToLeader();
@@ -86,7 +93,18 @@ class ElectionModule {
         Pelican* node_;
         LoggerModule* logger_;
 
+        bool election_completed_ {false};
+        bool voting_completed_ {false};
+        bool leader_elected_ {false};
+        bool external_leader_elected_ {false};
         unsigned int leader_id_ {0};
+        std::vector<comms::msg::Proposal::SharedPtr> received_votes_;
+
+        mutable std::mutex votes_mutex_;              // to use with received_votes_
+        mutable std::mutex election_completed_mutex_; // to use with election_completed_
+        mutable std::mutex voting_completed_mutex_;   // to use with voting_completed_
+        mutable std::mutex external_leader_mutex_;    // to use with external_leader_elected_
+        mutable std::mutex leader_mutex_;             // to use with leader_elected_
 
         rclcpp::QoS standard_qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
@@ -100,30 +118,15 @@ class ElectionModule {
         rclcpp::Publisher<comms::msg::RequestVoteRPC>::SharedPtr pub_to_request_vote_rpc_topic_;
         rclcpp::Subscription<comms::msg::RequestVoteRPC>::SharedPtr sub_to_request_vote_rpc_topic_;
 
-        rclcpp::TimerBase::SharedPtr election_timer_;
-        rclcpp::TimerBase::SharedPtr voting_timer_;
-
-        std::atomic<bool> election_completed_ {false};
-        std::atomic<bool> voting_completed_ {false};
-        std::atomic<bool> leader_elected_ {false};
-        std::atomic<bool> external_leader_elected_ {false};
-
-        mutable std::mutex votes_mutex_;              // to use with received_votes_
-        mutable std::mutex election_completed_mutex_; // to use with election_completed_
-        mutable std::mutex voting_completed_mutex_;   // to use with voting_completed_
-        mutable std::mutex external_leader_mutex_;    // to use with external_leader_elected_
-        mutable std::mutex leader_mutex_;             // to use with leader_elected_
-
         // Time frame after which a candidacy will begin if no heartbeat from a
         // leader has been received
         std::chrono::milliseconds election_timeout_;
-
-        std::vector<comms::msg::Proposal::SharedPtr> received_votes_;
+        rclcpp::TimerBase::SharedPtr election_timer_;
 
         // mersenne_twister_engine seeded with random_device()
         std::mt19937 random_engine_ {std::random_device {}()};
         // inclusive; intended as milliseconds
-        std::uniform_int_distribution<> random_distribution_ {150, 300};
+        std::uniform_int_distribution<> random_distribution_ {300, 600};
 };
 
 #include "election_templates.tpp"

@@ -2,7 +2,7 @@
 
 /************************* Standard getters ***************************/
 unsigned int Pelican::getID() const {
-    std::lock_guard<std::mutex> lock(this->id_mutex_);
+    std::lock_guard lock(this->id_mutex_);
     return this->id_;
 }
 
@@ -19,7 +19,7 @@ possible_roles Pelican::getRole() const {
 }
 
 unsigned int Pelican::getCurrentTerm() const {
-    std::lock_guard<std::mutex> lock(this->term_mutex_);
+    std::lock_guard lock(this->term_mutex_);
     return this->current_term_;
 }
 
@@ -60,41 +60,9 @@ double Pelican::getCollisionRadius() const {
 }
 
 unsigned int Pelican::getNetworkSize() const {
-    std::lock_guard<std::mutex> lock(this->discovery_mutex_);
+    std::lock_guard lock(this->discovery_mutex_);
     int s = this->discovery_vector_.size() + 1;
     return s;
-}
-
-std::optional<geometry_msgs::msg::Point> Pelican::getSetpointPosition() const {
-    std::lock_guard<std::mutex> lock(this->setpoint_position_mutex_);
-    if (this->setpoint_position_ != NAN_point) {
-        return this->setpoint_position_;
-    }
-
-    return std::nullopt;
-}
-
-std::optional<geometry_msgs::msg::Point> Pelican::getSetpointVelocity() const {
-    std::lock_guard<std::mutex> lock(this->setpoint_velocity_mutex_);
-    if (this->setpoint_velocity_ != NAN_point) {
-        return this->setpoint_velocity_;
-    }
-
-    return std::nullopt;
-}
-
-std::optional<geometry_msgs::msg::Point> Pelican::getTargetPosition() const {
-    std::lock_guard<std::mutex> lock(this->target_position_mutex_);
-    if (this->target_position_ != NAN_point) {
-        return this->target_position_;
-    }
-
-    return std::nullopt;
-}
-
-double Pelican::getActualTargetHeight() const {
-    std::lock_guard<std::mutex> lock(this->height_mutex_);
-    return this->actual_target_height_;
 }
 
 geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
@@ -103,7 +71,7 @@ geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
     auto disc_len = this->discovery_vector_.size() + 1;
     this->discovery_mutex_.unlock();
 
-    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+    std::lock_guard lock(this->positions_mutex_);
     auto copt_len = this->copters_positions_.size();
 
     // At least one needed vector is too short
@@ -132,16 +100,16 @@ bool Pelican::isReady() const {
 }
 
 bool Pelican::isFlying() const {
-    std::lock_guard<std::mutex> lock(this->flying_mutex_);
+    std::lock_guard lock(this->flying_mutex_);
     return this->flying_;
 }
 
 bool Pelican::isCarrying() const {
-    std::lock_guard<std::mutex> lock(this->carrying_mutex_);
+    std::lock_guard lock(this->carrying_mutex_);
     return this->carrying_;
 }
 
 bool Pelican::isLastCmdExecuted() const {
-    std::lock_guard<std::mutex> lock(this->last_cmd_result_mutex_);
+    std::lock_guard lock(this->last_cmd_result_mutex_);
     return this->last_cmd_result_;
 }

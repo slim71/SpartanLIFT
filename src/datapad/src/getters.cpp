@@ -5,6 +5,6 @@ std::shared_ptr<Datapad> Datapad::getInstance() {
 }
 
 bool Datapad::isRunning() const {
-    std::lock_guard<std::mutex> lock(this->running_mutex_);
+    std::lock_guard lock(this->running_mutex_);
     return this->running_;
 }

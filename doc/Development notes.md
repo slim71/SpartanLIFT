@@ -41,6 +41,9 @@ Logs cannot be automatically printed in different files, at the moment, as this 
 of the `rcl_logging_interface` (as stated [here](https://robotics.stackexchange.com/a/104433/30956)).
 I'll just manually do it; perhaps that's a thing for the future...
 
+Some constants declared in constants.hpp could have been taken from the PX4 package, but I prefer to keep them entirely separated
+and independent from one another.
+
 ---
 ## Gazebo
 Following the [official guide about the migration from Gazebo classic](https://github.com/gazebosim/gz-sim/blob/gz-sim7/tutorials/migration_sdf.md#path-relative-to-an-environment-variable), I've noticed I had the wrong environmental variable setup for the models loading. I've fixed that and now, *after sourcing the local overlay,* Gazebo can successfully load each model's meshes with no problems.
@@ -125,7 +128,7 @@ ros2 run datapad datapad --ros-args --log-level debug
 ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
-ros2 launch odst ros_agents.launch.py -d
+ros2 launch odst ros_agents.launch.py loglevel:=debug
 MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
@@ -145,6 +148,13 @@ For a multi-rotor drones, the acceptance radius is tuned using the parameter NAV
 During mission execution this will cause the vehicle to ascend vertically to the minimum takeoff altitude defined in the MIS_TAKEOFF_ALT parameter, then head towards the 3D position defined in the mission item.
 
 When an agents stops responding and the network needs to be downsized, we simply put a NAN value in the vector used to store all agents positions. Since it is reasonable to think that a network size does not change dramatically during normal operations, we simply don't worry about memory restrictions and usage optimizations (aka we do not resize the vector).
+
+The Gazebo odometry and the PX4 local positions have about 0.2m off.
+Because of this disalignment, the computations made when the copters are in offboard mode. We started checking if the distance between a copter and the latest setpoint is less than 0.2m on each axis and if it was, we would send another velocity setpoint for the offboard mode to track, in order to close in to the point.
+Unfortunately, since the PX4 estimator judges that the copter is already at the desired position, no further movement is made and the offset remains.
+*For now*, we've switched to a **0.4m threshold**.
+
+That's basically the same reason we needed a manual height compensation: Gazebo's data and the PX4 estimation were not equal, so we had to make sure all copters were hovering around the same height for this application.
 
 ---
 ## General notes

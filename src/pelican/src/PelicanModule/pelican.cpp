@@ -71,6 +71,8 @@ Pelican::~Pelican() {
 /********************** Core functionalities ***********************/
 void Pelican::parseModel() {
     this->sendLogDebug("Trying to load model {}", this->getModel());
+    // Thanks to this package's hook, the list of paths this searches into
+    // is automatically extended to include the actual folder being used
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(this->getModel().c_str());
 
@@ -109,7 +111,7 @@ void Pelican::signalHandler(int signum) {
 }
 
 void Pelican::storeAttendance(comms::msg::NetworkVertex::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock(this->discovery_mutex_);
+    std::lock_guard lock(this->discovery_mutex_);
 
     // Exclude this node's own ID, since it doesn't make sense
     if (msg->agent_id == this->getID()) {
@@ -162,7 +164,7 @@ void Pelican::sharePosition(geometry_msgs::msg::Point pos) {
 }
 
 void Pelican::recordCopterPosition(comms::msg::NetworkVertex::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+    std::lock_guard lock(this->positions_mutex_);
     this->sendLogDebug("Copter {} shared position: {}", msg->agent_id, msg->position);
     if (!this->copters_positions_.empty()) {
         this->copters_positions_[msg->agent_id - 1] = msg->position;
@@ -173,7 +175,7 @@ void Pelican::recordCopterPosition(comms::msg::NetworkVertex::SharedPtr msg) {
 
 void Pelican::resizeCopterPositionsVector(unsigned int new_size, unsigned int lost_id) {
     this->sendLogDebug("Resizing copter_positions_ vector to size {}", new_size);
-    std::lock_guard<std::mutex> lock(this->positions_mutex_);
+    std::lock_guard lock(this->positions_mutex_);
 
     int size_diff = new_size - this->copters_positions_.size();
     // Incrementing vector

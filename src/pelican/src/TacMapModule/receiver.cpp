@@ -39,9 +39,9 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
     status_data.calibration_enabled = msg->calibration_enabled;
     status_data.pre_flight_checks_pass = msg->pre_flight_checks_pass;
 
-    std::lock_guard<std::mutex> status_lock(this->status_mutex_);
-    std::lock_guard<std::mutex> sysid_lock(this->system_id_mutex_);
-    std::lock_guard<std::mutex> compid_lock(this->component_id_mutex_);
+    std::lock_guard status_lock(this->status_mutex_);
+    std::lock_guard sysid_lock(this->system_id_mutex_);
+    std::lock_guard compid_lock(this->component_id_mutex_);
     this->status_buffer_.push_back(status_data);
     // While we're at it, let's store the IDs identifying this agent
     this->system_id_ = msg->system_id;
@@ -49,7 +49,7 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
 }
 
 void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock(this->commander_ack_mutex_);
+    std::lock_guard lock(this->commander_ack_mutex_);
 
     if (this->last_commander_ack_)
         this->last_commander_ack_.reset();
@@ -66,7 +66,7 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
 }
 
 void TacMapModule::storeENUOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    std::lock_guard<std::mutex> lock(this->enu_odometry_mutex_);
+    std::lock_guard lock(this->enu_odometry_mutex_);
     this->enu_odometry_buffer_.push_back(nav_msgs::msg::Odometry()
                                              .set__header(msg->header)
                                              .set__pose(msg->pose)

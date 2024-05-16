@@ -1,18 +1,18 @@
 #include "ElectionModule/election.hpp"
 #include "PelicanModule/pelican.hpp"
 
-bool ElectionModule::checkElectionCompleted() const {
-    std::lock_guard<std::mutex> lock(this->election_completed_mutex_);
+bool ElectionModule::isElectionCompleted() const {
+    std::lock_guard lock(this->election_completed_mutex_);
     return this->election_completed_;
 }
 
-bool ElectionModule::checkVotingCompleted() const {
-    std::lock_guard<std::mutex> lock(this->voting_completed_mutex_);
+bool ElectionModule::isVotingCompleted() const {
+    std::lock_guard lock(this->voting_completed_mutex_);
     return this->voting_completed_;
 }
 
 bool ElectionModule::checkForExternalLeader() {
-    if (!this->checkExternalLeaderElected()) {
+    if (!this->isExternalLeaderElected()) {
         return false;
     }
 
@@ -34,12 +34,12 @@ bool ElectionModule::checkForExternalLeader() {
     }
 }
 
-bool ElectionModule::checkExternalLeaderElected() const {
-    std::lock_guard<std::mutex> lock(this->external_leader_mutex_);
+bool ElectionModule::isExternalLeaderElected() const {
+    std::lock_guard lock(this->external_leader_mutex_);
     return this->external_leader_elected_;
 }
 
-bool ElectionModule::checkLeaderElected() const {
-    std::lock_guard<std::mutex> lock(this->leader_mutex_);
+bool ElectionModule::isLeaderElected() const {
+    std::lock_guard lock(this->leader_mutex_);
     return this->leader_elected_;
 }

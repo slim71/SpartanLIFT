@@ -1,7 +1,7 @@
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
-/*************************** Get methods ***************************/
+/************************** Gather methods *************************/
 rclcpp::Time UNSCModule::gatherTime() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -50,30 +50,6 @@ std::optional<px4_msgs::msg::VehicleStatus> UNSCModule::gatherStatus() const {
     return this->node_->requestStatus();
 }
 
-std::optional<geometry_msgs::msg::Point> UNSCModule::gatherSetpointPosition() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getSetpointPosition();
-}
-
-std::optional<geometry_msgs::msg::Point> UNSCModule::gatherSetpointVelocity() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getSetpointVelocity();
-}
-
-std::optional<geometry_msgs::msg::Point> UNSCModule::gatherDesiredPosition() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getTargetPosition();
-}
-
 unsigned int UNSCModule::gatherNetworkSize() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -112,14 +88,6 @@ double UNSCModule::gatherCollisionRadius() const {
     }
 
     return this->node_->getCollisionRadius();
-}
-
-double UNSCModule::gatherActualTargetHeight() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getActualTargetHeight();
 }
 
 /************* To make other modules carry on an action ************/
@@ -170,18 +138,19 @@ bool UNSCModule::signalCheckOffboardEngagement() const {
     return this->node_->commenceCheckOffboardEngagement();
 }
 
-void UNSCModule::signalSetSetpointPosition(geometry_msgs::msg::Point p) const {
+void UNSCModule::signalSetReferenceHeight(double height) {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->commenceSetSetpointPosition(p);
+    this->node_->initiateSetActualTargetHeight(height);
 }
 
-void UNSCModule::signalSetSetpointVelocity(geometry_msgs::msg::Point v) const {
+/*************************** Flag checks ***************************/
+bool UNSCModule::confirmAgentIsLeader() const {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    return this->node_->commenceSetSetpointVelocity(v);
+    return this->node_->isLeader();
 }

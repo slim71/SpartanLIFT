@@ -110,7 +110,7 @@ bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->gatherCurrentTerm()) {
         // Ignore heartbeat; do not reset election timer
         this->sendLogWarning(
-            "Ignoring heartbeat form agent received with previous term ID ({})", msg.leader_id,
+            "Ignoring heartbeat from agent received with previous term ID ({})", msg.leader_id,
             msg.term_id
         );
         return false;
@@ -184,6 +184,6 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 }
 
 void HeartbeatModule::flushHeartbeats() {
-    std::lock_guard<std::mutex> lock(this->hbs_mutex_);
+    std::lock_guard lock(this->hbs_mutex_);
     this->received_hbs_.clear();
 }
