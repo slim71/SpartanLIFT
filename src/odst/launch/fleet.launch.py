@@ -1,12 +1,12 @@
 import os
 import sys
+
 import yaml
-from odst.logs import LogDebug
-from launch import LaunchDescription
-from launch.event_handlers import OnShutdown
-from launch.substitutions import LocalSubstitution
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import ExecuteProcess, RegisterEventHandler, LogInfo
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess
+
+from odst.logs import LaunchfileLogger
 
 
 def generate_launch_description():
@@ -17,20 +17,23 @@ def generate_launch_description():
         LaunchDescription: the object comprised of the needed actions to launch
     """
     level = "info"
-    pkg = "odst"
-    launchfile = "ros_agents.launch.py"
+    launch_pkg = "odst"
+    agents_launchfile = "ros_agents.launch.py"
+    cargo_launchfile = "cargo.launch.py"
 
-    logger = LogDebug()
+    logger = LaunchfileLogger()
     launch_description = LaunchDescription()
 
     # Parse loglevel argument manually to use it in this script too
     for arg in sys.argv:
         if arg.startswith("loglevel:="):
-            logger.setLevel(str(arg.split(":=")[1]))
-            level = logger.getLevel()
+            logger.set_level(str(arg.split(":=")[1]))
+            level = logger.get_level()
 
     # Get the filepath to your config file
-    config_file = os.path.join(get_package_share_directory(pkg), "config", "fleet.yaml")
+    config_file = os.path.join(
+        get_package_share_directory(launch_pkg), "config", "fleet.yaml"
+    )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
         config_params = yaml.safe_load(file)["launchfile"]
@@ -40,7 +43,7 @@ def generate_launch_description():
 
     # Script used when starting Gazebo
     additional_source_file = os.path.join(
-        get_package_share_directory(pkg), "resource", "include_px4_models.sh"
+        get_package_share_directory(launch_pkg), "resource", "include_px4_models.sh"
     )
 
     source_local_wos = "source install/setup.bash"
@@ -53,7 +56,9 @@ def generate_launch_description():
     bridges = ""
 
     # Get the filepath to your config file
-    script_file = os.path.join(get_package_share_directory(pkg), "temp", "terminal.sh")
+    script_file = os.path.join(
+        get_package_share_directory(launch_pkg), "temp", "terminal.sh"
+    )
     # Write every gnome-terminal in a temp file and use that to spawn
     # everything in the same gnome-terminal window
     with open(script_file, "w+", encoding="utf8") as tmp:
@@ -121,10 +126,12 @@ def generate_launch_description():
         # Manually execute launch file in order to get the logs in a standalone gnome terminal tab
         # Give an additional 10s to be sure everything has started correctly
         sleep_part = f"sleep {10 + simulation_headstart}"
-        agents_launchfile = f"ros2 launch {pkg} {launchfile} loglevel:={level}"
+        agents_launch = (
+            f"ros2 launch {launch_pkg} {agents_launchfile} loglevel:={level}"
+        )
         launch_cmd = (
             "gnome-terminal --tab -t 'ROS2 nodes' "
-            f"-- bash -c ' {sleep_part}; {source_local_wos}; {agents_launchfile}'"
+            f"-- bash -c ' {sleep_part}; {source_local_wos}; {agents_launch}'"
         )
         logger.print(launch_cmd)
         tmp.write(launch_cmd)
@@ -138,6 +145,16 @@ def generate_launch_description():
         )
         logger.print(datapad_cmd)
         tmp.write(datapad_cmd)
+        tmp.write("\n")
+
+        # Cargo spawn
+        cargo_launch = f"ros2 launch {launch_pkg} {cargo_launchfile} loglevel:={level}"
+        cargo_cmd = (
+            "gnome-terminal --tab -t 'Cargo' "
+            f"-- bash -c ' {sleep_part}; {source_local_wos}; {cargo_launch}'"
+        )
+        logger.print(cargo_cmd)
+        tmp.write(cargo_cmd)
         tmp.write("\n")
 
         # Interactive shell
