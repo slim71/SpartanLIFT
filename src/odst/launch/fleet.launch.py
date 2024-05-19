@@ -20,6 +20,8 @@ def generate_launch_description():
     launch_pkg = "odst"
     agents_launchfile = "ros_agents.launch.py"
     cargo_launchfile = "cargo.launch.py"
+    config_middleware = "config"
+    config_yaml = "nominal.yaml"
 
     logger = LaunchfileLogger()
     launch_description = LaunchDescription()
@@ -32,11 +34,11 @@ def generate_launch_description():
 
     # Get the filepath to your config file
     config_file = os.path.join(
-        get_package_share_directory(launch_pkg), "config", "fleet.yaml"
+        get_package_share_directory(launch_pkg), config_middleware, config_yaml
     )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
-        config_params = yaml.safe_load(file)["launchfile"]
+        config_params = yaml.safe_load(file)["simulation"]["agents"]
 
     # Extract the number of agents
     agent_num = config_params["fleet_size"]
