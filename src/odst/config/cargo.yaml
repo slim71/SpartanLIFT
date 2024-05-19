@@ -1,0 +1,5 @@
+cargo:
+  name: box_w_handles
+  x: -6
+  y: 0
+  z: 0
