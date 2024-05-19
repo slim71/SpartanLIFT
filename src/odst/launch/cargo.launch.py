@@ -23,7 +23,7 @@ def generate_launch_description():
     model_pkg = "cargo"
     model_middleware = "models/"
     config_middleware = "config"
-    config_file = "cargo.yaml"
+    config_yaml = "nominal.yaml"
     sdf_model = "model.sdf"
 
     logger = LaunchfileLogger()
@@ -34,11 +34,11 @@ def generate_launch_description():
 
     # Get the filepath to your config file
     config_file = os.path.join(
-        get_package_share_directory(launch_pkg), config_middleware, config_file
+        get_package_share_directory(launch_pkg), config_middleware, config_yaml
     )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
-        config_params = yaml.safe_load(file)["cargo"]
+        config_params = yaml.safe_load(file)["simulation"]["cargo"]
 
     # Extract details abouth of the cargo
     cargo_name = config_params["name"]
@@ -82,9 +82,7 @@ def generate_launch_description():
 
     # Print argument values
     if logger.get_level() == "debug":
-        print_launch_config = OpaqueFunction(
-            function=print_launch_configuration
-        )
+        print_launch_config = OpaqueFunction(function=print_launch_configuration)
         launch_description.add_action(print_launch_config)
 
     return launch_description

@@ -39,7 +39,7 @@ def generate_launch_description():
     )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
-        config_params = yaml.safe_load(file)["launchfile"]
+        config_params = yaml.safe_load(file)["simulation"]["agents"]
 
     # Extract the number of agents
     agent_num = config_params["fleet_size"]
