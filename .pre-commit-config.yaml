@@ -33,7 +33,11 @@ repos:
     -   id: black
         language: python
 
--   repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
     hooks:
-    -   id: flake8
+    # Run the linter.
+    -   id: ruff
+        args: [ --fix ]
+    # Run the formatter.
+    -   id: ruff-format
