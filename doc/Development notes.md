@@ -44,6 +44,9 @@ I'll just manually do it; perhaps that's a thing for the future...
 Some constants declared in constants.hpp could have been taken from the PX4 package, but I prefer to keep them entirely separated
 and independent from one another.
 
+### Launch files
+The helper functions to print debug info of arguments and LaunchConfigurations only work if those were added to the LaunchDescription **before** the OpaqueFunction handling the printing.
+
 ---
 ## Gazebo
 Following the [official guide about the migration from Gazebo classic](https://github.com/gazebosim/gz-sim/blob/gz-sim7/tutorials/migration_sdf.md#path-relative-to-an-environment-variable), I've noticed I had the wrong environmental variable setup for the models loading. I've fixed that and now, *after sourcing the local overlay,* Gazebo can successfully load each model's meshes with no problems.
