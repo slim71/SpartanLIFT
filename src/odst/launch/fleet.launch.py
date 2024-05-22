@@ -115,6 +115,18 @@ def generate_launch_description():
 
             bridges += f"/model/{model}_{count+1}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry "
 
+        # Cargo spawn
+        cargo_launch = f"ros2 launch {launch_pkg} {cargo_launchfile} loglevel:={level}"
+        cargo_cmd = (
+            "gnome-terminal --tab -t 'Cargo' "
+            f"-- bash -c 'sleep {simulation_headstart}; {source_local_wos}; {cargo_launch}'"
+        )
+        logger.print(cargo_cmd)
+        tmp.write(cargo_cmd)
+        tmp.write("\n")
+        # Cargo odometry
+        bridges += "/model/cargo/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry "
+
         # Run ros_gz_bridge, as we need data from a Gazebo topic for the local position
         bridge_cmd = (
             "gnome-terminal --tab -t 'ROS2-Gazebo bridge' "
@@ -147,16 +159,6 @@ def generate_launch_description():
         )
         logger.print(datapad_cmd)
         tmp.write(datapad_cmd)
-        tmp.write("\n")
-
-        # Cargo spawn
-        cargo_launch = f"ros2 launch {launch_pkg} {cargo_launchfile} loglevel:={level}"
-        cargo_cmd = (
-            "gnome-terminal --tab -t 'Cargo' "
-            f"-- bash -c ' {sleep_part}; {source_local_wos}; {cargo_launch}'"
-        )
-        logger.print(cargo_cmd)
-        tmp.write(cargo_cmd)
         tmp.write("\n")
 
         # Interactive shell
