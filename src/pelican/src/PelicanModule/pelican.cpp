@@ -23,9 +23,18 @@ Pelican::Pelican()
     get_parameter("roi", this->roi_);
     get_parameter("collision_radius", this->collision_radius_);
 
-    // Setting up the Reentrant group
+    // Setting up callback groups
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     this->reentrant_opt_.callback_group = this->reentrant_group_;
+    this->timer_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->timer_exclusive_opt_.callback_group = this->timer_exclusive_group_;
+    this->offboard_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->offboard_exclusive_opt_.callback_group = this->offboard_exclusive_group_;
+    this->rendezvous_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->rendezvous_exclusive_opt_.callback_group = this->rendezvous_exclusive_group_;
 
     // Own setup
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
