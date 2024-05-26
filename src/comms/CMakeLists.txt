@@ -38,6 +38,7 @@ set(MESSAGE_FILES
 
 set(SERVICE_FILES
     srv/FleetInfo.srv
+    srv/CargoPoint.srv
 )
 
 set(ACTION_FILES
