@@ -4,11 +4,11 @@ import sys
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-
-from odst.logs import LaunchfileLogger
 from odst.helpers import print_launch_configuration
+from odst.logs import LaunchfileLogger
 
 
 def generate_launch_description():
@@ -25,6 +25,8 @@ def generate_launch_description():
     config_middleware = "config"
     config_yaml = "nominal.yaml"
     sdf_model = "model.sdf"
+
+    launch_description = LaunchDescription()
 
     logger = LaunchfileLogger()
     # Parse loglevel argument manually to use it in this script too
@@ -50,10 +52,17 @@ def generate_launch_description():
         f"position ({cargo_x},{cargo_y},{cargo_z})"
     )
 
-    launch_description = LaunchDescription()
+    # Gather log-level argument to use in the nodes
+    log_level = LaunchConfiguration("loglevel", default="info")
+    log_level_argument = DeclareLaunchArgument(
+        name="loglevel",
+        default_value="info",
+        description="Log level of the launch file itself",
+    )
+    launch_description.add_action(log_level_argument)
 
     # # Spawn entity
-    box = Node(
+    cargo_model = Node(
         package="ros_gz_sim",
         executable="create",
         arguments=[
@@ -77,8 +86,20 @@ def generate_launch_description():
         ],
         output="screen",
     )
+    launch_description.add_action(cargo_model)
 
-    launch_description.add_action(box)
+    # Start the ROS2 node too
+    cargo_node = Node(
+        package="cargo",
+        executable="cargo",
+        # Using `ros_arguments` is equivalent to using `arguments` with
+        # a prepended '--ros-args' item.
+        ros_arguments=[
+            "--log-level",
+            log_level,
+        ],
+    )
+    launch_description.add_action(cargo_node)
 
     # Print argument values
     if logger.get_level() == "debug":
