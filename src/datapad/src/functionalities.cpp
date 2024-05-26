@@ -271,7 +271,7 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
         std::lock_guard odom_lock(this->cargo_mutex_);
         request.x = this->cargo_odom_.x;
         request.y = this->cargo_odom_.y;
-        request.z = this->cargo_odom_.z;
+        request.z = this->cargo_odom_.z + 3.0;
 
     } else if (flags.GetDropoff()) {
         float coordinates[3];
