@@ -2,16 +2,21 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>cargo</name>
-  <version>0.2.1</version>
+  <version>0.3.0</version>
   <description>Package for everything related to the payloads used</description>
   <author email="slim71sv@gmail.com">Simone Vollaro</author>
   <maintainer email="slim71sv@gmail.com">Simone Vollaro</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>ros_environment</build_depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <depend>rclcpp</depend>
+  <depend>comms</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
