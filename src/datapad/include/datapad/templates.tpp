@@ -1,5 +1,5 @@
-#ifndef _PELICAN_TEMPLATES_HPP_
-#define _PELICAN_TEMPLATES_HPP_
+#ifndef _DATAPAD_TEMPLATES_HPP_
+#define _DATAPAD_TEMPLATES_HPP_
 
 template<typename... Args> void Datapad::sendLogDebug(std::string s, Args... args) const {
     if(this->logger_.isReady())

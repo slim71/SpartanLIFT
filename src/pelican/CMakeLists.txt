@@ -43,7 +43,7 @@ find_library(PUGIXML_DIR pugixml)
 add_library(Pelican_class src/PelicanModule/pelican.cpp)
 target_include_directories(Pelican_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_compile_definitions(Pelican_class PRIVATE "TELEOPDATA__BUILDING_DLL")
-ament_target_dependencies(Pelican_class rclcpp rclcpp_action rclcpp_components px4_msgs comms tf2 nav_msgs geometry_msgs)
+ament_target_dependencies(Pelican_class rclcpp rclcpp_action rclcpp_components px4_msgs comms nav_msgs geometry_msgs)
 target_link_libraries(Pelican_class "${PUGIXML_DIR}" fmt::fmt Eigen3::Eigen)
 rclcpp_components_register_node(Pelican_class PLUGIN "pelican::TeleopDataActionServer" EXECUTABLE teleopdata_action_server)
 

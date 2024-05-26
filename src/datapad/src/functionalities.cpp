@@ -211,7 +211,7 @@ void Datapad::backToLZ() {
 
 void Datapad::payloadExtraction() {
     // Check if the fleet has a leader, since everything goes through it
-    if (!this->leader_present_) {
+    if (!this->leader_present_) { // TODO: move this check out of each function
         this->sendLogWarning(
             "No leader has been detected in the fleet! Please make sure it is present"
         );
@@ -251,10 +251,31 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
     request.retrieval = flags.GetRetrieval();
     request.dropoff = flags.GetDropoff();
 
-    float coordinates[3];
-    char coord_names[] = {'x', 'y', 'z'};
     // Add position if needed
-    if (flags.GetRetrieval() || flags.GetDropoff()) {
+    if (flags.GetRetrieval()) {
+        std::thread cargo_thread(&Datapad::askForCargoPoint, this);
+        cargo_thread.detach();
+
+        this->sendLogDebug("Waiting for the Cargo to send a position...");
+        std::unique_lock lock(this->cargo_tristate_mutex_);
+        this->cargo_cv_.wait(lock, [this] {
+            return this->cargo_handled_ != TriState::Floating;
+        });
+        lock.unlock();
+        if (this->isCargoHandled() != TriState::True) {
+            this->sendLogWarning("Cargo did not share a valid position!");
+            return;
+        }
+        this->sendLogDebug("Valid cargo position received");
+
+        std::lock_guard odom_lock(this->cargo_mutex_);
+        request.x = this->cargo_odom_.x;
+        request.y = this->cargo_odom_.y;
+        request.z = this->cargo_odom_.z;
+
+    } else if (flags.GetDropoff()) {
+        float coordinates[3];
+        char coord_names[] = {'x', 'y', 'z'};
         this->sendLogDebug("Enter desired coordinates: ");
         std::cout << "Enter desired coordinates" << std::endl;
         int i = 0;
@@ -307,5 +328,47 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
         auto result = this->teleopdata_client_->async_send_goal(request, send_goal_options);
     } else {
         this->sendLogWarning("The server seems to be down. Please try again.");
+    }
+}
+
+void Datapad::askForCargoPoint() {
+    // Search for a second, then log and search again if needed
+    unsigned int total_search_time = 0;
+    while (!this->cargopoint_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
+           ) &&
+           total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        if (!rclcpp::ok()) {
+            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            this->unsetAndNotifyCargoHandled();
+            return;
+        }
+
+        this->sendLogDebug("Service not available; waiting some more...");
+        total_search_time += constants::SEARCH_LEADER_STEP_SECS;
+    };
+
+    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        this->sendLogDebug("CargoPoint server available");
+
+        auto request = std::make_shared<comms::srv::CargoPoint::Request>();
+        // Send request
+        auto async_request_result = this->cargopoint_client_->async_send_request(
+            request, std::bind(&Datapad::storeCargoPoint, this, std::placeholders::_1)
+        );
+
+        auto future_status =
+            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
+            );
+        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+            this->sendLogWarning("Failed to receive a target position from the leader!");
+            this->cargopoint_client_->prune_pending_requests();
+            this->unsetAndNotifyCargoHandled();
+            return;
+        }
+    } else {
+        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->unsetAndNotifyCargoHandled();
+        return;
     }
 }

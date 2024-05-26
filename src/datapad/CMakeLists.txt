@@ -24,6 +24,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(comms REQUIRED)
 find_package(fmt)
 
@@ -31,7 +33,7 @@ find_package(fmt)
 add_library(Datapad_class src/datapad.cpp)
 target_include_directories(Datapad_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
 target_compile_definitions(Datapad_class PRIVATE "TELEOPDATA__BUILDING_DLL")
-ament_target_dependencies(Datapad_class rclcpp rclcpp_action rclcpp_components comms)
+ament_target_dependencies(Datapad_class rclcpp rclcpp_action rclcpp_components comms nav_msgs geometry_msgs)
 target_link_libraries(Datapad_class fmt::fmt)
 rclcpp_components_register_node(Datapad_class PLUGIN "pelican::TeleopDataActionServer" EXECUTABLE teleopdata_action_server)
 
@@ -77,7 +79,7 @@ if(BUILD_TESTING)
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
-  ament_target_dependencies(${PROJECT_NAME}_test rclcpp comms)
+  ament_target_dependencies(${PROJECT_NAME}_test rclcpp comms nav_msgs geometry_msgs)
   # Link to local library
   target_link_libraries(${PROJECT_NAME}_test Datapad_class)
 
@@ -95,7 +97,7 @@ add_executable(datapad
               ${DATAPAD_SOURCES}
 )
 target_include_directories(datapad PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(datapad rclcpp comms)
+ament_target_dependencies(datapad rclcpp comms nav_msgs geometry_msgs)
 target_link_libraries(datapad Datapad_class)
 # Once: install executables
 install(

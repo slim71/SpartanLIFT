@@ -1,5 +1,5 @@
-#ifndef _TYPES_HPP_
-#define _TYPES_HPP_
+#ifndef _PELICAN_TYPES_HPP_
+#define _PELICAN_TYPES_HPP_
 
 #include "comms/action/teleop_data.hpp"
 #include "comms/msg/command.hpp"
@@ -41,8 +41,6 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <signal.h>
 #include <string>
-#include <tf2/LinearMath/Matrix3x3.h>
-#include <tf2/transform_datatypes.h>
 #include <vector>
 
 class MissingExternModule : public std::exception {
