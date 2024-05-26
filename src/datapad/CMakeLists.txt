@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(datapad
-        VERSION 0.1.4
+        VERSION 0.3.2
         DESCRIPTION "Package simulating a tablet through which a human agent would interact with the fleet"
         LANGUAGES CXX)
 

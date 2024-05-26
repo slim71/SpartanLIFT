@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(cargo
-        VERSION 0.1.4
+        VERSION 0.3.0
         DESCRIPTION "Package containing the cargo node development"
         LANGUAGES CXX)
 
