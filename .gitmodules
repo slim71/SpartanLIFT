@@ -10,3 +10,6 @@
 [submodule "src/Micro-XRCE-DDS-Agent"]
 	path = src/Micro-XRCE-DDS-Agent
 	url = https://github.com/slim71/Micro-XRCE-DDS-Agent
+[submodule "ros_gz_ws/src/ros_gz"]
+	path = ros_gz_ws/src/ros_gz
+	url = git@github.com:slim71/ros_gz.git

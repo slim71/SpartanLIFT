@@ -47,6 +47,15 @@ and independent from one another.
 ### Launch files
 The helper functions to print debug info of arguments and LaunchConfigurations only work if those were added to the LaunchDescription **before** the OpaqueFunction handling the printing.
 
+### ros_gz package
+I've created a supplemental workspace in the project, aimed at sustaining a fork of the `ros_gz` package.
+
+Even though I initially used the `humble` branch of the original project as is, when dealing with a cargo which has to move together with the leader of the quadcopters fleet, I've noticed that the `SetEntityPose` service was not supported yet by `ros_gz_bridge`.
+
+Since I think I'll need that in order to easily move the box around, I've forked the repository and manually picked some commits found in another pre-existing fork: [UoA-Cares/ros_gz](https://github.com/UoA-CARES/ros_gz). I could not easily cherry-picked those changes because they're made on the `ros2` branch, which has major differences from the one I need to use, due to my configuration.
+
+At the present state, this workspace should be the first one being built and source when setting everything up. For ease of use, I've added the sourcing of this overlay in my `.bashrc` file.
+
 ---
 ## Gazebo
 Following the [official guide about the migration from Gazebo classic](https://github.com/gazebosim/gz-sim/blob/gz-sim7/tutorials/migration_sdf.md#path-relative-to-an-environment-variable), I've noticed I had the wrong environmental variable setup for the models loading. I've fixed that and now, *after sourcing the local overlay,* Gazebo can successfully load each model's meshes with no problems.
@@ -135,6 +144,8 @@ ros2 launch odst ros_agents.launch.py loglevel:=debug
 MicroXRCEAgent udp4 -p 8888
 PX4_SYS_AUTOSTART=4001 PX4_GZ_MODEL_POSE='0,1' PX4_GZ_MODEL=x500 ./build/px4_sitl_default/bin/px4 -i 1
 grep "\[Agent 1|" launch.log > agent1.log && grep "\[Agent 2|" launch.log > agent2.log && grep "\[Agent 3|" launch.log > agent3.log && grep "\[Agent 4|" launch.log > agent4.log && grep "\[Agent 5|" launch.log > agent5.log
+ros2 run ros_gz_bridge parameter_bridge /world/empty/set_pose@ros_gz_interfaces/srv/SetEntityPose
+ros2 service call /world/empty/set_pose ros_gz_interfaces/srv/SetEntityPose "{entity: {name: 'sphere'}, pose: {position: {x: 4, y: 3, z: 2}}}"
 
 ---
 ## Mission useful stuff
@@ -207,6 +218,4 @@ More info [here](https://github.com/gazebosim/gz-rendering/issues/587).
 ---
 ## TODOs
 
-TODO: ros_gz_workspace as a package, since it's from source?
 TODO: fork of px4_msgs for the queue change
-CHECK: do I need a confirmation of operation completed from leader to datapad?
