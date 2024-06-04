@@ -85,6 +85,7 @@ class UNSCModule {
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
         void signalSetReferenceHeight(double);
+        void signalCargoAttachment();
 
         // Flag checks
         bool confirmAgentIsLeader() const;

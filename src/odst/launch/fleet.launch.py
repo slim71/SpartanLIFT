@@ -39,6 +39,8 @@ def generate_launch_description():
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
         config_params = yaml.safe_load(file)["simulation"]["agents"]
+        file.seek(0)
+        cargo_name = yaml.safe_load(file)["simulation"]["cargo"]["name"]
 
     # Extract the number of agents
     agent_num = config_params["fleet_size"]
@@ -124,8 +126,13 @@ def generate_launch_description():
         logger.print(cargo_cmd)
         tmp.write(cargo_cmd)
         tmp.write("\n")
-        # Cargo odometry
-        bridges += "/model/cargo/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry "
+        # Cargo odometry topic
+        bridges += (
+            f"/model/{cargo_name}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry "
+        )
+
+        # SetEntityPose service bridge
+        bridges += f"/world/{world_name}/set_pose@ros_gz_interfaces/srv/SetEntityPose "
 
         # Run ros_gz_bridge, as we need data from a Gazebo topic for the local position
         bridge_cmd = (

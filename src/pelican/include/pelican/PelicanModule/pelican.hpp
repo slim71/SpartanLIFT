@@ -19,6 +19,8 @@ class Pelican : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
+        void cargoAttachment();
+
         // Getters
         unsigned int getID() const;
         std::string getModel() const;
@@ -153,6 +155,7 @@ class Pelican : public rclcpp::Node {
         void
         targetNotification(const std::shared_ptr<comms::srv::FleetInfo::Request>, const std::shared_ptr<comms::srv::FleetInfo::Response>);
         void processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
+        void checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture);
 
     private: // Attributes
         LoggerModule logger_;
@@ -220,6 +223,8 @@ class Pelican : public rclcpp::Node {
 
         rclcpp::Service<comms::srv::FleetInfo>::SharedPtr fleetinfo_server_;
         rclcpp::Client<comms::srv::FleetInfo>::SharedPtr fleetinfo_client_;
+
+        rclcpp::Client<comms::srv::CargoLinkage>::SharedPtr cargo_attachment_client_;
 
         std::string dispatch_topic_ {"/fleet/dispatch"};
         rclcpp::Subscription<comms::msg::Command>::SharedPtr sub_to_dispatch_;

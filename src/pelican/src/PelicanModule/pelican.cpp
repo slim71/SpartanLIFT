@@ -50,6 +50,8 @@ Pelican::Pelican()
         this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
     this->pub_to_locator_ =
         this->create_publisher<comms::msg::NetworkVertex>(this->locator_topic_, this->qos_);
+    this->cargo_attachment_client_ =
+        this->create_client<comms::srv::CargoLinkage>("attachment_service");
 
     // Other modules' setup
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
@@ -229,4 +231,74 @@ void Pelican::handleAcceptedTeleopData(
     // so spin up a new thread for the actual handling
     std::thread {std::bind(&Pelican::rogerWillCo, this, std::placeholders::_1), goal_handle}.detach(
     );
+}
+
+void Pelican::cargoAttachment() {
+    // Create request
+    auto request = std::make_shared<comms::srv::CargoLinkage::Request>();
+    std::string model_path = this->getModel();
+    std::regex rgx(R"(/([^/]+)/model\.sdf)");
+    std::smatch match;
+    std::string model_name;
+
+    if (std::regex_search(model_path, match, rgx)) {
+        model_name = match[1];
+    } else {
+        this->sendLogWarning("No match found");
+        return;
+    }
+    request->set__leader_id(this->getID()).set__model(model_name);
+
+    // Send request
+    // Search for a second, then log and search again if needed
+    unsigned int total_search_time = 0;
+    while (!this->cargo_attachment_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
+           ) &&
+           total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        if (!rclcpp::ok()) {
+            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            return;
+        }
+
+        this->sendLogDebug("Service not available; waiting some more...");
+        total_search_time += constants::SEARCH_SERVER_STEP_SECS;
+    };
+
+    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        this->sendLogDebug("CargoLinkage server available");
+
+        // Send request
+        auto async_request_result = this->cargo_attachment_client_->async_send_request(
+            request, std::bind(&Pelican::checkCargoAttachment, this, std::placeholders::_1)
+        );
+
+        auto future_status =
+            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
+            );
+        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+            this->sendLogWarning("Failed to receive confirmation from the CargoLinkage server!");
+            this->cargo_attachment_client_->prune_pending_requests();
+            return;
+        }
+    } else {
+        this->sendLogWarning("The server seems to be down. Please try again.");
+        return;
+    }
+}
+
+void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture future) {
+    // Wait for the specified amount or until the result is available
+    this->sendLogDebug("Getting response...");
+    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+
+    if (status == std::future_status::ready) {
+        auto response = future.get();
+        if (response->done)
+            this->sendLogDebug("Cargo attachment completed");
+        else
+            this->sendLogWarning("Issues with cargo attachment!");
+    } else {
+        this->sendLogDebug("Service not ready yet...");
+    }
 }

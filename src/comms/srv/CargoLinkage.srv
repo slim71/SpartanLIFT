@@ -1,0 +1,6 @@
+# Request is a blank line
+uint64 leader_id
+string model
+---
+# Response
+bool done

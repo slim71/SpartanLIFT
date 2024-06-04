@@ -5,7 +5,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch_ros.actions import Node
 from odst.helpers import print_launch_configuration
 from odst.logs import LaunchfileLogger
@@ -41,15 +41,19 @@ def generate_launch_description():
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
         config_params = yaml.safe_load(file)["simulation"]["cargo"]
+        file.seek(0)  # Reset file pointer to the beginning of the file
+        agents_section = yaml.safe_load(file)["simulation"]["agents"]
 
     # Extract details abouth of the cargo
     cargo_name = config_params["name"]
     cargo_x = config_params["x"]
     cargo_y = config_params["y"]
     cargo_z = config_params["z"]
+    world_name = agents_section["world"]
     logger.print(
         f"Model {cargo_name} will be spawned at "
-        f"position ({cargo_x},{cargo_y},{cargo_z})"
+        f"position ({cargo_x},{cargo_y},{cargo_z}) "
+        f"in world '{world_name}'"
     )
 
     # Gather log-level argument to use in the nodes
@@ -94,9 +98,12 @@ def generate_launch_description():
         executable="cargo",
         # Using `ros_arguments` is equivalent to using `arguments` with
         # a prepended '--ros-args' item.
-        ros_arguments=[
-            "--log-level",
-            log_level,
+        ros_arguments=["--log-level", log_level],
+        parameters=[
+            {
+                "model": TextSubstitution(text=cargo_name),
+                "world": TextSubstitution(text=world_name),
+            }
         ],
     )
     launch_description.add_action(cargo_node)

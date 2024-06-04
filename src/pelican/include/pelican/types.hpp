@@ -8,6 +8,7 @@
 #include "comms/msg/proposal.hpp"
 #include "comms/msg/request_vote_rpc.hpp"
 #include "comms/msg/status.hpp"
+#include "comms/srv/cargo_linkage.hpp"
 #include "comms/srv/fleet_info.hpp"
 #include "constants.hpp"
 #include "pugixml.hpp"
@@ -39,6 +40,7 @@
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <regex>
 #include <signal.h>
 #include <string>
 #include <vector>

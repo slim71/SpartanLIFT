@@ -146,6 +146,14 @@ void UNSCModule::signalSetReferenceHeight(double height) {
     this->node_->initiateSetActualTargetHeight(height);
 }
 
+void UNSCModule::signalCargoAttachment() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->cargoAttachment();
+}
+
 /*************************** Flag checks ***************************/
 bool UNSCModule::confirmAgentIsLeader() const {
     if (!this->node_) {

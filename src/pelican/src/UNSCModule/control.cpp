@@ -280,7 +280,17 @@ void UNSCModule::rendezvousClosure() {
                 this->offboard_setpoint_counter_ = 0;
                 this->sendLogInfo("Finished rendezvous succesfully");
                 cancelTimer(this->rend_check_timer_);
+
+                // Wait a bit and get lower
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                this->sendLogDebug("Getting lower");
                 this->signalSetReferenceHeight(2.0);
+
+                if (this->confirmAgentIsLeader()) {
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    this->sendLogDebug("Attaching cargo to leader");
+                    this->signalCargoAttachment();
+                }
             } else {
                 this->move_to_center_ = true;
                 auto maybe_target = this->getTargetPosition();

@@ -7,7 +7,7 @@ project(cargo
 #To generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 17) # Minimum
+set(CMAKE_CXX_STANDARD 14) # Minimum
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic) # -Werror
@@ -25,12 +25,13 @@ find_package(rclcpp REQUIRED)
 find_package(comms REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(ros_gz_interfaces REQUIRED)
 find_package(fmt)
 
 # Create a library to allow separation of headers and sources
 add_library(Cargo_class src/cargo.cpp)
-target_include_directories(Cargo_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(Cargo_class rclcpp comms nav_msgs geometry_msgs)
+target_include_directories(Cargo_class PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" ${ros_gz_interfaces_INCLUDE_DIRS})
+ament_target_dependencies(Cargo_class rclcpp comms nav_msgs geometry_msgs ros_gz_interfaces)
 target_link_libraries(Cargo_class fmt::fmt)
 
 set(MAIN
@@ -47,6 +48,7 @@ set(LOGGER_SOURCES
 
 set(CARGO_SOURCES
     src/cargo.cpp
+    src/setters.cpp
 )
 
 if(BUILD_TESTING)
@@ -66,7 +68,7 @@ if(BUILD_TESTING)
                             $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   )
   # Add dependencies if needed
-  ament_target_dependencies(${PROJECT_NAME}_test rclcpp comms nav_msgs geometry_msgs)
+  ament_target_dependencies(${PROJECT_NAME}_test rclcpp comms nav_msgs geometry_msgs ros_gz_interfaces)
   # Link to local library
   target_link_libraries(${PROJECT_NAME}_test Cargo_class)
 
@@ -83,8 +85,8 @@ add_executable(cargo
               ${LOGGER_SOURCES}
               ${CARGO_SOURCES}
 )
-target_include_directories(cargo PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}")
-ament_target_dependencies(cargo rclcpp comms nav_msgs geometry_msgs)
+target_include_directories(cargo PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" ${ros_gz_interfaces_INCLUDE_DIRS})
+ament_target_dependencies(cargo rclcpp comms nav_msgs geometry_msgs ros_gz_interfaces)
 target_link_libraries(cargo Cargo_class)
 
 # Once: install executables
@@ -94,7 +96,7 @@ install(
 )
 
 install(
-  DIRECTORY config
+  DIRECTORY config models
   DESTINATION share/${PROJECT_NAME}
 )
 
