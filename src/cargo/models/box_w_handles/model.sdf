@@ -1,7 +1,7 @@
 <?xml version='1.0' ?>
 <sdf version="1.6">
-  <model name="large_dry_box_handles">
-    <static>false</static>
+  <model name="box_w_handles">
+    <static>true</static>
 
     <link name="suspension_front_left">
       <pose>.3861 .2245 0.025 0 0 0</pose>
@@ -561,7 +561,7 @@
         name="gz::sim::systems::OdometryPublisher">
         <dimensions>3</dimensions>
         <odom_frame>world</odom_frame>
-        <odom_topic>/model/cargo/odometry</odom_topic>
+        <odom_topic>/model/box_w_handles/odometry</odom_topic>
     </plugin>
   </model>
 </sdf>

@@ -63,6 +63,10 @@ As of this note creation, the correct variable used by Gazebo is `GZ_SIM_RESOURC
 
 I also need some topics published by Gazebo plugins, so I have introduced `ros_gz_bridge` in the launch file. This allows the porting of messages and services from Gazebo to ROS2 and viceversa.
 
+### Cargo model
+Since at the time of this development the `gravity` tag was not available per-model (well, it is but it's also not actually parsed in Gazebo Garden), I've turned to using the `static` tag instead. This would hinder *any* movement of the model (not only prevent the cargo model to fall due to the gravitational force), but since there won't be anything else here, apart from the manual calls to the `set_pose` gz service, that's good enough.
+See [issue #504](https://github.com/gazebosim/gz-sim/issues/504) for more details and to follow related developments.
+
 ---
 ## PX4 topics
 
@@ -136,8 +140,10 @@ gdbtui build/pelican/pelican
 gdbtui install/pelican/lib/pelican/pelican_test
 gdbtui --args build/pelican/pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
 handle SIGINT noprint nostop pass
+thread apply all bt   |   t a a bt
 ros2 run datapad datapad --ros-args --log-level debug
 ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
+ros2 run pelican pelican --ros-args -p model:="/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/x500/model.sdf" -p id:=1 -p roi:=2.0 -p collision_radius:=2.0 --log-level debug
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 launch odst ros_agents.launch.py loglevel:=debug
