@@ -93,7 +93,7 @@ void Pelican::rogerWillCo(
                 geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
 
-            this->initiateSetActualTargetHeight(request->z);
+            this->commenceSetActualTargetHeight(request->z);
             this->initiateSetTargetPosition(
                 geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
             );
@@ -184,7 +184,7 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
         auto response = future.get();
         this->sendLogInfo("Target received: {}", response->target);
 
-        this->initiateSetActualTargetHeight(response->target.z);
+        this->commenceSetActualTargetHeight(response->target.z);
         this->initiateSetTargetPosition(response->target);
     } else {
         this->sendLogDebug("Service not ready yet...");

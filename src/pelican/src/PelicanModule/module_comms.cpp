@@ -63,7 +63,7 @@ void Pelican::initiateSetSetpointPosition(geometry_msgs::msg::Point p) {
     this->unsc_core_.setSetpointPosition(p);
 }
 
-void Pelican::initiateSetActualTargetHeight(double height) {
+void Pelican::commenceSetActualTargetHeight(double height) {
     this->unsc_core_.setActualTargetHeight(height);
 }
 

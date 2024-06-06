@@ -69,7 +69,7 @@ class Pelican : public rclcpp::Node {
         void initiateSetSetpointPosition(geometry_msgs::msg::Point);                  // UNSC module
         std::optional<geometry_msgs::msg::Point> initiateGetSetpointPosition() const; // UNSC module
         void initiateSetTargetPosition(geometry_msgs::msg::Point);                    // UNSC module
-        void initiateSetActualTargetHeight(double);                                   // UNSC module
+        void commenceSetActualTargetHeight(double);                                   // UNSC module
 
         // Actions initiated from outside the module
         void commenceSetElectionStatus(int); // Heartbeat module

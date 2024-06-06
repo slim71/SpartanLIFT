@@ -143,7 +143,7 @@ void UNSCModule::signalSetReferenceHeight(double height) {
         throw MissingExternModule();
     }
 
-    this->node_->initiateSetActualTargetHeight(height);
+    this->node_->commenceSetActualTargetHeight(height);
 }
 
 void UNSCModule::signalCargoAttachment() {
