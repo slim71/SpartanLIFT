@@ -9,6 +9,16 @@
             "type": "shell",
             "command": "./discover_dependencies.sh ${input:executable}"
         },
+        // Useful
+        {
+            "label": "print_cwd",
+            "detail": "Print current working directory",
+            "type": "shell",
+            "command": "pwd",
+            "dependsOn":[
+                "roscore: roscore"
+            ]
+        },
         // Build tasks
         {
             "label": "build",
@@ -63,25 +73,37 @@
         },
         {
             "label": "colconbuild",
-            "detail": "Test the target",
+            "detail": "Build the specified package",
             "type": "shell",
             "command": "colcon build --packages-select ${input:package}",
             "problemMatcher": "$gcc",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "sourceros",
-                "sourcews"
+                "sourceall"
+            ]
+        },
+        {
+            "label": "debug_build",
+            "detail": "Build the specified package in debug mode",
+            "type": "shell",
+            "command": "colcon build --packages-select ${input:package} --cmake-args '-DCMAKE_BUILD_TYPE=Debug' -Wall -Wextra -Wpedantic -DCMAKE_CXX_FLAGS=-g -DDEBUG_MODE=1",
+            "problemMatcher": "$gcc",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "sourceros",
+                "sourceall"
             ]
         },
         {
             "label": "sourceall",
             "detail": "Source the local workspace",
             "type": "shell",
-            "command": "source install/setup.bash",
+            "command": "source install/setup.bash && pwd",
             "problemMatcher": "$gcc",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "sourcews"
+                "sourceros"
             ]
         },
         {
@@ -92,7 +114,7 @@
             "problemMatcher": "$gcc",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "sourcews",
+                "sourceall",
                 "colconbuild"
             ]
         },

@@ -6,7 +6,7 @@
   "configurations": [
     {
       "name": "Python: Current File",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
@@ -16,7 +16,7 @@
       "name": "(gdb) Launch (merge-install)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/install/lib/${input:package}/${input:program}",
+      "program": "${workspaceFolder}/install/${input:package}/share/${input:package}/${input:program}",
       "args": [],
       "preLaunchTask": "build",
       "stopAtEntry": true,
@@ -35,10 +35,10 @@
       "name": "(gdb) Launch (isolated-install)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/install/${input:package}/lib/${input:package}/${input:program}",
+      "program": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:program}",
       "args": [],
-      "preLaunchTask": "build",
-      "stopAtEntry": true,
+      "preLaunchTask": "debug",
+      "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "externalConsole": false,
       "MIMode": "gdb",
@@ -79,20 +79,16 @@
       "name": "ROS: Launch File (merge-install)",
       "type": "ros",
       "request": "launch",
-      "preLaunchTask": "build",
+      // "preLaunchTask": "build",
       "target": "${workspaceFolder}/install/share/${input:package}/launch/${input:ros_launch}",
     },
     {
       "name": "ROS: Launch File (isolated-install)",
+      "type": "ros",
       "request": "launch",
-      "target": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:ros_launch}",
-      "launch": [
-        "rviz",
-        "gz",
-        "gzserver",
-        "gzclient"
-      ],
-      "type": "ros"
+      "preLaunchTask": "debug_build",
+      "target": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:ros_launch}.launch.py",
+      "arguments": ["loglevel:=debug"],
     }
   ],
   "inputs": [
