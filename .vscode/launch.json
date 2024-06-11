@@ -76,17 +76,32 @@
       ]
     },
     {
-      "name": "ROS: Launch File (merge-install)",
-      "type": "ros",
-      "request": "launch",
-      // "preLaunchTask": "build",
-      "target": "${workspaceFolder}/install/share/${input:package}/launch/${input:ros_launch}",
-    },
-    {
-      "name": "ROS: Launch File (isolated-install)",
+      "name": "ROS: Debug launched nodes (merge-install)",
       "type": "ros",
       "request": "launch",
       "preLaunchTask": "debug_build",
+      "target": "${workspaceFolder}/install/share/${input:package}/launch/${input:ros_launch}",
+      "arguments": ["loglevel:=debug"],
+    },
+    {
+      "name": "ROS: Debug launched nodes (isolated-install)",
+      "type": "ros",
+      "request": "launch",
+      "preLaunchTask": "debug_build",
+      "target": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:ros_launch}.launch.py",
+      "arguments": ["loglevel:=debug"],
+    },
+    {
+      "name": "ROS: Debug Launch File (merge-install)",
+      "type": "ros",
+      "request": "debug_launch",
+      "target": "${workspaceFolder}/install/share/${input:package}/launch/${input:ros_launch}.launch.py",
+      "arguments": ["loglevel:=debug"],
+    },
+    {
+      "name": "ROS: Debug Launch File (isolated-install)",
+      "type": "ros",
+      "request": "debug_launch",
       "target": "${workspaceFolder}/install/${input:package}/share/${input:package}/launch/${input:ros_launch}.launch.py",
       "arguments": ["loglevel:=debug"],
     }
@@ -96,7 +111,7 @@
       "id": "package",
       "type": "promptString",
       "description": "Package name",
-      "default": "pelican"
+      "default": "odst"
     },
     {
       "id": "program",
