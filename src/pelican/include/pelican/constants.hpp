@@ -36,10 +36,6 @@ namespace constants {
     static constexpr double PX4_CUSTOM_MAIN_MODE = 4.0;
     static constexpr double PX4_LOITER_SUB_MODE = 3.0;
 
-    // Up to and including C++17, pi is not a constant introduced into the language.
-    // It is present in C++20, but switching standard just for a constant seems a bit
-    // of an overkill. Have it hardcoded.
-    static constexpr double PI = 3.14159265358979323846;
     static constexpr unsigned int NANO_TO_MILLI_ORDER_CONVERSION = 1000000;
 
     // Rendezvous-related

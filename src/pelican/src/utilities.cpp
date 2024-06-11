@@ -15,7 +15,7 @@ void cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
 Eigen::Matrix3d rotX(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
-        angle_rad = angle * constants::PI / 180.0;
+        angle_rad = angle * M_PI / 180.0;
     }
 
     Eigen::Matrix3d mat {
@@ -30,7 +30,7 @@ Eigen::Matrix3d rotX(const double angle, bool is_degree) {
 Eigen::Matrix3d rotY(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
-        angle_rad = angle * constants::PI / 180.0;
+        angle_rad = angle * M_PI / 180.0;
     }
 
     Eigen::Matrix3d mat {
@@ -45,7 +45,7 @@ Eigen::Matrix3d rotY(const double angle, bool is_degree) {
 Eigen::Matrix3d rotZ(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
-        angle_rad = angle * constants::PI / 180.0;
+        angle_rad = angle * M_PI / 180.0;
     }
 
     Eigen::Matrix3d mat {
