@@ -27,6 +27,7 @@ class UNSCModule {
         bool returnToLaunchPosition();
         void activateOffboardMode();
         void heightCompensation(double);
+        void unblockFormation();
 
         // Getters
         bool getRunningStatus() const;
@@ -39,6 +40,7 @@ class UNSCModule {
         // Setters
         void setSetpointPosition(geometry_msgs::msg::Point);
         void setSetpointVelocity(geometry_msgs::msg::Point);
+        void setHeightSetpoint(double);
         void setActualTargetHeight(double);
         void setTargetPosition(geometry_msgs::msg::Point);
 
@@ -50,9 +52,14 @@ class UNSCModule {
 
         void runPreChecks();
         void setAndMaintainOffboardMode();
-        geometry_msgs::msg::Point adjustmentForCollisionAvoidance(geometry_msgs::msg::Point);
+        geometry_msgs::msg::Point
+        adjustmentForCollisionAvoidance(geometry_msgs::msg::Point, double);
         void consensusToRendezvous();
         void rendezvousClosure();
+        void formationControl();
+        void findNeighbors();
+        void assignFormationPositions();
+        void preFormationActions();
 
         bool sendToCommanderUnit(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
@@ -68,11 +75,17 @@ class UNSCModule {
         unsigned int gatherNetworkSize() const;
         geometry_msgs::msg::Point gatherCopterPosition(unsigned int) const;
         std::optional<nav_msgs::msg::Odometry> gatherENUOdometry() const;
+        unsigned int gatherLeaderID() const;
+        std::vector<unsigned int> gatherCoptersIDs() const;
+        geometry_msgs::msg::Point gatherNeighborDesiredPosition();
+        geometry_msgs::msg::Point gatherDesiredPosition() const;
 
-        // For callback groups
+        // For callback groups; CHECK: leave each one in the class using it?
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherRendezvousExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherFormationExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherFormationTimerGroup() const;
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
@@ -86,6 +99,8 @@ class UNSCModule {
         bool signalCheckOffboardEngagement() const;
         void signalSetReferenceHeight(double);
         void signalCargoAttachment();
+        void signalSendFormationPositions(std::vector<geometry_msgs::msg::Point>);
+        void signalAskPositionToNeighbor(unsigned int);
 
         // Flag checks
         bool confirmAgentIsLeader() const;
@@ -98,6 +113,7 @@ class UNSCModule {
         bool running_ {true};
         bool sitl_ready_ {false};
         bool move_to_center_ {false};
+        bool neighbor_gathered_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
         double actual_target_height_ {0};        // needed in order to stabilize height tracking
         Eigen::Vector3d offset_ {0, 0, 0};       // [m, m, m]
@@ -106,6 +122,8 @@ class UNSCModule {
         geometry_msgs::msg::Point setpoint_position_ = NAN_point;
         // referring to temporary setpoint along a trajectory
         geometry_msgs::msg::Point setpoint_velocity_;
+        unsigned int neighbors_[2] {UINT_MAX, UINT_MAX};
+        std::condition_variable formation_cv_;
 
         mutable std::mutex offset_mutex_;            // to be used with offset_ and yaw_
         mutable std::mutex running_mutex_;           // to be used with running_
@@ -113,6 +131,7 @@ class UNSCModule {
         mutable std::mutex setpoint_velocity_mutex_; // Used to access setpoint_velocity_
         mutable std::mutex height_mutex_;            // Used to access actual_target_height_
         mutable std::mutex target_position_mutex_;   // Used to access target_position_
+        mutable std::mutex formation_cv_mutex_;      // Used to access formation_cv_
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
@@ -124,8 +143,9 @@ class UNSCModule {
         std::chrono::milliseconds rendezvous_period_ {
             std::chrono::milliseconds(constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS)};
 
-        rclcpp::TimerBase::SharedPtr rend_check_timer_;
-        std::chrono::milliseconds rend_check_period_ {std::chrono::seconds(1)};
+        rclcpp::TimerBase::SharedPtr formation_timer_;
+        std::chrono::milliseconds formation_period_ {
+            std::chrono::milliseconds(constants::FORMATION_CONSENSUS_PERIOD_MILLIS)};
 };
 
 #include "unsc_template.tpp"

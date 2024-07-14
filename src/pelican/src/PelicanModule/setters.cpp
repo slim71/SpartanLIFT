@@ -25,6 +25,12 @@ void Pelican::setID(unsigned int id) {
     this->id_ = id;
 }
 
+void Pelican::setNeighborPosition(geometry_msgs::msg::Point p) {
+    std::lock_guard lock(this->neigh_mutex_);
+    this->neigh_des_pos_ = p;
+}
+
+/**************************** Flag setters ****************************/
 void Pelican::setFlyingStatus() {
     std::lock_guard lock(this->flying_mutex_);
     this->flying_ = true;

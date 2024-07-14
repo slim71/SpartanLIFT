@@ -533,3 +533,14 @@ bool Pelican::executeRPCCommand(uint16_t command) {
             return false;
     }
 }
+
+void Pelican::sendFormationPositions(std::vector<geometry_msgs::msg::Point> desired_positions) {
+    auto msg = comms::msg::FormationDesired();
+    for (unsigned int i = 0; i < desired_positions.size(); i++) {
+        comms::msg::NetworkVertex v;
+        v.set__agent_id(i + 1).set__position(desired_positions[i]);
+        msg.des_positions.push_back(v);
+    }
+
+    this->pub_to_formation_->publish(msg);
+}

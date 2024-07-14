@@ -3,6 +3,7 @@
 
 #include "comms/action/teleop_data.hpp"
 #include "comms/msg/command.hpp"
+#include "comms/msg/formation_desired.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/network_vertex.hpp"
 #include "comms/msg/proposal.hpp"
@@ -28,6 +29,7 @@
 #include <bitset>
 #include <boost/circular_buffer.hpp>
 #include <chrono>
+#include <cmath>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <geometry_msgs/msg/point.hpp>
@@ -43,6 +45,7 @@
 #include <regex>
 #include <signal.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 class MissingExternModule : public std::exception {

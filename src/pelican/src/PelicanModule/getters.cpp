@@ -47,6 +47,14 @@ rclcpp::CallbackGroup::SharedPtr Pelican::getRendezvousExclusiveGroup() const {
     return this->rendezvous_exclusive_group_;
 }
 
+rclcpp::CallbackGroup::SharedPtr Pelican::getFormationExclusiveGroup() const {
+    return this->formation_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getFormationTimerGroup() const {
+    return this->formation_timer_group_;
+}
+
 rclcpp::Time Pelican::getTime() const {
     return this->now();
 }
@@ -80,6 +88,27 @@ geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
     }
 
     return this->copters_positions_[id - 1];
+}
+
+std::vector<unsigned int> Pelican::getCoptersIDs() const {
+    std::vector<unsigned int> ids;
+    std::lock_guard lock(this->discovery_mutex_);
+    for (auto elem : this->discovery_vector_) {
+        this->sendLogDebug("Accruing ID {}", elem.agent_id);
+        ids.push_back(elem.agent_id);
+    }
+
+    return ids;
+}
+
+geometry_msgs::msg::Point Pelican::getDesiredPosition() const {
+    std::lock_guard lock(this->formation_mutex_);
+    return this->des_formation_pos_;
+}
+
+geometry_msgs::msg::Point Pelican::getNeighborDesiredPosition() const {
+    std::lock_guard lock(this->formation_mutex_);
+    return this->neigh_des_pos_;
 }
 
 /*************************** Status flags *****************************/

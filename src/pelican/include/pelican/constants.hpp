@@ -14,6 +14,7 @@ namespace constants {
     static constexpr unsigned int COMPENSATION_GAP_SECS = 1;
     static constexpr unsigned int POS_SHARING_PERIOD_MILLIS = 100;
     static constexpr unsigned int RENDEZVOUS_CONSENSUS_PERIOD_MILLIS = 500;
+    static constexpr unsigned int FORMATION_CONSENSUS_PERIOD_MILLIS = 500;
 
     // Standard heartbeat period is 100ms, so this would keep a log of 10s
     static constexpr unsigned int MAX_HB_NUM = 100;
@@ -37,10 +38,13 @@ namespace constants {
     static constexpr double PX4_LOITER_SUB_MODE = 3.0;
 
     static constexpr unsigned int NANO_TO_MILLI_ORDER_CONVERSION = 1000000;
+    static constexpr double MILLIS_TO_SECS_ORDER_CONVERSION = 1000.0;
 
     // Rendezvous-related
     static constexpr double ALPHA_REND = 0.2;
     static constexpr double BETA_REND = 1.0;
     static constexpr double AVOIDANCE_DISTANCE = 1.0;
     static constexpr double SETPOINT_REACHED_DISTANCE = 0.4;
+    // Formation-related
+    static constexpr double FORMATION_COLLISION_THRESHOLD = 0.5;
 } // namespace constants

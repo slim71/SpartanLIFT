@@ -120,3 +120,59 @@ operator-(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point
 
     return diff;
 }
+
+geometry_msgs::msg::Point
+operator+(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point second) {
+    geometry_msgs::msg::Point sum;
+    sum.x = first.x + second.x;
+    sum.y = first.y + second.y;
+    sum.z = first.z + second.z;
+
+    return sum;
+}
+
+geometry_msgs::msg::Point closestCirclePoint(
+    geometry_msgs::msg::Point p, geometry_msgs::msg::Point center, double circle_radius
+) {
+    double dist =
+        std::sqrt((p.x - center.x) * (p.x - center.x) + (p.y - center.y) * (p.y - center.y));
+    double scale_factor = circle_radius / dist;
+    return geometry_msgs::msg::Point()
+        .set__x(scale_factor * p.x)
+        .set__y(scale_factor * p.y)
+        .set__z(p.z);
+}
+
+std::vector<geometry_msgs::msg::Point> homPointsOnCircle(
+    geometry_msgs::msg::Point start, geometry_msgs::msg::Point center, int radius, int number
+) {
+    std::vector<geometry_msgs::msg::Point> v;
+    double angle_increment = 2 * M_PI / number;
+    double start_angle = std::atan2(start.y, start.x);
+
+    for (int i = 0; i < number; ++i) {
+        double angle = start_angle + i * angle_increment;
+        double x = center.x + radius * std::cos(angle);
+        double y = center.y + radius * std::sin(angle);
+        v.push_back(geometry_msgs::msg::Point().set__x(x).set__y(y).set__z(center.z));
+    }
+
+    return v;
+}
+
+double circleDistance(
+    geometry_msgs::msg::Point p, geometry_msgs::msg::Point center, double circle_radius
+) {
+    return std::abs(
+        std::sqrt((p.x - center.x) * (p.x - center.x) + (p.y - center.y) * (p.y - center.y)) -
+        circle_radius
+    );
+}
+
+double p2p2DDistance(geometry_msgs::msg::Point p, geometry_msgs::msg::Point q) {
+    return std::sqrt((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y));
+}
+
+bool geomPointHasNan(geometry_msgs::msg::Point& p) {
+    return std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z);
+}

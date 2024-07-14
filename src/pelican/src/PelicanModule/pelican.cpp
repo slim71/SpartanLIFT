@@ -35,8 +35,17 @@ Pelican::Pelican()
     this->rendezvous_exclusive_group_ =
         this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->rendezvous_exclusive_opt_.callback_group = this->rendezvous_exclusive_group_;
+    this->formation_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->formation_exclusive_opt_.callback_group = this->formation_exclusive_group_;
+    this->formation_service_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->formation_service_opt_.callback_group = this->formation_service_group_;
+    this->formation_timer_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->formation_timer_opt_.callback_group = this->formation_timer_group_;
 
-    // Own setup
+    // Subscribers
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
         this->locator_topic_, this->data_qos_,
         std::bind(&Pelican::storeCopterInfo, this, std::placeholders::_1), this->reentrant_opt_
@@ -46,12 +55,31 @@ Pelican::Pelican()
         std::bind(&Pelican::handleCommandReception, this, std::placeholders::_1),
         this->reentrant_opt_
     );
+    this->sub_to_formation_ = this->create_subscription<comms::msg::FormationDesired>(
+        this->formation_topic_, this->qos_,
+        std::bind(&Pelican::storeDesiredPosition, this, std::placeholders::_1),
+        this->formation_exclusive_opt_
+    );
+    // Publishers
     this->pub_to_dispatch_ =
         this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
     this->pub_to_locator_ =
         this->create_publisher<comms::msg::NetworkVertex>(this->locator_topic_, this->qos_);
+    this->pub_to_formation_ =
+        this->create_publisher<comms::msg::FormationDesired>(this->formation_topic_, this->qos_);
+    // Service clients
     this->cargo_attachment_client_ =
         this->create_client<comms::srv::CargoLinkage>("attachment_service");
+    // Service servers
+    this->des_pos_server_ = this->create_service<comms::srv::FleetInfo>(
+        "des_pos_service_" + std::to_string(this->getID()),
+        std::bind(
+            &Pelican::shareDesiredPosition, this, std::placeholders::_1, std::placeholders::_2
+        ),
+        rmw_qos_profile_services_default,
+        // this->formation_service_group_ // CHECK
+        this->getReentrantGroup()
+    );
 
     // Other modules' setup
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
@@ -172,6 +200,15 @@ void Pelican::sharePosition(geometry_msgs::msg::Point pos) {
     msg.position = pos;
 
     this->pub_to_locator_->publish(msg);
+}
+
+void Pelican::shareDesiredPosition(
+    const std::shared_ptr<comms::srv::FleetInfo::Request>,
+    std::shared_ptr<comms::srv::FleetInfo::Response> response
+) {
+    auto my_pos = this->getDesiredPosition();
+    response->formation = true;
+    response->target = my_pos;
 }
 
 void Pelican::recordCopterPosition(comms::msg::NetworkVertex::SharedPtr msg) {
@@ -301,4 +338,82 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
     } else {
         this->sendLogDebug("Service not ready yet...");
     }
+}
+
+void Pelican::storeDesiredPosition(const comms::msg::FormationDesired msg) {
+    for (auto&& pos :
+         msg.des_positions) { // CHECK: can be done with direct access, but this is safer?
+        if (pos.agent_id == this->getID()) {
+            std::lock_guard lock(this->formation_mutex_);
+            this->des_formation_pos_ = pos.position;
+            this->sendLogDebug("Received desired formation position {}", pos.position);
+            return;
+        }
+    }
+    this->sendLogDebug("Could not find my desired formation position in the received message");
+}
+
+// TODO: change name to desired...
+void Pelican::askPositionToNeighbor(unsigned int id) {
+    this->sendLogDebug("Asking neighbor {} its desired position...", id);
+    this->des_pos_client_ = this->create_client<comms::srv::FleetInfo>(
+        "des_pos_service_" + std::to_string(id), rmw_qos_profile_services_default,
+        this->getReentrantGroup()
+    );
+
+    // Send request
+    // Search for a second, then log and search again if needed
+    unsigned int total_search_time = 0;
+    while (!this->des_pos_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
+           ) &&
+           total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        if (!rclcpp::ok()) {
+            this->sendLogError(
+                "Client interrupted while waiting for neighbor's {} des_pos server. Terminating...",
+                id
+            );
+            return;
+        }
+
+        this->sendLogDebug("Service not available; waiting some more...");
+        total_search_time += constants::SEARCH_SERVER_STEP_SECS;
+    };
+
+    // CHECK: invert if/else (see GPT if needed)
+    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        this->sendLogDebug("Neighbor's {} des_pos server available", id);
+
+        // Create request
+        auto request = std::make_shared<comms::srv::FleetInfo::Request>();
+        // Send request
+        auto async_request_result = this->des_pos_client_->async_send_request(
+            request, std::bind(&Pelican::storeNeighborPosition, this, std::placeholders::_1)
+        );
+    } else {
+        this->sendLogWarning("The server seems to be down. Please try again.");
+        return;
+    }
+}
+
+void Pelican::storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
+    // Wait for the specified amount or until the result is available
+    this->sendLogDebug("Getting neighbor position...");
+    auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+
+    // CHECK: invert if/else?
+    if (status == std::future_status::ready) {
+        this->sendLogDebug("Neighbor des_pos service ready...");
+        auto response = future.get();
+        if (response) {
+            this->sendLogDebug("Received good neighbor position {}", response->target);
+            this->setNeighborPosition(response->target);
+        } else {
+            this->sendLogWarning("Received an empty response from the neighbor's service");
+        }
+    } else {
+        this->sendLogDebug("Neighbor des_pos service not ready yet...");
+    }
+
+    this->initiateUnblockFormation(); // CHECK: how to avoid deadlock if response not received?
 }

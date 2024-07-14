@@ -26,6 +26,10 @@ void Pelican::commenceStopElectionService() {
     this->el_core_.stopService();
 }
 
+unsigned int Pelican::requestLeaderID() const {
+    return this->el_core_.getLeaderID();
+}
+
 /**************************** UNSC Module *****************************/
 bool Pelican::initiateArm() {
     return this->unsc_core_.arm();
@@ -61,6 +65,10 @@ void Pelican::initiateSetTargetPosition(geometry_msgs::msg::Point p) {
 
 void Pelican::initiateSetSetpointPosition(geometry_msgs::msg::Point p) {
     this->unsc_core_.setSetpointPosition(p);
+}
+
+void Pelican::initiateUnblockFormation() {
+    this->unsc_core_.unblockFormation();
 }
 
 void Pelican::commenceSetActualTargetHeight(double height) {

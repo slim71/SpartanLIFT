@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(pelican
-        VERSION 0.8.1
+        VERSION 0.9.0
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
@@ -8,6 +8,8 @@ project(pelican
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 17) # Minimum
+
+message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)

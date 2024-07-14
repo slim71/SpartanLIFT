@@ -34,6 +34,7 @@ set(MESSAGE_FILES
     msg/Proposal.msg
     msg/RequestVoteRPC.msg
     msg/NetworkVertex.msg
+    msg/FormationDesired.msg
 )
 
 set(SERVICE_FILES

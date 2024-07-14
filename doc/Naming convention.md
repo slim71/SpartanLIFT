@@ -37,13 +37,13 @@ The module owning a flag returns said flag to the requiring module (another one 
 
 ## Response patterns
 
-|    Source (Initiator)     | Passthrough (main) |     Destination     |
-|---------------------------|--------------------|---------------------|
-|  `signal[action]` (ext)   | `commence[action]` |  '[action]' (ext)   |
-|   `gather[data]`  (ext)   |  `request[data]`   |  `get[data]` (ext)  |
-|   `confirm[flag]` (ext)   |        N/A         |  `is[flag]` (any)   |
-|  `request[data]` (main)   |        N/A         |  `get[data]` (ext)  |
-| `initiate[action]` (main) |        N/A         |  '[action]' (ext)   |
+| Source (Initiator)        | Passthrough (main) | Destination            |
+| ------------------------- | ------------------ | ---------------------- |
+| `signal[action]` (ext)    | `commence[action]` | '[action]' (ext/main)  |
+| `gather[data]`  (ext)     | `request[data]`    | `get[data]` (ext/main) |
+| `confirm[flag]` (ext)     | N/A                | `is[flag]` (any)       |
+| `request[data]` (main)    | N/A                | `get[data]` (ext)      |
+| `initiate[action]` (main) | N/A                | '[action]' (ext)       |
 
 ext: external module
 main: main module (PelicanModule)
