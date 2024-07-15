@@ -314,40 +314,41 @@ void UNSCModule::preFormationActions() {
     }
 }
 
-geometry_msgs::msg::Point
-UNSCModule::adjustmentForCollisionAvoidance(geometry_msgs::msg::Point agentPosition) {
+geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
+    geometry_msgs::msg::Point agentPosition, double threshold
+) {
     // Initialize the total adjustment vector to zero
     double totalAdjustmentX = 0.0;
     double totalAdjustmentY = 0.0;
 
+    // To reduce function calls
     unsigned int net_size = this->gatherNetworkSize();
     unsigned int my_id = this->gatherAgentID();
 
     // Compute adjustment vector for each neighbor
     for (unsigned int copter_id = 1; copter_id <= net_size; copter_id++) { // for each copter
-        if (copter_id != my_id) { // Exclude my own position
-            auto neighborPosition = this->gatherCopterPosition(copter_id);
-            // CHECK: != not working with nan? retest when seen again
-            if (neighborPosition != NAN_point) { // Copter position valid
+        if (copter_id != my_id) {                   // Exclude my own position
+            geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
+            if (!geomPointHasNan(neigh_position)) { // Copter position valid
 
                 // Compute vector from neighbor to agent
-                double dx = neighborPosition.x - agentPosition.x;
-                double dy = neighborPosition.y - agentPosition.y;
+                double dx = neigh_position.x - agentPosition.x;
+                double dy = neigh_position.y - agentPosition.y;
                 // Euclidean distance between the agent and the neighbor
                 double distance = std::hypot(dx, dy);
                 this->sendLogDebug(
                     "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
-                    neighborPosition, distance, dx, dy
+                    neigh_position, distance, dx, dy
                 );
 
                 // Adjust only if the distance is less than the threshold
-                if (distance < gatherCollisionRadius()) {
+                if (distance < threshold) {
                     // Compute the adjustment direction (away from the neighbor)
                     double adjustmentMagnitude = constants::AVOIDANCE_DISTANCE - distance;
                     double adjustmentDirectionX = dx / distance * adjustmentMagnitude;
                     double adjustmentDirectionY = dy / distance * adjustmentMagnitude;
                     this->sendLogDebug(
-                        "Adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
+                        "Collision avoidance adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
                         adjustmentDirectionX, adjustmentDirectionY, adjustmentMagnitude
                     );
 
@@ -355,12 +356,15 @@ UNSCModule::adjustmentForCollisionAvoidance(geometry_msgs::msg::Point agentPosit
                     totalAdjustmentX -= adjustmentDirectionX;
                     totalAdjustmentY -= adjustmentDirectionY;
                 }
+            } else {
+                this->sendLogDebug(
+                    "Neighbor {} position contains NANs ({})", copter_id, neigh_position
+                );
             }
         }
     }
     // Return the normalized total adjustment vector
     return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
-    ;
 }
 
 // CHECK: right now I'm establishing the neighbors before actually giving them a desired position;
