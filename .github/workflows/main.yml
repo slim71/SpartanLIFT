@@ -10,16 +10,15 @@ jobs:
       - name: License analysis
         uses: lowlighter/metrics@latest
         with:
-          filename: license_info.svg
-          path: media
+          filename: media/license_info.svg
           token: ${{ secrets.METRICS_TOKEN }}
           # Options
-          user: slim71
           config_timezone: Europe/Rome
           # Plugin configuration
           base: ""
           template: repository
-          repo: metrics
+          user: slim71
+          repo: SpartanLIFT
           plugin_licenses: yes
           plugin_licenses_legal: yes
           # What to do at each run
