@@ -11,6 +11,7 @@ jobs:
         uses: lowlighter/metrics@latest
         with:
           filename: license_info.svg
+          path: media
           token: ${{ secrets.METRICS_TOKEN }}
           # Options
           user: slim71
@@ -23,7 +24,6 @@ jobs:
           plugin_licenses_legal: yes
           # What to do at each run
           output_action: commit
-          committer_branch: metrics
           committer_message: "Updating License Info render"
           # Rendering is subject to external factors and can fail occasionally
           retries: 3
