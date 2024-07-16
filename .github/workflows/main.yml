@@ -1,0 +1,33 @@
+name: License Info
+on:
+  workflow_dispatch:
+jobs:
+  license-info:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: License analysis
+        uses: lowlighter/metrics@latest
+        with:
+          filename: license_info.svg
+          token: ${{ secrets.METRICS_TOKEN }}
+          # Options
+          user: slim71
+          config_timezone: Europe/Rome
+          # Plugin configuration
+          base: ""
+          template: repository
+          repo: metrics
+          plugin_licenses: yes
+          plugin_licenses_legal: yes
+          # What to do at each run
+          output_action: commit
+          committer_branch: metrics
+          committer_message: "Updating License Info render"
+          # Rendering is subject to external factors and can fail occasionally
+          retries: 3
+          retries_delay: 300
+          # Output action is also subject to GitHub API rate-limiting and overall health status and can fail occasionally
+          retries_output_action: 5
+          retries_delay_output_action: 120
