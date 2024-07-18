@@ -38,12 +38,6 @@ Pelican::Pelican()
     this->formation_exclusive_group_ =
         this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->formation_exclusive_opt_.callback_group = this->formation_exclusive_group_;
-    this->formation_service_group_ =
-        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    this->formation_service_opt_.callback_group = this->formation_service_group_;
-    this->formation_timer_group_ =
-        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    this->formation_timer_opt_.callback_group = this->formation_timer_group_;
 
     // Subscribers
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
@@ -76,9 +70,7 @@ Pelican::Pelican()
         std::bind(
             &Pelican::shareDesiredPosition, this, std::placeholders::_1, std::placeholders::_2
         ),
-        rmw_qos_profile_services_default,
-        // this->formation_service_group_ // CHECK
-        this->getReentrantGroup()
+        rmw_qos_profile_services_default, this->getReentrantGroup()
     );
 
     // Other modules' setup
@@ -202,6 +194,7 @@ void Pelican::sharePosition(geometry_msgs::msg::Point pos) {
     this->pub_to_locator_->publish(msg);
 }
 
+// Request handler of FleetInfo requests
 void Pelican::shareDesiredPosition(
     const std::shared_ptr<comms::srv::FleetInfo::Request>,
     std::shared_ptr<comms::srv::FleetInfo::Response> response
@@ -270,6 +263,7 @@ void Pelican::handleAcceptedTeleopData(
     );
 }
 
+// CargoLinkage request generator
 void Pelican::cargoAttachment() {
     // Create request
     auto request = std::make_shared<comms::srv::CargoLinkage::Request>();
@@ -324,6 +318,7 @@ void Pelican::cargoAttachment() {
     }
 }
 
+// CargoLinkage response handler
 void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
@@ -340,9 +335,9 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
     }
 }
 
+// Receiver of FormationDesired messages
 void Pelican::storeDesiredPosition(const comms::msg::FormationDesired msg) {
-    for (auto&& pos :
-         msg.des_positions) { // CHECK: can be done with direct access, but this is safer?
+    for (auto&& pos : msg.des_positions) {
         if (pos.agent_id == this->getID()) {
             std::lock_guard lock(this->formation_mutex_);
             this->des_formation_pos_ = pos.position;
@@ -353,8 +348,8 @@ void Pelican::storeDesiredPosition(const comms::msg::FormationDesired msg) {
     this->sendLogDebug("Could not find my desired formation position in the received message");
 }
 
-// TODO: change name to desired...
-void Pelican::askPositionToNeighbor(unsigned int id) {
+// FleetInfo request generator - Neighbor desired position request
+void Pelican::askDesPosToNeighbor(unsigned int id) {
     this->sendLogDebug("Asking neighbor {} its desired position...", id);
     this->des_pos_client_ = this->create_client<comms::srv::FleetInfo>(
         "des_pos_service_" + std::to_string(id), rmw_qos_profile_services_default,
@@ -380,28 +375,26 @@ void Pelican::askPositionToNeighbor(unsigned int id) {
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
-    // CHECK: invert if/else (see GPT if needed)
-    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogDebug("Neighbor's {} des_pos server available", id);
-
-        // Create request
-        auto request = std::make_shared<comms::srv::FleetInfo::Request>();
-        // Send request
-        auto async_request_result = this->des_pos_client_->async_send_request(
-            request, std::bind(&Pelican::storeNeighborPosition, this, std::placeholders::_1)
-        );
-    } else {
+    if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogWarning("The server seems to be down. Please try again.");
         return;
     }
+
+    this->sendLogDebug("Neighbor's {} des_pos server available", id);
+    // Create request
+    auto request = std::make_shared<comms::srv::FleetInfo::Request>();
+    // Send request
+    auto async_request_result = this->des_pos_client_->async_send_request(
+        request, std::bind(&Pelican::storeNeighborPosition, this, std::placeholders::_1)
+    );
 }
 
+// Resutl handler of FleetInfo data - Neighbor desired position
 void Pelican::storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting neighbor position...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
 
-    // CHECK: invert if/else?
     if (status == std::future_status::ready) {
         this->sendLogDebug("Neighbor des_pos service ready...");
         auto response = future.get();

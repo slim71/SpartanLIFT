@@ -32,14 +32,14 @@ class UNSCModule {
         // Getters
         bool getRunningStatus() const;
         Eigen::Vector3d getOffset() const;
-        std::optional<geometry_msgs::msg::Point> getSetpointPosition() const;
+        std::optional<geometry_msgs::msg::Point> getPositionSetpoint() const;
         std::optional<geometry_msgs::msg::Point> getSetpointVelocity() const;
         double getActualTargetHeight() const;
         std::optional<geometry_msgs::msg::Point> getTargetPosition() const;
 
         // Setters
-        void setSetpointPosition(geometry_msgs::msg::Point);
-        void setSetpointVelocity(geometry_msgs::msg::Point);
+        void setPositionSetpoint(geometry_msgs::msg::Point);
+        void setVelocitySetpoint(geometry_msgs::msg::Point);
         void setHeightSetpoint(double);
         void setActualTargetHeight(double);
         void setTargetPosition(geometry_msgs::msg::Point);
@@ -80,12 +80,11 @@ class UNSCModule {
         geometry_msgs::msg::Point gatherNeighborDesiredPosition();
         geometry_msgs::msg::Point gatherDesiredPosition() const;
 
-        // For callback groups; CHECK: leave each one in the class using it?
+        // For callback groups
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherRendezvousExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherFormationExclusiveGroup() const;
-        rclcpp::CallbackGroup::SharedPtr gatherFormationTimerGroup() const;
 
         // command| param1| param2| param3| param4| param5| param6| param7|
         void signalPublishVehicleCommand(
@@ -99,11 +98,15 @@ class UNSCModule {
         bool signalCheckOffboardEngagement() const;
         void signalSetReferenceHeight(double);
         void signalCargoAttachment();
-        void signalSendFormationPositions(std::vector<geometry_msgs::msg::Point>);
-        void signalAskPositionToNeighbor(unsigned int);
+        void signalSendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point>);
+        void signalAskDesPosToNeighbor(unsigned int);
 
         // Flag checks
         bool confirmAgentIsLeader() const;
+
+        // Setters
+        void setNeighborGathered();
+        void unsetNeighborGathered();
 
     private: // Attributes
         Pelican* node_;

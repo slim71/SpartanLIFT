@@ -101,6 +101,7 @@ void Cargo::shareCargoPosition(
     response->position = this->own_odom_;
 }
 
+// CargoLinkage request handler
 void Cargo::notifyAttachment(
     const std::shared_ptr<comms::srv::CargoLinkage::Request> req,
     std::shared_ptr<comms::srv::CargoLinkage::Response> response

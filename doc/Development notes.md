@@ -29,13 +29,46 @@ For the interaction of different callbacks with each other:
 Note that if the group for a callback is not explicitly specified, the default one is used: that's shared accross
 all callbacks with a non-specified group.
 
-To help identify ROS2 Services used in the code, here's a quick reference:
-1. TeleopData Service
-   - Server node: **Datapad**, server function: `Datapad::teleopTaskServer`
-   - Client node: **Pelican** (leader), request function: `Pelican::rogerWillCo`
-2. FleetInfo
-   - Server node: **Pelican** (leader), server function: `Pelican::targetNotification`
-   - Client node: **Pelican** (follower), request function: `Pelican::rendezvousFleet`
+To help identify ROS2 communication channels used in the code, here's a quick reference.
+1. *Actions*
+   1. **TeleopData**
+      - Client node: **Datapad**
+        - request function: `Datapad::teleopTaskClient`
+        - response analyzer: `Datapad::analyzeTeleopDataResponse`
+        - feedback handler: `Datapad::parseTeleopDataFeedback`
+        - final result handler: `Datapad::processFleetLeaderCommandAck`
+      - Server node: **Pelican** (leader)
+        - goal receiver: `Pelican::handleTeleopDataGoal`
+        - acceptance handler: `Pelican::handleAcceptedTeleopData`
+        - goal execution: `Pelican::rogerWillCo`
+        - feedback generator: `Pelican::handleCommandReception`
+        - cancellation handler: `Pelican::handleTeleopDataCancellation`
+2. *Services*
+   1. **FleetInfo**
+      - First exchange type: *Target position*
+        - Server node: **Pelican** (leader)
+          - server function: `Pelican::targetNotification`
+        - Client node: **Pelican** (follower)
+          - request function: `Pelican::rendezvousFleet`
+          - result handler function: `Pelican::processLeaderResponse`
+      - Second exchange type: *Neighbor desired position*
+        - Server node: **Pelican**
+          - server function: `Pelican::askDesPosToNeighbor`
+        - Client node: **Pelican**
+          - request function: `Pelican::shareDesiredPosition`
+          - result handler function: `Pelican::storeNeighborPosition`
+   2. **CargoPoint**
+      - Server node: **Cargo**
+        - server function: `Cargo::shareCargoPosition`
+      - Client node: **Datapad**
+        - request function: `Datapad::askForCargoPoint`
+        - result handler function: `Datapad::storeCargoPoint`
+   3. **CargoLinkage**
+      - Server node: **Cargo**
+        - server function: `Cargo::notifyAttachment`
+      - Client node: **Pelican**
+        - request function: `Pelican::cargoAttachment`
+        - result handler function: `Pelican::checkCargoAttachment`
 
 Logs cannot be automatically printed in different files, at the moment, as this would require an ad-hoc implementation
 of the `rcl_logging_interface` (as stated [here](https://robotics.stackexchange.com/a/104433/30956)).

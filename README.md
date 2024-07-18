@@ -2,6 +2,10 @@
 
 MSc thesis regarding the application of a teleoperated multi-UAV system for cooperative payload transport.
 
+<img alt="Github License" src="https://img.shields.io/github/license/slim71/SpartanLIFT" />
+
+![License details](media/license_info.svg)
+
 ---
 
 - [SpartanLIFT (Swarm dePloyment in Autonomous Robot TeleoperAtioNs for Load-Intensive Flight and Transport)](#spartanlift-swarm-deployment-in-autonomous-robot-teleoperations-for-load-intensive-flight-and-transport)

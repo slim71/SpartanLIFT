@@ -42,14 +42,6 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherFormationExclusiveGroup() con
     return this->node_->getFormationExclusiveGroup();
 }
 
-rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherFormationTimerGroup() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getFormationTimerGroup();
-}
-
 std::optional<nav_msgs::msg::Odometry> UNSCModule::gatherENUOdometry() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -112,6 +104,30 @@ geometry_msgs::msg::Point UNSCModule::gatherDesiredPosition() const {
     }
 
     return this->node_->getDesiredPosition();
+}
+
+unsigned int UNSCModule::gatherLeaderID() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->requestLeaderID();
+}
+
+std::vector<unsigned int> UNSCModule::gatherCoptersIDs() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getCoptersIDs();
+}
+
+geometry_msgs::msg::Point UNSCModule::gatherNeighborDesiredPosition() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getNeighborDesiredPosition();
 }
 
 /************* To make other modules carry on an action ************/
@@ -178,12 +194,20 @@ void UNSCModule::signalCargoAttachment() {
     this->node_->cargoAttachment();
 }
 
-void UNSCModule::signalSendFormationPositions(std::vector<geometry_msgs::msg::Point> pos) {
+void UNSCModule::signalSendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point> pos) {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->sendFormationPositions(pos);
+    this->node_->sendDesiredFormationPositions(pos);
+}
+
+void UNSCModule::signalAskDesPosToNeighbor(unsigned int id) {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->askDesPosToNeighbor(id);
 }
 
 /*************************** Flag checks ***************************/
@@ -193,38 +217,4 @@ bool UNSCModule::confirmAgentIsLeader() const {
     }
 
     return this->node_->isLeader();
-}
-
-// TODO: move all beneath
-unsigned int UNSCModule::gatherLeaderID() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->requestLeaderID();
-}
-
-std::vector<unsigned int>
-UNSCModule::gatherCoptersIDs() const { // CHECK: actually needed? maybe in case of failing agents
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getCoptersIDs();
-}
-
-geometry_msgs::msg::Point UNSCModule::gatherNeighborDesiredPosition() {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getNeighborDesiredPosition();
-}
-
-void UNSCModule::signalAskPositionToNeighbor(unsigned int id) {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    this->node_->askPositionToNeighbor(id);
 }

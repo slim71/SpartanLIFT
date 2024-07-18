@@ -20,8 +20,8 @@ class Pelican : public rclcpp::Node {
         static std::shared_ptr<Pelican> getInstance();
 
         void cargoAttachment();
-        void sendFormationPositions(std::vector<geometry_msgs::msg::Point>);
-        void askPositionToNeighbor(unsigned int);
+        void sendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point>);
+        void askDesPosToNeighbor(unsigned int);
 
         // Getters
         unsigned int getID() const;
@@ -74,8 +74,8 @@ class Pelican : public rclcpp::Node {
         bool initiateLand();                                                          // UNSC module
         bool initiateReturnToLaunchPosition();                                        // UNSC module
         void initiateOffboardMode();                                                  // UNSC module
-        void initiateSetSetpointPosition(geometry_msgs::msg::Point);                  // UNSC module
-        std::optional<geometry_msgs::msg::Point> initiateGetSetpointPosition() const; // UNSC module
+        void initiateSetPositionSetpoint(geometry_msgs::msg::Point);                  // UNSC module
+        std::optional<geometry_msgs::msg::Point> initiateGetPositionSetpoint() const; // UNSC module
         void initiateSetTargetPosition(geometry_msgs::msg::Point);                    // UNSC module
         void initiateUnblockFormation();                                              // UNSC module
 
@@ -200,7 +200,7 @@ class Pelican : public rclcpp::Node {
         geometry_msgs::msg::Point neigh_des_pos_ = NAN_point;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>
             last_goal_handle_;
-        std::condition_variable rend_handled_cv_; // CHECK: change name?
+        std::condition_variable rendezvous_handled_cv_;
         possible_roles role_ {tbd};
         TriState rendezvous_handled_ {TriState::Floating};
 
@@ -228,8 +228,6 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr rendezvous_exclusive_group_;
         rclcpp::SubscriptionOptions formation_exclusive_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr formation_exclusive_group_;
-        rclcpp::SubscriptionOptions formation_service_opt_ {rclcpp::SubscriptionOptions()};
-        rclcpp::CallbackGroup::SharedPtr formation_service_group_;
         rclcpp::SubscriptionOptions formation_timer_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr formation_timer_group_;
 

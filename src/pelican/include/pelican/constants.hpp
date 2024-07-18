@@ -37,14 +37,17 @@ namespace constants {
     static constexpr double PX4_CUSTOM_MAIN_MODE = 4.0;
     static constexpr double PX4_LOITER_SUB_MODE = 3.0;
 
-    static constexpr unsigned int NANO_TO_MILLI_ORDER_CONVERSION = 1000000;
-    static constexpr double MILLIS_TO_SECS_ORDER_CONVERSION = 1000.0;
+    static constexpr unsigned int NANO_TO_MILLI_CONVERSION = 1000000;
+    static constexpr double MILLIS_TO_SECS_CONVERSION = 1000.0;
 
     // Rendezvous-related
-    static constexpr double ALPHA_REND = 0.2;
-    static constexpr double BETA_REND = 1.0;
+    static constexpr double TARGET_LOC_WEIGHT = 0.2;
+    static constexpr double REND_COLL_WEIGHT = 1.0;
     static constexpr double AVOIDANCE_DISTANCE = 1.0;
     static constexpr double SETPOINT_REACHED_DISTANCE = 0.4;
+
     // Formation-related
-    static constexpr double FORMATION_COLLISION_THRESHOLD = 0.5;
+    static constexpr double FORM_COLL_THRESHOLD = 0.5;
+    static constexpr double FORM_DIST_WEIGHT = 0.1;
+    static constexpr double FORM_COLL_WEIGHT = 1.0;
 } // namespace constants

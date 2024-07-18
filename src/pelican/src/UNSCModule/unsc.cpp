@@ -37,25 +37,29 @@ void UNSCModule::stopService() {
 }
 
 void UNSCModule::heightCompensation(double odom_height) {
-    auto maybe_target = this->getSetpointPosition();
+    auto maybe_pos_setpoint = this->getPositionSetpoint();
     double target_height = this->getActualTargetHeight();
 
-    if (this->signalCheckOffboardEngagement() && maybe_target) {
-        auto current_target = maybe_target.value();
-        double compensated_height = current_target.z + (target_height - odom_height);
+    if (!this->signalCheckOffboardEngagement() || !maybe_pos_setpoint) {
         this->sendLogDebug(
-            "Height| setpoint: {:.4f}, target: {:.4f}, odom: {:.4f}, compensated: {:.4f}",
-            current_target.z, target_height, odom_height, compensated_height
+            "Height compensation skipped: {}",
+            maybe_pos_setpoint ? "not in offboard mode" : "the position setpoint is invalid"
         );
-
-        // Small velocity to help a more precise tracking (if needed)
-        this->sendLogDebug("Setting z velocity to {}", (compensated_height - current_target.z) / 2);
-        geometry_msgs::msg::Point vel = NAN_point;
-        vel.set__z((compensated_height - current_target.z) / 2);
-
-        this->setSetpointVelocity(vel);
-        this->setHeightSetpoint(compensated_height);
+        return;
     }
+
+    auto curr_pos_setpoint = maybe_pos_setpoint.value();
+    double compensated_height = curr_pos_setpoint.z + (target_height - odom_height);
+    this->sendLogDebug(
+        "Height| setpoint: {:.4f}, target: {:.4f}, odom: {:.4f}, compensated: {:.4f}",
+        curr_pos_setpoint.z, target_height, odom_height, compensated_height
+    );
+
+    geometry_msgs::msg::Point vel = NAN_point;
+    vel.set__z((compensated_height - curr_pos_setpoint.z) / constants::COMPENSATION_GAP_SECS);
+
+    this->setVelocitySetpoint(vel);
+    this->setHeightSetpoint(compensated_height);
 }
 
 void UNSCModule::unblockFormation() {

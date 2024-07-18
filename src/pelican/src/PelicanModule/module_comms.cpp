@@ -55,16 +55,16 @@ void Pelican::initiateOffboardMode() {
     this->unsc_core_.activateOffboardMode();
 }
 
-std::optional<geometry_msgs::msg::Point> Pelican::initiateGetSetpointPosition() const {
-    return this->unsc_core_.getSetpointPosition();
+std::optional<geometry_msgs::msg::Point> Pelican::initiateGetPositionSetpoint() const {
+    return this->unsc_core_.getPositionSetpoint();
 }
 
 void Pelican::initiateSetTargetPosition(geometry_msgs::msg::Point p) {
     this->unsc_core_.setTargetPosition(p);
 }
 
-void Pelican::initiateSetSetpointPosition(geometry_msgs::msg::Point p) {
-    this->unsc_core_.setSetpointPosition(p);
+void Pelican::initiateSetPositionSetpoint(geometry_msgs::msg::Point p) {
+    this->unsc_core_.setPositionSetpoint(p);
 }
 
 void Pelican::initiateUnblockFormation() {

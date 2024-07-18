@@ -119,17 +119,7 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     // Set a timer for height tracking compensation
     this->compensation_timer_ = this->node_->create_wall_timer(
         std::chrono::seconds(constants::COMPENSATION_GAP_SECS),
-        [this]() {
-            auto maybe_odom = this->getENUOdometry();
-            if (!maybe_odom)
-                return;
-            auto last_enu_odom = maybe_odom.value();
-            this->sendLogDebug(
-                "Height from global odometry: {}", last_enu_odom.pose.pose.position.z
-            );
-            this->signalHeightCompensation(last_enu_odom.pose.pose.position.z);
-        },
-        this->gatherReentrantGroup()
+        std::bind(&TacMapModule::triggerHeightTracking, this), this->gatherReentrantGroup()
     );
 }
 
@@ -149,4 +139,13 @@ bool TacMapModule::checkOffboardEngagement() {
     }
 
     return false;
+}
+
+void TacMapModule::triggerHeightTracking() {
+    auto maybe_odom = this->getENUOdometry();
+    if (!maybe_odom)
+        return;
+    auto last_enu_odom = maybe_odom.value();
+    this->sendLogDebug("Height from global odometry: {}", last_enu_odom.pose.pose.position.z);
+    this->signalHeightCompensation(last_enu_odom.pose.pose.position.z);
 }

@@ -11,7 +11,7 @@ Eigen::Vector3d UNSCModule::getOffset() const {
     return this->offset_;
 }
 
-std::optional<geometry_msgs::msg::Point> UNSCModule::getSetpointPosition() const {
+std::optional<geometry_msgs::msg::Point> UNSCModule::getPositionSetpoint() const {
     std::lock_guard lock(this->setpoint_position_mutex_);
     if (this->setpoint_position_ != NAN_point) {
         return this->setpoint_position_;

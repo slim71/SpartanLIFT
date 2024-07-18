@@ -30,10 +30,10 @@ class Datapad : public rclcpp::Node {
         void payloadExtraction();
         void payloadDropoff();
         void askForCargoPoint();
+        void teleopTaskClient(Flags);
         void storeCargoPoint(rclcpp::Client<comms::srv::CargoPoint>::SharedFuture);
         void processFleetLeaderCommandAck(const rclcpp_action::ClientGoalHandle<
                                           comms::action::TeleopData>::WrappedResult&);
-        void teleopTaskClient(Flags);
         void analyzeTeleopDataResponse(const rclcpp_action::ClientGoalHandle<
                                        comms::action::TeleopData>::SharedPtr&);
         void

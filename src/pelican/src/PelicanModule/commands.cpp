@@ -113,7 +113,8 @@ void Pelican::rogerWillCo(
     }
 }
 
-void Pelican::targetNotification( // Leader-side, receiver of FleetInfo requests
+// Leader-side; Receiver of FleetInfo requests - Target position
+void Pelican::targetNotification(
     const std::shared_ptr<comms::srv::FleetInfo::Request>,
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
 ) {
@@ -127,7 +128,8 @@ void Pelican::targetNotification( // Leader-side, receiver of FleetInfo requests
     }
 }
 
-void Pelican::rendezvousFleet() { // non-leader side; request for FleetInfo data
+// Non-leader side; FleetInfo request generator - Target position
+void Pelican::rendezvousFleet() {
     // The leader has already set the target position before calling this
     if (!this->isLeader()) {
         // Search for a second, then log and search again if needed
@@ -519,7 +521,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
 
             this->sendLogDebug("Waiting for the rendezvous to start...");
             std::unique_lock lock(this->rendez_tristate_mutex_);
-            this->rend_handled_cv_.wait(lock, [this] {
+            this->rendezvous_handled_cv_.wait(lock, [this] {
                 return this->rendezvous_handled_ != TriState::Floating;
             });
 
@@ -534,7 +536,9 @@ bool Pelican::executeRPCCommand(uint16_t command) {
     }
 }
 
-void Pelican::sendFormationPositions(std::vector<geometry_msgs::msg::Point> desired_positions) {
+// Function to publish FormationDesired messages
+void Pelican::sendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point> desired_positions
+) {
     auto msg = comms::msg::FormationDesired();
     for (unsigned int i = 0; i < desired_positions.size(); i++) {
         comms::msg::NetworkVertex v;

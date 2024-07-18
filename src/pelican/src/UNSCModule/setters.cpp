@@ -1,7 +1,7 @@
 #include "UNSCModule/unsc.hpp"
 
 /***************************** Setters *****************************/
-void UNSCModule::setSetpointPosition(geometry_msgs::msg::Point p) {
+void UNSCModule::setPositionSetpoint(geometry_msgs::msg::Point p) {
     std::lock_guard lock(this->setpoint_position_mutex_);
     this->sendLogDebug("Setting position setpoint to {}", p);
     this->setpoint_position_.x = p.x;
@@ -18,7 +18,7 @@ void UNSCModule::setHeightSetpoint(double h) {
     this->setpoint_position_.z = h;
 }
 
-void UNSCModule::setSetpointVelocity(geometry_msgs::msg::Point v) {
+void UNSCModule::setVelocitySetpoint(geometry_msgs::msg::Point v) {
     // Velocity is capped to keep copter's movement smoother and
     // to allow a better control of setpoint tracking
     auto v_capped = v;
@@ -44,4 +44,14 @@ void UNSCModule::setTargetPosition(geometry_msgs::msg::Point p) {
     std::lock_guard lock(this->target_position_mutex_);
     this->sendLogDebug("Setting target position to {}", p);
     this->target_position_ = p;
+}
+
+void UNSCModule::unsetNeighborGathered() {
+    std::lock_guard lock(this->formation_cv_mutex_);
+    this->neighbor_gathered_ = false;
+}
+
+void UNSCModule::setNeighborGathered() {
+    std::lock_guard lock(this->formation_cv_mutex_);
+    this->neighbor_gathered_ = true;
 }

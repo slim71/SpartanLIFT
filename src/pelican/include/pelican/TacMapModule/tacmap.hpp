@@ -50,6 +50,8 @@ class TacMapModule {
         void initSubscribers();
         void initPublishers();
 
+        void triggerHeightTracking();
+
         // Receiving data
         void storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr);
         void storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr);

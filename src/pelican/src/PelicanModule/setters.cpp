@@ -64,11 +64,11 @@ void Pelican::unsetLastCmdStatus() {
 void Pelican::setAndNotifyRendezvousHandled() {
     std::lock_guard rd_lock(this->rendez_tristate_mutex_);
     this->rendezvous_handled_ = TriState::True;
-    this->rend_handled_cv_.notify_all();
+    this->rendezvous_handled_cv_.notify_all();
 }
 
 void Pelican::unsetAndNotifyRendezvousHandled() {
     std::lock_guard rd_lock(this->rendez_tristate_mutex_);
     this->rendezvous_handled_ = TriState::False;
-    this->rend_handled_cv_.notify_all();
+    this->rendezvous_handled_cv_.notify_all();
 }
