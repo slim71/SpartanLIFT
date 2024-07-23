@@ -155,70 +155,6 @@ void UNSCModule::preFormationActions() {
     }
 }
 
-/*********************** Collision avoidance ***********************/
-geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
-    geometry_msgs::msg::Point agentPosition, double threshold
-) {
-    // Initialize the total adjustment vector to zero
-    double totalAdjustmentX = 0.0;
-    double totalAdjustmentY = 0.0;
-
-    // To reduce function calls
-    unsigned int my_id = this->gatherAgentID();
-    std::vector<unsigned int> ids = this->gatherCoptersIDs();
-
-    // Compute adjustment vector for each neighbor
-    for (auto& copter_id : ids) { // for each copter
-        // Exclude my own position
-        if (copter_id != my_id) {
-            geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
-
-            if (!geomPointHasNan(neigh_position)) { // Copter position valid
-                // Euclidean distance between the agent and the neighbor
-                double dx = neigh_position.x - agentPosition.x;
-                double dy = neigh_position.y - agentPosition.y;
-                double distance = std::hypot(dx, dy);
-
-                // Ensure distance is not zero to avoid division by zero
-                if (distance == 0) {
-                    this->sendLogWarning(
-                        "Distance to copter {} is zero, skipping adjustment", copter_id
-                    );
-                    continue;
-                }
-                this->sendLogDebug(
-                    "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
-                    neigh_position, distance, dx, dy
-                );
-
-                // Adjust only if the distance is less than the threshold
-                if (distance < threshold) {
-                    // Compute the adjustment direction (away from the neighbor)
-                    double adjustmentMagnitude = threshold - distance;
-                    double adjustmentDirectionX = dx / distance * adjustmentMagnitude;
-                    double adjustmentDirectionY = dy / distance * adjustmentMagnitude;
-                    this->sendLogDebug(
-                        "Collision avoidance adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
-                        adjustmentDirectionX, adjustmentDirectionY, adjustmentMagnitude
-                    );
-
-                    // Accumulate adjustments
-                    totalAdjustmentX -= adjustmentDirectionX;
-                    totalAdjustmentY -= adjustmentDirectionY;
-                }
-            } else {
-                this->sendLogDebug(
-                    "Cannot compute collision contribution: neighbor {} position contains NANs "
-                    "({})",
-                    copter_id, neigh_position
-                );
-            }
-        }
-    }
-    // Return the normalized total adjustment vector
-    return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
-}
-
 void UNSCModule::formationControl() {
     /************** Preparations ***************/
     // Make sure neighbors are determined
@@ -306,6 +242,70 @@ void UNSCModule::formationControl() {
 
     this->setPositionSetpoint(new_pos);
     this->setVelocitySetpoint(vel);
+}
+
+/*********************** Collision avoidance ***********************/
+geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
+    geometry_msgs::msg::Point agentPosition, double threshold
+) {
+    // Initialize the total adjustment vector to zero
+    double totalAdjustmentX = 0.0;
+    double totalAdjustmentY = 0.0;
+
+    // To reduce function calls
+    unsigned int my_id = this->gatherAgentID();
+    std::vector<unsigned int> ids = this->gatherCoptersIDs();
+
+    // Compute adjustment vector for each neighbor
+    for (auto& copter_id : ids) { // for each copter
+        // Exclude my own position
+        if (copter_id != my_id) {
+            geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
+
+            if (!geomPointHasNan(neigh_position)) { // Copter position valid
+                // Euclidean distance between the agent and the neighbor
+                double dx = neigh_position.x - agentPosition.x;
+                double dy = neigh_position.y - agentPosition.y;
+                double distance = std::hypot(dx, dy);
+
+                // Ensure distance is not zero to avoid division by zero
+                if (distance == 0) {
+                    this->sendLogWarning(
+                        "Distance to copter {} is zero, skipping adjustment", copter_id
+                    );
+                    continue;
+                }
+                this->sendLogDebug(
+                    "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
+                    neigh_position, distance, dx, dy
+                );
+
+                // Adjust only if the distance is less than the threshold
+                if (distance < threshold) {
+                    // Compute the adjustment direction (away from the neighbor)
+                    double adjustmentMagnitude = threshold - distance;
+                    double adjustmentDirectionX = dx / distance * adjustmentMagnitude;
+                    double adjustmentDirectionY = dy / distance * adjustmentMagnitude;
+                    this->sendLogDebug(
+                        "Collision avoidance adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
+                        adjustmentDirectionX, adjustmentDirectionY, adjustmentMagnitude
+                    );
+
+                    // Accumulate adjustments
+                    totalAdjustmentX -= adjustmentDirectionX;
+                    totalAdjustmentY -= adjustmentDirectionY;
+                }
+            } else {
+                this->sendLogDebug(
+                    "Cannot compute collision contribution: neighbor {} position contains NANs "
+                    "({})",
+                    copter_id, neigh_position
+                );
+            }
+        }
+    }
+    // Return the normalized total adjustment vector
+    return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
 }
 
 /************************** Neighborhood ***************************/
