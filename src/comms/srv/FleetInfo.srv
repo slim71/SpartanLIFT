@@ -4,3 +4,4 @@
 bool rendezvous
 bool formation
 geometry_msgs/Point target
+uint64 agent_id

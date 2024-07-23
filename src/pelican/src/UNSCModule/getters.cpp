@@ -42,3 +42,21 @@ std::optional<geometry_msgs::msg::Point> UNSCModule::getTargetPosition() const {
 
     return std::nullopt;
 }
+
+std::vector<unsigned int> UNSCModule::getNeighborsIDs() const {
+    std::lock_guard lock(this->neighbors_mutex_);
+    return this->neighbors_;
+}
+
+geometry_msgs::msg::Point UNSCModule::getNeighborDesPos(unsigned int agent) {
+    try {
+        std::lock_guard lock(this->neighbors_despos_mutex_);
+        return this->neigh_des_positions_.at(agent);
+
+    } catch (const std::out_of_range&) {
+        // If not already present, collect it and THEN return it
+        this->collectNeighDesPositions(agent);
+        std::lock_guard lock(this->neighbors_despos_mutex_);
+        return this->neigh_des_positions_.at(agent);
+    }
+}

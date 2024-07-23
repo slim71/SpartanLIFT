@@ -198,27 +198,17 @@ void Cargo::followReference() {
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
-    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogDebug("SetPoseEntity server available");
-
-        auto request = std::make_shared<ros_gz_interfaces::srv::SetEntityPose::Request>(req);
-        // Send request
-        auto async_request_result = this->set_pose_client_->async_send_request(
-            request, std::bind(&Cargo::parseSetEntityPoseResponse, this, std::placeholders::_1)
-        );
-
-        auto future_status =
-            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
-            );
-        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-            this->sendLogWarning("Failed to receive confirmation from the SetEntityPose server!");
-            this->set_pose_client_->prune_pending_requests();
-            return;
-        }
-    } else {
+    if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogWarning("The server seems to be down. Please try again.");
         return;
     }
+    this->sendLogDebug("SetPoseEntity server available");
+
+    // Send request
+    auto request = std::make_shared<ros_gz_interfaces::srv::SetEntityPose::Request>(req);
+    auto async_request_result = this->set_pose_client_->async_send_request(
+        request, std::bind(&Cargo::parseSetEntityPoseResponse, this, std::placeholders::_1)
+    );
 }
 
 void Cargo::parseSetEntityPoseResponse(
@@ -228,13 +218,14 @@ void Cargo::parseSetEntityPoseResponse(
     this->sendLogDebug("Getting response...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
 
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-        if (response->success)
-            this->sendLogInfo("Pose changed successfully");
-        else
-            this->sendLogWarning("Error while setting cargo pose");
-    } else {
+    if (status != std::future_status::ready) {
         this->sendLogDebug("Service not ready yet...");
+        return;
     }
+
+    auto response = future.get();
+    if (response->success)
+        this->sendLogInfo("Pose changed successfully");
+    else
+        this->sendLogWarning("Error while setting cargo pose");
 }

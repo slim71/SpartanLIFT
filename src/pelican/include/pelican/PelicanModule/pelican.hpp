@@ -20,7 +20,8 @@ class Pelican : public rclcpp::Node {
         static std::shared_ptr<Pelican> getInstance();
 
         void cargoAttachment();
-        void sendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point>);
+        void sendDesiredFormationPositions(std::unordered_map<
+                                           unsigned int, geometry_msgs::msg::Point>);
         void askDesPosToNeighbor(unsigned int);
 
         // Getters
@@ -29,7 +30,6 @@ class Pelican : public rclcpp::Node {
         double getMass() const;
         possible_roles getRole() const;
         double getROI() const;
-        double getCollisionRadius() const;
         unsigned int getCurrentTerm() const;
         rclcpp::Time getTime() const;
         unsigned int getNetworkSize() const;
@@ -118,7 +118,6 @@ class Pelican : public rclcpp::Node {
         void storeAttendance(comms::msg::NetworkVertex::SharedPtr);
         void storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr);
         void storeDesiredPosition(const comms::msg::FormationDesired);
-        void resizeCopterPositionsVector(unsigned int, unsigned int = UINT_MAX);
         void sharePosition(geometry_msgs::msg::Point);
         void recordCopterPosition(comms::msg::NetworkVertex::SharedPtr);
 
@@ -169,7 +168,7 @@ class Pelican : public rclcpp::Node {
         void checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture);
         void
         shareDesiredPosition(const std::shared_ptr<comms::srv::FleetInfo::Request>, std::shared_ptr<comms::srv::FleetInfo::Response>);
-        void storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
+        void storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
 
     private: // Attributes
         LoggerModule logger_;
@@ -190,9 +189,8 @@ class Pelican : public rclcpp::Node {
         unsigned int current_term_ {0};
         double mass_ {0.0};
         double roi_;
-        double collision_radius_;
         std::string model_;
-        std::vector<geometry_msgs::msg::Point> copters_positions_;
+        std::unordered_map<unsigned int, geometry_msgs::msg::Point> copters_positions_;
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         std::vector<comms::msg::NetworkVertex> discovery_vector_;
         std::vector<comms::msg::Command> dispatch_vector_;

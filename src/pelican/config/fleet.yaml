@@ -1,0 +1,29 @@
+/**:
+  ros__parameters:
+    roi: 2.0
+    collision_radius: 1.0
+
+pelican_1:
+  ros__parameters:
+    model: "PX4-Autopilot/Tools/simulation/gz/models/x500/model.sdf"
+    id: 1
+
+pelican_2:
+  ros__parameters:
+    model: "PX4-Autopilot/Tools/simulation/gz/models/X3/model.sdf"
+    id: 2
+
+pelican_3:
+  ros__parameters:
+    model: "PX4-Autopilot/Tools/simulation/gz/models/X3/model.sdf"
+    id: 3
+
+pelican_4:
+  ros__parameters:
+    model: "PX4-Autopilot/Tools/simulation/gz/models/emesent_hovermap/model.sdf"
+    id: 4
+
+pelican_5:
+  ros__parameters:
+    model: "PX4-Autopilot/Tools/simulation/gz/models/typhoon_h480/model.sdf"
+    id: 5

@@ -40,16 +40,16 @@ def generate_launch_description():
     )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
-        config_params = yaml.safe_load(file)["simulation"]["cargo"]
-        file.seek(0)  # Reset file pointer to the beginning of the file
-        agents_section = yaml.safe_load(file)["simulation"]["agents"]
+        config_params = yaml.safe_load(file)["simulation"]
+    world_section = config_params["world"]
+    cargo_section = config_params["cargo"]
 
     # Extract details abouth of the cargo
-    cargo_name = config_params["name"]
-    cargo_x = config_params["x"]
-    cargo_y = config_params["y"]
-    cargo_z = config_params["z"]
-    world_name = agents_section["world"]
+    cargo_name = cargo_section["name"]
+    cargo_x = cargo_section["x"]
+    cargo_y = cargo_section["y"]
+    cargo_z = cargo_section["z"]
+    world_name = world_section["name"]
     logger.print(
         f"Model {cargo_name} will be spawned at "
         f"position ({cargo_x},{cargo_y},{cargo_z}) "

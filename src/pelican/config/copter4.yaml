@@ -1,6 +1,0 @@
-pelican_4:
-  ros__parameters:
-    model: "PX4-Autopilot/Tools/simulation/gz/models/emesent_hovermap/model.sdf"
-    id: 4
-    roi: 2.0
-    collision_radius: 1.0

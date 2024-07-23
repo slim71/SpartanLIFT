@@ -63,10 +63,6 @@ double Pelican::getROI() const {
     return this->roi_;
 }
 
-double Pelican::getCollisionRadius() const {
-    return this->collision_radius_;
-}
-
 unsigned int Pelican::getNetworkSize() const {
     std::lock_guard lock(this->discovery_mutex_);
     int s = this->discovery_vector_.size() + 1;
@@ -74,29 +70,22 @@ unsigned int Pelican::getNetworkSize() const {
 }
 
 geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
-    // Each node does not count itself in this, so manual +1 needed
-    this->discovery_mutex_.lock();
-    auto disc_len = this->discovery_vector_.size() + 1;
-    this->discovery_mutex_.unlock();
-
-    std::lock_guard lock(this->positions_mutex_);
-    auto copt_len = this->copters_positions_.size();
-
-    // At least one needed vector is too short
-    if ((disc_len < id) || (copt_len < id)) {
+    try {
+        return this->copters_positions_.at(id);
+    } catch (const std::out_of_range&) {
+        // ID not known
         return NAN_point;
     }
-
-    return this->copters_positions_[id - 1];
 }
 
 std::vector<unsigned int> Pelican::getCoptersIDs() const {
     std::vector<unsigned int> ids;
     std::lock_guard lock(this->discovery_mutex_);
-    for (auto elem : this->discovery_vector_) {
+    for (auto& elem : this->discovery_vector_) {
         this->sendLogDebug("Accruing ID {}", elem.agent_id);
         ids.push_back(elem.agent_id);
     }
+    ids.push_back(this->getID()); // Ensure my ID is considered
 
     return ids;
 }

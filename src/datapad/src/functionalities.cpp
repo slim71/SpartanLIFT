@@ -56,18 +56,38 @@ void Datapad::landingPage() {
                     this->contactLeader();
                     break;
                 case 2:
+                    if (!this->leader_present_) {
+                        this->sendLogWarning("No leader has been detected in the fleet! Please "
+                                             "make sure it is present");
+                        break;
+                    }
                     this->sendLogDebug("Initiating 'unitSortie' functionality");
                     this->unitSortie();
                     break;
                 case 3:
+                    if (!this->leader_present_) {
+                        this->sendLogWarning("No leader has been detected in the fleet! Please "
+                                             "make sure it is present");
+                        break;
+                    }
                     this->sendLogDebug("Initiating 'payloadExtraction' functionality");
                     this->payloadExtraction();
                     break;
                 case 4:
+                    if (!this->leader_present_) {
+                        this->sendLogWarning("No leader has been detected in the fleet! Please "
+                                             "make sure it is present");
+                        break;
+                    }
                     this->sendLogDebug("Initiating 'payloadDropoff' functionality");
                     this->payloadDropoff();
                     break;
                 case 5:
+                    if (!this->leader_present_) {
+                        this->sendLogWarning("No leader has been detected in the fleet! Please "
+                                             "make sure it is present");
+                        break;
+                    }
                     this->sendLogDebug("Initiating 'backToLZ' functionality");
                     this->backToLZ();
                     break;
@@ -175,14 +195,6 @@ void Datapad::processFleetLeaderCommandAck(
 }
 
 void Datapad::unitSortie() {
-    // Check if the fleet has a leader, since everything goes through it
-    if (!this->leader_present_) {
-        this->sendLogWarning(
-            "No leader has been detected in the fleet! Please make sure it is present"
-        );
-        return;
-    }
-
     // Check that the fleet is indeed flying
     if (this->fleet_fying_) {
         this->sendLogWarning("Units are already deployed!");
@@ -193,13 +205,6 @@ void Datapad::unitSortie() {
 }
 
 void Datapad::backToLZ() {
-    // Check if the fleet has a leader, since everything goes through it
-    if (!this->leader_present_) {
-        this->sendLogWarning(
-            "No leader has been detected in the fleet! Please make sure it is present"
-        );
-        return;
-    }
     // Check that the fleet is indeed flying
     if (!this->fleet_fying_) {
         this->sendLogWarning("Units are not deployed!");
@@ -210,13 +215,6 @@ void Datapad::backToLZ() {
 }
 
 void Datapad::payloadExtraction() {
-    // Check if the fleet has a leader, since everything goes through it
-    if (!this->leader_present_) { // TODO: move this check out of each function
-        this->sendLogWarning(
-            "No leader has been detected in the fleet! Please make sure it is present"
-        );
-        return;
-    }
     // Check that the fleet is not already busy
     if (this->transport_wip_) {
         this->sendLogWarning("Payload is already engaged!");
@@ -227,13 +225,6 @@ void Datapad::payloadExtraction() {
 }
 
 void Datapad::payloadDropoff() {
-    // Check if the fleet has a leader, since everything goes through it
-    if (!this->leader_present_) {
-        this->sendLogWarning(
-            "No leader has been detected in the fleet! Please make sure it is present"
-        );
-        return;
-    }
     // Check that the payload is engaged
     if (!this->transport_wip_) {
         this->sendLogWarning("The fleet is not carrying anything!");
@@ -348,27 +339,16 @@ void Datapad::askForCargoPoint() {
         total_search_time += constants::SEARCH_LEADER_STEP_SECS;
     };
 
-    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogDebug("CargoPoint server available");
-
-        auto request = std::make_shared<comms::srv::CargoPoint::Request>();
-        // Send request
-        auto async_request_result = this->cargopoint_client_->async_send_request(
-            request, std::bind(&Datapad::storeCargoPoint, this, std::placeholders::_1)
-        );
-
-        auto future_status =
-            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
-            );
-        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-            this->sendLogWarning("Failed to receive a target position from the leader!");
-            this->cargopoint_client_->prune_pending_requests();
-            this->unsetAndNotifyCargoHandled();
-            return;
-        }
-    } else {
+    if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogWarning("The server seems to be down. Please try again.");
         this->unsetAndNotifyCargoHandled();
         return;
     }
+    this->sendLogDebug("CargoPoint server available");
+
+    // Send request
+    auto request = std::make_shared<comms::srv::CargoPoint::Request>();
+    auto async_request_result = this->cargopoint_client_->async_send_request(
+        request, std::bind(&Datapad::storeCargoPoint, this, std::placeholders::_1)
+    );
 }

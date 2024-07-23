@@ -1,7 +1,6 @@
 #include "PelicanModule/pelican.hpp"
 
 /*************** Service- and action server- related ***************/
-// TODO: make this work as a unique handling of whatever command, rendezvous and formation included
 // This is only executed by the leader, receiver of TeleopData goals, to handle an accepted goal
 void Pelican::rogerWillCo(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>> goal_handle
@@ -147,50 +146,40 @@ void Pelican::rendezvousFleet() {
             total_search_time += constants::SEARCH_LEADER_STEP_SECS;
         };
 
-        if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-            this->sendLogDebug("Rendezvous server available");
-
-            auto request = std::make_shared<comms::srv::FleetInfo::Request>();
-            // Send request
-            auto async_request_result = this->fleetinfo_client_->async_send_request(
-                request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
-            );
-
-            auto future_status = async_request_result.wait_for(
-                std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
-            );
-            if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-                this->sendLogWarning("Failed to receive a target position from the leader!");
-                this->fleetinfo_client_->prune_pending_requests();
-                this->unsetAndNotifyRendezvousHandled();
-                return;
-            }
-        } else {
+        if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
             this->sendLogWarning("The server seems to be down. Please try again.");
             this->unsetAndNotifyRendezvousHandled();
             return;
         }
+        this->sendLogDebug("Rendezvous server available");
+
+        // Send request
+        auto request = std::make_shared<comms::srv::FleetInfo::Request>();
+        auto async_request_result = this->fleetinfo_client_->async_send_request(
+            request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
+        );
     }
 
     this->setAndNotifyRendezvousHandled();
     this->initiateOffboardMode();
 }
 
-// This is only executed by non-leaders; response handling for FleetInfo data
+// This is only executed by non-leaders; FleetInfo response handling - Target position
 void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
 
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-        this->sendLogInfo("Target received: {}", response->target);
-
-        this->commenceSetActualTargetHeight(response->target.z);
-        this->initiateSetTargetPosition(response->target);
-    } else {
+    if (status != std::future_status::ready) {
         this->sendLogDebug("Service not ready yet...");
+        return;
     }
+
+    auto response = future.get();
+    this->sendLogInfo("Target received: {}", response->target);
+
+    this->commenceSetActualTargetHeight(response->target.z);
+    this->initiateSetTargetPosition(response->target);
 }
 
 /************************* Command-related *************************/
@@ -270,7 +259,6 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
             "Received command with index {} greater than the number of stored RPCs (expected:{})",
             msg.index, expected_index
         );
-        // TODO request Logs if follower
     };
 
     return true;
@@ -537,12 +525,15 @@ bool Pelican::executeRPCCommand(uint16_t command) {
 }
 
 // Function to publish FormationDesired messages
-void Pelican::sendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point> desired_positions
+void Pelican::sendDesiredFormationPositions(
+    std::unordered_map<unsigned int, geometry_msgs::msg::Point> desired_positions
 ) {
+    std::vector<unsigned int> ids = this->getCoptersIDs();
+
     auto msg = comms::msg::FormationDesired();
-    for (unsigned int i = 0; i < desired_positions.size(); i++) {
+    for (auto& id : ids) {
         comms::msg::NetworkVertex v;
-        v.set__agent_id(i + 1).set__position(desired_positions[i]);
+        v.set__agent_id(id).set__position(desired_positions.at(id));
         msg.des_positions.push_back(v);
     }
 

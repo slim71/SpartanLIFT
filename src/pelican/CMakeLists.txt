@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(pelican
-        VERSION 0.10.0
+        VERSION 0.10.1
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
@@ -9,10 +9,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 17) # Minimum
 
-message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+if(DEBUG_MODE)
+  message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
+  message("Compiling with debug symbols!")
+  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif()
 
 if(PEDANTIC_MODE)
@@ -20,10 +21,8 @@ if(PEDANTIC_MODE)
   add_compile_options(-Werror)
 endif()
 
-if(DEBUG_MODE)
-  message("Compiling with debug symbols!")
-  set(CMAKE_BUILD_TYPE Debug)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # Find dependencies

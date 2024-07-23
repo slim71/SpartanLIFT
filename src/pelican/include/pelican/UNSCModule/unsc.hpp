@@ -36,6 +36,8 @@ class UNSCModule {
         std::optional<geometry_msgs::msg::Point> getSetpointVelocity() const;
         double getActualTargetHeight() const;
         std::optional<geometry_msgs::msg::Point> getTargetPosition() const;
+        std::vector<unsigned int> getNeighborsIDs() const;
+        geometry_msgs::msg::Point getNeighborDesPos(unsigned int);
 
         // Setters
         void setPositionSetpoint(geometry_msgs::msg::Point);
@@ -58,6 +60,7 @@ class UNSCModule {
         void rendezvousClosure();
         void formationControl();
         void findNeighbors();
+        void collectNeighDesPositions(unsigned int);
         void assignFormationPositions();
         void preFormationActions();
 
@@ -70,7 +73,6 @@ class UNSCModule {
         rclcpp::Time gatherTime() const;
         unsigned int gatherAgentID() const;
         double gatherROI() const;
-        double gatherCollisionRadius() const;
         std::optional<px4_msgs::msg::VehicleStatus> gatherStatus() const;
         unsigned int gatherNetworkSize() const;
         geometry_msgs::msg::Point gatherCopterPosition(unsigned int) const;
@@ -98,7 +100,8 @@ class UNSCModule {
         bool signalCheckOffboardEngagement() const;
         void signalSetReferenceHeight(double);
         void signalCargoAttachment();
-        void signalSendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point>);
+        void signalSendDesiredFormationPositions(std::unordered_map<
+                                                 unsigned int, geometry_msgs::msg::Point>);
         void signalAskDesPosToNeighbor(unsigned int);
 
         // Flag checks
@@ -125,8 +128,9 @@ class UNSCModule {
         geometry_msgs::msg::Point setpoint_position_ = NAN_point;
         // referring to temporary setpoint along a trajectory
         geometry_msgs::msg::Point setpoint_velocity_;
-        unsigned int neighbors_[2] {UINT_MAX, UINT_MAX};
+        std::vector<unsigned int> neighbors_;
         std::condition_variable formation_cv_;
+        std::unordered_map<unsigned int, geometry_msgs::msg::Point> neigh_des_positions_;
 
         mutable std::mutex offset_mutex_;            // to be used with offset_ and yaw_
         mutable std::mutex running_mutex_;           // to be used with running_
@@ -135,6 +139,8 @@ class UNSCModule {
         mutable std::mutex height_mutex_;            // Used to access actual_target_height_
         mutable std::mutex target_position_mutex_;   // Used to access target_position_
         mutable std::mutex formation_cv_mutex_;      // Used to access formation_cv_
+        mutable std::mutex neighbors_mutex_;         // Used to access neighbors_
+        mutable std::mutex neighbors_despos_mutex_;  // Used to access neigh_des_positions_
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
@@ -144,11 +150,11 @@ class UNSCModule {
 
         rclcpp::TimerBase::SharedPtr rendezvous_timer_;
         std::chrono::milliseconds rendezvous_period_ {
-            std::chrono::milliseconds(constants::RENDEZVOUS_CONSENSUS_PERIOD_MILLIS)};
+            std::chrono::milliseconds(constants::RENDEZVOUS_PERIOD_MILLIS)};
 
         rclcpp::TimerBase::SharedPtr formation_timer_;
         std::chrono::milliseconds formation_period_ {
-            std::chrono::milliseconds(constants::FORMATION_CONSENSUS_PERIOD_MILLIS)};
+            std::chrono::milliseconds(constants::FORMATION_PERIOD_MILLIS)};
 };
 
 #include "unsc_template.tpp"

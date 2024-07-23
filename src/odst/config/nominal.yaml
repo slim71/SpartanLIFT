@@ -25,7 +25,8 @@ simulation:
       - 6.5
       - -6.5
       - -0.5
-    world: 'tugbot_depot'
+  world:
+    name: 'tugbot_depot'
   cargo:
     name: box_w_handles
     x: -6

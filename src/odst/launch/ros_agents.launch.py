@@ -33,9 +33,12 @@ def generate_launch_description():
         if arg.startswith("loglevel:="):
             logger.set_level(str(arg.split(":=")[1]))
 
-    # Get the filepath to your config file
+    # Get the filepath to your config files
     config_file = os.path.join(
         get_package_share_directory(launch_pkg), "config", "fleet.yaml"
+    )
+    nodes_config_file = os.path.join(
+        get_package_share_directory(main_pkg), "config", "fleet.yaml"
     )
     # Load the parameters specific to your ComposableNode
     with open(config_file, "r", encoding="utf8") as file:
@@ -61,17 +64,17 @@ def generate_launch_description():
 
     # Actually populate launch actions with nodes
     logger.print(f"Starting {agent_num} agents...")
-    for file_index, config_file in enumerate(files):
+    for index in range(agent_num):
         pelican_node = Node(
             package="pelican",
             executable="pelican",
-            name=f"pelican_{file_index+1}",
+            name=f"pelican_{index+1}",
             # Using `ros_arguments` is equivalent to using `arguments` with
             # a prepended '--ros-args' item.
             ros_arguments=[
                 "--params-file",
                 PathJoinSubstitution(
-                    [config_pkg_share, config_middleware, config_file]
+                    [config_pkg_share, config_middleware, nodes_config_file]
                 ),
                 "--log-level",
                 log_level,

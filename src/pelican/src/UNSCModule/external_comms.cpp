@@ -90,14 +90,6 @@ double UNSCModule::gatherROI() const {
     return this->node_->getROI();
 }
 
-double UNSCModule::gatherCollisionRadius() const {
-    if (!this->node_) {
-        throw MissingExternModule();
-    }
-
-    return this->node_->getCollisionRadius();
-}
-
 geometry_msgs::msg::Point UNSCModule::gatherDesiredPosition() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -194,7 +186,9 @@ void UNSCModule::signalCargoAttachment() {
     this->node_->cargoAttachment();
 }
 
-void UNSCModule::signalSendDesiredFormationPositions(std::vector<geometry_msgs::msg::Point> pos) {
+void UNSCModule::signalSendDesiredFormationPositions(
+    std::unordered_map<unsigned int, geometry_msgs::msg::Point> pos
+) {
     if (!this->node_) {
         throw MissingExternModule();
     }

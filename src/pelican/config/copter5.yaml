@@ -1,6 +1,0 @@
-pelican_5:
-  ros__parameters:
-    model: "PX4-Autopilot/Tools/simulation/gz/models/typhoon_h480/model.sdf"
-    id: 5
-    roi: 2.0
-    collision_radius: 1.0

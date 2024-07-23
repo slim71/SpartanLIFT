@@ -36,14 +36,15 @@ def generate_launch_description():
     config_file = os.path.join(
         get_package_share_directory(launch_pkg), config_middleware, config_yaml
     )
-    # Load the parameters specific to your ComposableNode
+    # Load the parameters specific to the node
     with open(config_file, "r", encoding="utf8") as file:
-        config_params = yaml.safe_load(file)["simulation"]["agents"]
-        file.seek(0)
-        cargo_name = yaml.safe_load(file)["simulation"]["cargo"]["name"]
+        config_params = yaml.safe_load(file)["simulation"]
+    agents_section = config_params["agents"]
+    cargo_name = config_params["cargo"]["name"]
+    world_section = config_params["world"]
 
     # Extract the number of agents
-    agent_num = config_params["fleet_size"]
+    agent_num = agents_section["fleet_size"]
 
     # Script used when starting Gazebo
     additional_source_file = os.path.join(
@@ -53,7 +54,7 @@ def generate_launch_description():
     source_local_wos = "source install/setup.bash"
 
     # World to use in Gazebo
-    world_name = config_params["world"]
+    world_name = world_section["name"]
     logger.print(f"Using world {world_name}")
 
     # List of topics to bridge from Gazebo to ROS2
@@ -93,10 +94,10 @@ def generate_launch_description():
         # Prepare each PX4 instance
         simulation_headstart = 10
         for count in range(agent_num):
-            code = config_params["codes"][count]
-            x = config_params["xs"][count]
-            y = config_params["ys"][count]
-            model = config_params["models"][count]
+            code = agents_section["codes"][count]
+            x = agents_section["xs"][count]
+            y = agents_section["ys"][count]
+            model = agents_section["models"][count]
 
             # Add the command to start the PX4 simulation for the model
             px4_cmd = (

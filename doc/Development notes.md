@@ -56,7 +56,7 @@ To help identify ROS2 communication channels used in the code, here's a quick re
           - server function: `Pelican::askDesPosToNeighbor`
         - Client node: **Pelican**
           - request function: `Pelican::shareDesiredPosition`
-          - result handler function: `Pelican::storeNeighborPosition`
+          - result handler function: `Pelican::storeNeighborDesPos`
    2. **CargoPoint**
       - Server node: **Cargo**
         - server function: `Cargo::shareCargoPosition`
@@ -179,7 +179,8 @@ handle SIGINT noprint nostop pass
 thread apply all bt   |   t a a bt
 ros2 run datapad datapad --ros-args --log-level debug
 ros2 run pelican pelican --ros-args --params-file src/pelican/config/copter_test.yaml --log-level debug
-ros2 run pelican pelican --ros-args -p model:="/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/x500/model.sdf" -p id:=1 -p roi:=2.0 -p collision_radius:=2.0 --log-level debug
+ros2 run pelican pelican --ros-args -p model:="/home/slim71/Documents/git/SpartanLIFT/src/pelican/models/x500/model.sdf" -p id:=1 -p roi:=2.0 --log-level debug
+ros2 run pelican pelican --ros-args --remap __node:=pelican_2 --params-file src/pelican/config/fleet.yaml --log-level debug
 ros2 run --prefix 'gdbtui -ex run --args' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 run --prefix 'valgrind --tool=callgrind' pelican pelican --ros-args --params-file src/pelican/config/copter1.yaml
 ros2 launch odst ros_agents.launch.py loglevel:=debug

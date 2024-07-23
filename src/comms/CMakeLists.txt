@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(comms
-        VERSION 0.3.1
+        VERSION 0.3.4
         DESCRIPTION "Package for custom ROS2 messages and services")
 
 #To generate compile_commands.json

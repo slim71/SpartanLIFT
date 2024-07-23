@@ -12,16 +12,14 @@ Pelican::Pelican()
       tac_core_(this),
       unsc_core_(this) {
     // Declare parameters
-    declare_parameter("model", "");             // default to ""
-    declare_parameter("id", 0);                 // default to 0
-    declare_parameter("roi", 2.0);              // default to 2.0
-    declare_parameter("collision_radius", 1.0); // default to 1.0
+    declare_parameter("model", ""); // default to ""
+    declare_parameter("id", 0);     // default to 0
+    declare_parameter("roi", 2.0);  // default to 2.0
 
     // Get parameters values and store them
     get_parameter("model", this->model_);
     get_parameter("id", this->id_);
     get_parameter("roi", this->roi_);
-    get_parameter("collision_radius", this->collision_radius_);
 
     // Setting up callback groups
     this->reentrant_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
@@ -85,6 +83,7 @@ Pelican::Pelican()
 
     // Log parameters values
     this->sendLogInfo("Loaded model {} | Agent mass: {}", this->getModel(), this->getMass());
+    this->sendLogInfo("Parameters: roi: {}", this->roi_);
 
     this->ready_ = true;
     this->sendLogInfo("Node ready!");
@@ -165,17 +164,6 @@ void Pelican::storeAttendance(comms::msg::NetworkVertex::SharedPtr msg) {
     }
 
     this->sendLogDebug("Setting discovery timer");
-    // (Re)set a timer which logs the inferred network size
-    this->netsize_timer_ = this->create_wall_timer(
-        this->netsize_timeout_,
-        [this]() {
-            cancelTimer(this->netsize_timer_); // Execute this only once
-            auto net_size = this->getNetworkSize();
-            this->sendLogDebug("Discovered network has size {}", net_size);
-            this->resizeCopterPositionsVector(net_size);
-        },
-        this->getTimerExclusiveGroup()
-    );
 }
 
 void Pelican::storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr msg) {
@@ -194,7 +182,7 @@ void Pelican::sharePosition(geometry_msgs::msg::Point pos) {
     this->pub_to_locator_->publish(msg);
 }
 
-// Request handler of FleetInfo requests
+// FleetInfo request handler - Neighbor desired position
 void Pelican::shareDesiredPosition(
     const std::shared_ptr<comms::srv::FleetInfo::Request>,
     std::shared_ptr<comms::srv::FleetInfo::Response> response
@@ -202,42 +190,13 @@ void Pelican::shareDesiredPosition(
     auto my_pos = this->getDesiredPosition();
     response->formation = true;
     response->target = my_pos;
+    response->agent_id = this->getID();
 }
 
 void Pelican::recordCopterPosition(comms::msg::NetworkVertex::SharedPtr msg) {
     std::lock_guard lock(this->positions_mutex_);
     this->sendLogDebug("Copter {} shared position: {}", msg->agent_id, msg->position);
-    if (!this->copters_positions_.empty()) {
-        this->copters_positions_[msg->agent_id - 1] = msg->position;
-    } else {
-        this->sendLogDebug("Ignoring because I don't know the fleet size, yet");
-    }
-}
-
-void Pelican::resizeCopterPositionsVector(unsigned int new_size, unsigned int lost_id) {
-    this->sendLogDebug("Resizing copter_positions_ vector to size {}", new_size);
-    std::lock_guard lock(this->positions_mutex_);
-
-    int size_diff = new_size - this->copters_positions_.size();
-    // Incrementing vector
-    if (size_diff > 0) {
-        this->sendLogDebug("Increasing it, adding {} elements", size_diff);
-        for (int i = 0; i < size_diff; i++) {
-            this->copters_positions_.push_back(NAN_point);
-        }
-    } else {
-        // Record a NAN position, which will be ignored
-        this->sendLogWarning("Agent with ID {} lost connection to the network", lost_id);
-        if (lost_id == UINT_MAX) {
-            this->sendLogWarning("Invalid 'downsizing'");
-            return;
-        }
-        if (lost_id < this->copters_positions_.size()) {
-            this->copters_positions_[lost_id] = NAN_point;
-        } else {
-            this->sendLogWarning("Trying to lose an ID greater than vector size");
-        }
-    }
+    this->copters_positions_[msg->agent_id] = msg->position;
 }
 
 rclcpp_action::GoalResponse Pelican::
@@ -296,26 +255,16 @@ void Pelican::cargoAttachment() {
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
-    if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogDebug("CargoLinkage server available");
-
-        // Send request
-        auto async_request_result = this->cargo_attachment_client_->async_send_request(
-            request, std::bind(&Pelican::checkCargoAttachment, this, std::placeholders::_1)
-        );
-
-        auto future_status =
-            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
-            );
-        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-            this->sendLogWarning("Failed to receive confirmation from the CargoLinkage server!");
-            this->cargo_attachment_client_->prune_pending_requests();
-            return;
-        }
-    } else {
+    if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
         this->sendLogWarning("The server seems to be down. Please try again.");
         return;
     }
+    this->sendLogDebug("CargoLinkage server available");
+
+    // Send request
+    auto async_request_result = this->cargo_attachment_client_->async_send_request(
+        request, std::bind(&Pelican::checkCargoAttachment, this, std::placeholders::_1)
+    );
 }
 
 // CargoLinkage response handler
@@ -324,15 +273,16 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
     this->sendLogDebug("Getting response...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
 
-    if (status == std::future_status::ready) {
-        auto response = future.get();
-        if (response->done)
-            this->sendLogDebug("Cargo attachment completed");
-        else
-            this->sendLogWarning("Issues with cargo attachment!");
-    } else {
+    if (status != std::future_status::ready) {
         this->sendLogDebug("Service not ready yet...");
+        return;
     }
+
+    auto response = future.get();
+    if (response->done)
+        this->sendLogDebug("Cargo attachment completed");
+    else
+        this->sendLogWarning("Issues with cargo attachment!");
 }
 
 // Receiver of FormationDesired messages
@@ -381,16 +331,15 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
     }
 
     this->sendLogDebug("Neighbor's {} des_pos server available", id);
-    // Create request
-    auto request = std::make_shared<comms::srv::FleetInfo::Request>();
     // Send request
+    auto request = std::make_shared<comms::srv::FleetInfo::Request>();
     auto async_request_result = this->des_pos_client_->async_send_request(
-        request, std::bind(&Pelican::storeNeighborPosition, this, std::placeholders::_1)
+        request, std::bind(&Pelican::storeNeighborDesPos, this, std::placeholders::_1)
     );
 }
 
-// Resutl handler of FleetInfo data - Neighbor desired position
-void Pelican::storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
+// Result handler of FleetInfo data - Neighbor desired position
+void Pelican::storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting neighbor position...");
     auto status = future.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
@@ -399,7 +348,10 @@ void Pelican::storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::Share
         this->sendLogDebug("Neighbor des_pos service ready...");
         auto response = future.get();
         if (response) {
-            this->sendLogDebug("Received good neighbor position {}", response->target);
+            this->sendLogDebug(
+                "Received from neighbor {} desired position {}", response->agent_id,
+                response->target
+            );
             this->setNeighborPosition(response->target);
         } else {
             this->sendLogWarning("Received an empty response from the neighbor's service");
@@ -408,5 +360,5 @@ void Pelican::storeNeighborPosition(rclcpp::Client<comms::srv::FleetInfo>::Share
         this->sendLogDebug("Neighbor des_pos service not ready yet...");
     }
 
-    this->initiateUnblockFormation(); // CHECK: how to avoid deadlock if response not received?
+    this->initiateUnblockFormation();
 }
