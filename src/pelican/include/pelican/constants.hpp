@@ -12,7 +12,7 @@ namespace constants {
     static constexpr unsigned int PRECHECKS_TIME_SECS = 10;
     static constexpr unsigned int MAX_SEARCH_TIME_SECS = 10;
     static constexpr unsigned int COMPENSATION_GAP_SECS = 1;
-    static constexpr unsigned int MAX_WAITING_TIME_SECS = 1;
+    static constexpr unsigned int MAX_WAITING_TIME_SECS = 2;
     static constexpr unsigned int SEARCH_LEADER_STEP_SECS = 1;
     static constexpr unsigned int SEARCH_SERVER_STEP_SECS = 1;
     static constexpr unsigned int SERVICE_FUTURE_WAIT_SECS = 1;

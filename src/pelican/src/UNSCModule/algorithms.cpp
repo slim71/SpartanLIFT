@@ -452,7 +452,7 @@ void UNSCModule::collectNeighDesPositions(unsigned int neighbor) {
 
     // Wait for the answer to arrive
     std::unique_lock lock(this->formation_cv_mutex_);
-    bool cv_timed_out = this->formation_cv_.wait_for(
+    bool cv_successful = this->formation_cv_.wait_for(
         lock, std::chrono::seconds(constants::MAX_WAITING_TIME_SECS),
         [this] {
             return this->neighbor_gathered_;
@@ -463,7 +463,7 @@ void UNSCModule::collectNeighDesPositions(unsigned int neighbor) {
     geometry_msgs::msg::Point n_des_pos;
 
     // If wait_for timed out, behave as if the neighbor returned a NAN position
-    if (cv_timed_out) {
+    if (!cv_successful) {
         this->sendLogError("Desired position not received for agent {}", neighbor);
         n_des_pos = NAN_point;
     } else {

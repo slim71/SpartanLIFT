@@ -108,7 +108,6 @@ class UNSCModule {
         bool confirmAgentIsLeader() const;
 
         // Setters
-        void setNeighborGathered();
         void unsetNeighborGathered();
 
     private: // Attributes

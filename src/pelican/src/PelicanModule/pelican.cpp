@@ -265,6 +265,14 @@ void Pelican::cargoAttachment() {
     auto async_request_result = this->cargo_attachment_client_->async_send_request(
         request, std::bind(&Pelican::checkCargoAttachment, this, std::placeholders::_1)
     );
+    // Check if request was accepted and cleanup if not (not to waste memory)
+    auto future_status =
+        async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+    if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+        this->sendLogWarning("Failed to receive confirmation from the CargoLinkage server!");
+        this->cargo_attachment_client_->prune_pending_requests();
+        return;
+    }
 }
 
 // CargoLinkage response handler
@@ -336,6 +344,16 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
     auto async_request_result = this->des_pos_client_->async_send_request(
         request, std::bind(&Pelican::storeNeighborDesPos, this, std::placeholders::_1)
     );
+    // Check if request was accepted and cleanup if not (not to waste memory)
+    auto future_status =
+        async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+    if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+        this->sendLogWarning(
+            "Failed to receive confirmation from the FleetInfo server (desired position)!"
+        );
+        this->des_pos_client_->prune_pending_requests();
+        return;
+    }
 }
 
 // Result handler of FleetInfo data - Neighbor desired position

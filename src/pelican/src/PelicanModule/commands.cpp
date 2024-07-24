@@ -158,6 +158,17 @@ void Pelican::rendezvousFleet() {
         auto async_request_result = this->fleetinfo_client_->async_send_request(
             request, std::bind(&Pelican::processLeaderResponse, this, std::placeholders::_1)
         );
+        // Check if request was accepted and cleanup if not (not to waste memory)
+        auto future_status =
+            async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS)
+            );
+        if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+            this->sendLogWarning(
+                "Failed to receive confirmation from the FleetInfo server (target)!"
+            );
+            this->fleetinfo_client_->prune_pending_requests();
+            return;
+        }
     }
 
     this->setAndNotifyRendezvousHandled();

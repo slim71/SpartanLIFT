@@ -50,8 +50,3 @@ void UNSCModule::unsetNeighborGathered() {
     std::lock_guard lock(this->formation_cv_mutex_);
     this->neighbor_gathered_ = false;
 }
-
-void UNSCModule::setNeighborGathered() {
-    std::lock_guard lock(this->formation_cv_mutex_);
-    this->neighbor_gathered_ = true;
-}
