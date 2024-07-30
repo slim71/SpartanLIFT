@@ -48,7 +48,7 @@ void UNSCModule::consensusToRendezvous() {
     auto y_diff = abs(updated_pos.y - init_pos.y);
     auto z_diff = abs(target_height - init_pos.z);
 
-    // If close enough to target setpoint (updated position)
+    // If the new position is close enough to target setpoint, go to the next step
     if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
         (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
         (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
@@ -192,6 +192,8 @@ void UNSCModule::formationControl() {
     this->sendLogDebug("Leader (ID: {}) position: {}", this->gatherLeaderID(), leader_pos);
     if (geomPointHasNan(leader_pos))
         return;
+    // Gather target height
+    double target_height = this->getActualTargetHeight();
 
     /************* Actual algorith *************/
     // Compute control input u_i = K_p * \sum_j (p_j - p_i - (p_j^{desired} - p_i^{desired}))
@@ -225,6 +227,34 @@ void UNSCModule::formationControl() {
     new_pos.x += constants::FORM_COLL_WEIGHT * coll_adj.x;
     new_pos.y += constants::FORM_COLL_WEIGHT * coll_adj.y;
     this->sendLogDebug("Updated formation position after collision adjustments: {}", new_pos);
+
+    // Compute distance from setpoint
+    auto x_diff = abs(new_pos.x - my_curr_pos.x);
+    auto y_diff = abs(new_pos.y - my_curr_pos.y);
+    auto z_diff = abs(target_height - my_curr_pos.z);
+
+    // If the new position is close enough to the target setpoint, go to the next step
+    if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
+        (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
+        (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
+        this->near_target_counter_++;
+        this->sendLogDebug("Near target enough; count: {}", this->near_target_counter_);
+    } else {
+        this->near_target_counter_ = 0;
+        this->sendLogDebug("Not near target; reset counter");
+    }
+    if (this->near_target_counter_ >= constants::FORM_TARGET_COUNT) {
+        this->sendLogDebug("Static formation achieved successfully");
+
+        if (this->confirmAgentIsLeader()) {
+            cancelTimer(this->formation_timer_); // Do not call this function again
+
+            // The last setpoints update is not actually needed, so don't perform it
+            return;
+        } else {
+            this->signalNotifyAgentInFormation();
+        }
+    }
 
     // Small velocity to help a more precise tracking (if needed)
     geometry_msgs::msg::Point vel =

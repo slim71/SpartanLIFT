@@ -96,6 +96,7 @@ class Pelican : public rclcpp::Node {
             geometry_msgs::msg::Point, geometry_msgs::msg::Point
         );                                                     // UNSC module
         void commenceSetActualTargetHeight(double);            // UNSC module
+        void commenceNotifyAgentInFormation();                 // UNSC module
         bool commenceCheckOffboardEngagement();                // TacMap and UNSC modules
         bool commenceWaitForCommanderAck(uint16_t);            // TacMap module
         void commenceHeightCompensation(double);               // TacMap module
@@ -169,6 +170,9 @@ class Pelican : public rclcpp::Node {
         void
         shareDesiredPosition(const std::shared_ptr<comms::srv::FleetInfo::Request>, std::shared_ptr<comms::srv::FleetInfo::Response>);
         void storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
+        void
+        recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request>, std::shared_ptr<comms::srv::FormationReached::Response>);
+        void notifyAgentInFormation();
 
     private: // Attributes
         LoggerModule logger_;
@@ -194,6 +198,7 @@ class Pelican : public rclcpp::Node {
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         std::vector<comms::msg::NetworkVertex> discovery_vector_;
         std::vector<comms::msg::Command> dispatch_vector_;
+        std::vector<unsigned int> agents_in_formation_;
         geometry_msgs::msg::Point des_formation_pos_ = NAN_point;
         geometry_msgs::msg::Point neigh_des_pos_ = NAN_point;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>
@@ -215,6 +220,7 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex rendez_tristate_mutex_; // to be used with rendezvous_handled_
         mutable std::mutex formation_mutex_;       // to be used with des_formation_pos_
         mutable std::mutex neigh_mutex_;           // to be used with neigh_des_pos_
+        mutable std::mutex form_reached_mutex_;    // to be used with agents_in_formation_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -248,6 +254,9 @@ class Pelican : public rclcpp::Node {
 
         rclcpp::Service<comms::srv::FleetInfo>::SharedPtr des_pos_server_;
         rclcpp::Client<comms::srv::FleetInfo>::SharedPtr des_pos_client_;
+
+        rclcpp::Service<comms::srv::FormationReached>::SharedPtr form_reached_server_;
+        rclcpp::Client<comms::srv::FormationReached>::SharedPtr form_reached_client_;
 
         std::string dispatch_topic_ {"/fleet/dispatch"};
         rclcpp::Subscription<comms::msg::Command>::SharedPtr sub_to_dispatch_;

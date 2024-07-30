@@ -204,6 +204,14 @@ void UNSCModule::signalAskDesPosToNeighbor(unsigned int id) {
     this->node_->askDesPosToNeighbor(id);
 }
 
+void UNSCModule::signalNotifyAgentInFormation() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceNotifyAgentInFormation();
+}
+
 /*************************** Flag checks ***************************/
 bool UNSCModule::confirmAgentIsLeader() const {
     if (!this->node_) {

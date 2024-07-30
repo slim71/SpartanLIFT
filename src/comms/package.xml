@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>comms</name>
-  <version>0.3.4</version>
+  <version>0.3.5</version>
   <description>Package for custom data exchange among agents in the fleet</description>
   <author email="slim71sv@gmail.com">Simone Vollaro</author>
   <maintainer email="slim71sv@gmail.com">slim71</maintainer>

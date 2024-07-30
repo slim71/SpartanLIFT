@@ -239,7 +239,6 @@ void Pelican::cargoAttachment() {
     }
     request->set__leader_id(this->getID()).set__model(model_name);
 
-    // Send request
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
     while (!this->cargo_attachment_client_->wait_for_service(
@@ -314,7 +313,6 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
         this->getReentrantGroup()
     );
 
-    // Send request
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
     while (!this->des_pos_client_->wait_for_service(
@@ -379,4 +377,60 @@ void Pelican::storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedF
     }
 
     this->initiateUnblockFormation();
+}
+
+// FormationReached request handler - executed only by the leader
+void Pelican::
+    recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request> request, std::shared_ptr<comms::srv::FormationReached::Response>) {
+    std::lock_guard lock(this->form_reached_mutex_);
+    if (std::find(
+            this->agents_in_formation_.begin(), this->agents_in_formation_.end(), request->agent_id
+        ) == this->agents_in_formation_.end()) {
+        this->sendLogDebug("New agent in formation to be registered: {}", request->agent_id);
+        this->agents_in_formation_.push_back(request->agent_id);
+    }
+}
+
+// FormationReached request generator - executed by the followers
+void Pelican::notifyAgentInFormation() {
+    std::string service_name = this->form_reached_client_->get_service_name();
+    this->sendLogDebug("Notifying I'm in formation...");
+
+    // Create request
+    auto request = std::make_shared<comms::srv::FormationReached::Request>();
+    request->set__agent_id(this->getID());
+
+    // Search for a second, then log and search again if needed
+    unsigned int total_search_time = 0;
+    while (!this->form_reached_client_->wait_for_service(
+               std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
+           ) &&
+           total_search_time < constants::MAX_SEARCH_TIME_SECS) {
+        if (!rclcpp::ok()) {
+            this->sendLogError(
+                "Client interrupted while waiting for the {} server. Terminating...", service_name
+            );
+            return;
+        }
+        this->sendLogDebug("{} service not available; waiting some more...", service_name);
+        total_search_time += constants::SEARCH_SERVER_STEP_SECS;
+    };
+
+    if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
+        // TODO: specify these messages for all services
+        this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
+        return;
+    }
+
+    this->sendLogDebug("{} server available", service_name);
+    // Send request
+    auto async_request_result = this->form_reached_client_->async_send_request(request);
+    // Check if request was accepted and cleanup if not (not to waste memory)
+    auto future_status =
+        async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
+    if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
+        this->sendLogWarning("Failed to receive confirmation from the {} server!", service_name);
+        this->form_reached_client_->prune_pending_requests();
+        return;
+    }
 }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(comms
-        VERSION 0.3.4
+        VERSION 0.3.5
         DESCRIPTION "Package for custom ROS2 messages and services")
 
 #To generate compile_commands.json
@@ -41,6 +41,7 @@ set(SERVICE_FILES
     srv/FleetInfo.srv
     srv/CargoPoint.srv
     srv/CargoLinkage.srv
+    srv/FormationReached.srv
 )
 
 set(ACTION_FILES

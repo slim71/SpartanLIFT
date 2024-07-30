@@ -53,9 +53,9 @@ To help identify ROS2 communication channels used in the code, here's a quick re
           - result handler function: `Pelican::processLeaderResponse`
       - Second exchange type: *Neighbor desired position*
         - Server node: **Pelican**
-          - server function: `Pelican::askDesPosToNeighbor`
+          - server function: `Pelican::shareDesiredPosition`
         - Client node: **Pelican**
-          - request function: `Pelican::shareDesiredPosition`
+          - request function: `Pelican::askDesPosToNeighbor`
           - result handler function: `Pelican::storeNeighborDesPos`
    2. **CargoPoint**
       - Server node: **Cargo**
@@ -69,6 +69,12 @@ To help identify ROS2 communication channels used in the code, here's a quick re
       - Client node: **Pelican**
         - request function: `Pelican::cargoAttachment`
         - result handler function: `Pelican::checkCargoAttachment`
+   4. **FormationReached**
+      - Server node: **Pelican** (leader)
+        - server function: `Pelican::recordAgentInFormation`
+      - Client node: **Pelican** (follower)
+        - request function: `Pelican::notifyAgentInFormation`
+        - result handler function absent, since the response is empty
 
 Logs cannot be automatically printed in different files, at the moment, as this would require an ad-hoc implementation
 of the `rcl_logging_interface` (as stated [here](https://robotics.stackexchange.com/a/104433/30956)).

@@ -18,6 +18,7 @@ void Pelican::becomeLeader() {
 
     // Service preparation
     resetSharedPointer(this->fleetinfo_client_);
+    resetSharedPointer(this->form_reached_client_);
     this->teleopdata_server_ = rclcpp_action::create_server<comms::action::TeleopData>(
         this, "contactLeader",
         std::bind(
@@ -29,6 +30,13 @@ void Pelican::becomeLeader() {
     this->fleetinfo_server_ = this->create_service<comms::srv::FleetInfo>(
         "shareinfo_service",
         std::bind(&Pelican::targetNotification, this, std::placeholders::_1, std::placeholders::_2)
+    );
+    this->form_reached_server_ = this->create_service<comms::srv::FormationReached>(
+        "formation_service",
+        std::bind(
+            &Pelican::recordAgentInFormation, this, std::placeholders::_1, std::placeholders::_2
+        ),
+        rmw_qos_profile_services_default, this->getReentrantGroup()
     );
 
     this->hb_core_.sendNow(); // To promptly notify all agents about the new leader
@@ -50,7 +58,10 @@ void Pelican::becomeFollower() {
     // Service preparation
     resetSharedPointer(this->teleopdata_server_);
     resetSharedPointer(this->fleetinfo_server_);
+    resetSharedPointer(this->form_reached_server_);
     this->fleetinfo_client_ = this->create_client<comms::srv::FleetInfo>("shareinfo_service");
+    this->form_reached_client_ =
+        this->create_client<comms::srv::FormationReached>("formation_service");
 
     this->el_core_.followerActions();
 }

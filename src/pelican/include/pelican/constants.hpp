@@ -55,4 +55,5 @@ namespace constants {
     static constexpr double FORM_DIST_WEIGHT = 0.1;
     static constexpr double FORM_COLL_WEIGHT = 1.0;
     static constexpr double FORM_COLL_THRESHOLD = 0.5;
+    static constexpr unsigned int FORM_TARGET_COUNT = 10;
 } // namespace constants

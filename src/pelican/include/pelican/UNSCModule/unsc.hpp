@@ -103,6 +103,7 @@ class UNSCModule {
         void signalSendDesiredFormationPositions(std::unordered_map<
                                                  unsigned int, geometry_msgs::msg::Point>);
         void signalAskDesPosToNeighbor(unsigned int);
+        void signalNotifyAgentInFormation();
 
         // Flag checks
         bool confirmAgentIsLeader() const;
@@ -120,6 +121,7 @@ class UNSCModule {
         bool move_to_center_ {false};
         bool neighbor_gathered_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
+        uint64_t near_target_counter_ {0};       // counter for subsequent setpoints near target
         double actual_target_height_ {0};        // needed in order to stabilize height tracking
         Eigen::Vector3d offset_ {0, 0, 0};       // [m, m, m]
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target

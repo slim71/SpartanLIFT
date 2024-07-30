@@ -158,3 +158,7 @@ void Pelican::commenceSetTerm(uint64_t term) {
 void Pelican::commenceSharePosition(geometry_msgs::msg::Point pos) {
     this->sharePosition(pos);
 }
+
+void Pelican::commenceNotifyAgentInFormation() {
+    this->notifyAgentInFormation();
+}
