@@ -20,7 +20,7 @@ operator+(const geometry_msgs::msg::Point, const geometry_msgs::msg::Point);
 geometry_msgs::msg::Point
 closestCirclePoint(geometry_msgs::msg::Point, geometry_msgs::msg::Point, double);
 std::vector<geometry_msgs::msg::Point>
-homPointsOnCircle(geometry_msgs::msg::Point, geometry_msgs::msg::Point, int, int);
+homPointsOnCircle(double, geometry_msgs::msg::Point, int, int);
 template<typename T> void resetSharedPointer(std::shared_ptr<T>&);
 template<typename T> inline constexpr int signum(T, std::false_type);
 template<typename T> inline constexpr int signum(T, std::true_type);

@@ -100,6 +100,11 @@ geometry_msgs::msg::Point Pelican::getNeighborDesiredPosition() const {
     return this->neigh_des_pos_;
 }
 
+geometry_msgs::msg::Point Pelican::getDropoffPosition() const {
+    std::lock_guard lock(this->dropoff_mutex_);
+    return this->dropoff_position_;
+}
+
 /*************************** Status flags *****************************/
 bool Pelican::isLeader() const {
     return (this->getRole() == leader);
@@ -130,4 +135,9 @@ bool Pelican::isCarrying() const {
 bool Pelican::isLastCmdExecuted() const {
     std::lock_guard lock(this->last_cmd_result_mutex_);
     return this->last_cmd_result_;
+}
+
+bool Pelican::isFormationAchieved() const {
+    std::lock_guard lock(this->form_achieved_mutex_);
+    return this->formation_achieved_;
 }

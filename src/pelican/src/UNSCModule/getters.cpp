@@ -60,3 +60,23 @@ geometry_msgs::msg::Point UNSCModule::getNeighborDesPos(unsigned int agent) {
         return this->neigh_des_positions_.at(agent);
     }
 }
+
+unsigned int UNSCModule::getClosestAgent() const {
+    std::lock_guard lock(this->closest_agent_mutex_);
+    return this->closest_agent_;
+}
+
+double UNSCModule::getClosestAngle() const {
+    std::lock_guard lock(this->closest_angle_mutex_);
+    return this->closest_angle_;
+}
+
+unsigned int UNSCModule::getFleetOrder(unsigned int id) const {
+    std::lock_guard lock(this->order_mutex_);
+    return this->fleet_order_.at(id);
+}
+
+uint64_t UNSCModule::getTargetCount() const {
+    std::lock_guard lock(this->target_count_mutex_);
+    return this->near_target_counter_;
+}

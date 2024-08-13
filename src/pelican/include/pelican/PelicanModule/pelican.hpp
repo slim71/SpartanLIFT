@@ -19,11 +19,6 @@ class Pelican : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
-        void cargoAttachment();
-        void sendDesiredFormationPositions(std::unordered_map<
-                                           unsigned int, geometry_msgs::msg::Point>);
-        void askDesPosToNeighbor(unsigned int);
-
         // Getters
         unsigned int getID() const;
         std::string getModel() const;
@@ -37,6 +32,7 @@ class Pelican : public rclcpp::Node {
         std::vector<unsigned int> getCoptersIDs() const;
         geometry_msgs::msg::Point getDesiredPosition() const;
         geometry_msgs::msg::Point getNeighborDesiredPosition() const;
+        geometry_msgs::msg::Point getDropoffPosition() const;
 
         // For callback groups
         rclcpp::SubscriptionOptions getReentrantOptions() const;
@@ -57,6 +53,7 @@ class Pelican : public rclcpp::Node {
         bool isFlying() const;
         bool isCarrying() const;
         bool isLastCmdExecuted() const;
+        bool isFormationAchieved() const;
 
         // Handle data exchange among modules
         unsigned int requestLeaderID() const;                                   // Election module
@@ -73,11 +70,12 @@ class Pelican : public rclcpp::Node {
         bool initiateTakeoff();                                                       // UNSC module
         bool initiateLand();                                                          // UNSC module
         bool initiateReturnToLaunchPosition();                                        // UNSC module
-        void initiateOffboardMode();                                                  // UNSC module
+        void initiateConsensus();                                                     // UNSC module
         void initiateSetPositionSetpoint(geometry_msgs::msg::Point);                  // UNSC module
         std::optional<geometry_msgs::msg::Point> initiateGetPositionSetpoint() const; // UNSC module
         void initiateSetTargetPosition(geometry_msgs::msg::Point);                    // UNSC module
         void initiateUnblockFormation();                                              // UNSC module
+        void initiatePreFormationActions();                                           // UNSC module
 
         // Actions initiated from outside the module
         void commenceSetElectionStatus(int); // Heartbeat module
@@ -94,9 +92,15 @@ class Pelican : public rclcpp::Node {
         void commencePublishOffboardControlMode(); // UNSC module
         void commencePublishTrajectorySetpoint(
             geometry_msgs::msg::Point, geometry_msgs::msg::Point
-        );                                                     // UNSC module
-        void commenceSetActualTargetHeight(double);            // UNSC module
-        void commenceNotifyAgentInFormation();                 // UNSC module
+        );                                          // UNSC module
+        void commenceSetActualTargetHeight(double); // UNSC module
+        void commenceNotifyAgentInFormation();      // UNSC module
+        void commenceSyncTrigger();                 // UNSC module
+        void commenceSendDesiredFormationPositions(std::unordered_map<
+                                                   unsigned int,
+                                                   geometry_msgs::msg::Point>); // UNSC module
+        void commenceAskDesPosToNeighbor(unsigned int);                         // UNSC module
+        void commenceCargoAttachment();                                         // UNSC module
         bool commenceCheckOffboardEngagement();                // TacMap and UNSC modules
         bool commenceWaitForCommanderAck(uint16_t);            // TacMap module
         void commenceHeightCompensation(double);               // TacMap module
@@ -117,11 +121,7 @@ class Pelican : public rclcpp::Node {
         // Other functionalities
         void parseModel();
         void storeAttendance(comms::msg::NetworkVertex::SharedPtr);
-        void storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr);
-        void storeDesiredPosition(const comms::msg::FormationDesired);
-        void sharePosition(geometry_msgs::msg::Point);
         void recordCopterPosition(comms::msg::NetworkVertex::SharedPtr);
-
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
@@ -129,31 +129,29 @@ class Pelican : public rclcpp::Node {
         // Command-related
         bool checkCommandMsgValidity(const comms::msg::Command);
         void handleCommandDispatch(uint16_t);
-        void handleCommandReception(const comms::msg::Command);
         bool broadcastCommand(uint16_t);
-        void sendAppendEntryRPC(unsigned int, uint16_t, bool = false, bool = false);
         void sendRPCAck(unsigned int, uint16_t, bool = false);
         bool waitForRPCsAcks(uint16_t, bool = false);
         void appendEntry(uint16_t, unsigned int);
         bool executeRPCCommand(uint16_t);
-        void rendezvousFleet();
 
-        // Setters
-        void setID(unsigned int);
-        void setMass(double);
-        void setRole(possible_roles);
-        void setTerm(unsigned int);
-        void setNeighborPosition(geometry_msgs::msg::Point);
-        void setFlyingStatus();
-        void unsetFlyingStatus();
-        void setCarryingStatus();
-        void unsetCarryingStatus();
-        void setLastCmdStatus();
-        void unsetLastCmdStatus();
-        void setAndNotifyRendezvousHandled();
-        void unsetAndNotifyRendezvousHandled();
+        // Topic-related
+        // "/fleet/network"
+        void sharePosition(geometry_msgs::msg::Point);                    // publisher
+        void storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr); // subscriber
+        // "/fleet/dispatch"
+        void handleCommandReception(const comms::msg::Command);                      // subscriber
+        void sendAppendEntryRPC(unsigned int, uint16_t, bool = false, bool = false); // publisher
+        // "/fleet/formation"
+        void storeDesiredPosition(const comms::msg::FormationDesired);                // subscriber
+        void sendDesiredFormationPositions(std::unordered_map<
+                                           unsigned int, geometry_msgs::msg::Point>); // publisher
+        // "/fleet/synchronization"
+        void handleSyncSignal(std_msgs::msg::Empty); // subscriber
+        void syncTrigger();                          // publisher
 
-        // Services- and action servers- related
+        // Action server-related
+        // TeleopData action
         rclcpp_action::GoalResponse
         handleTeleopDataGoal(const rclcpp_action::GoalUUID&, std::shared_ptr<const comms::action::TeleopData::Goal>);
         rclcpp_action::CancelResponse
@@ -163,16 +161,45 @@ class Pelican : public rclcpp::Node {
                                       rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
         void rogerWillCo(const std::shared_ptr<
                          rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>);
+
+        // Service-related
+        // FleetInfo
         void
         targetNotification(const std::shared_ptr<comms::srv::FleetInfo::Request>, const std::shared_ptr<comms::srv::FleetInfo::Response>);
+        void rendezvousFleet();
         void processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
-        void checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture);
         void
         shareDesiredPosition(const std::shared_ptr<comms::srv::FleetInfo::Request>, std::shared_ptr<comms::srv::FleetInfo::Response>);
+        void askDesPosToNeighbor(unsigned int);
         void storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
+        // CargoLinkage
+        void checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture);
+        void cargoAttachment();
+        // FormationReached
         void
         recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request>, std::shared_ptr<comms::srv::FormationReached::Response>);
         void notifyAgentInFormation();
+
+        // Setters
+        void setID(unsigned int);
+        void setMass(double);
+        void setRole(possible_roles);
+        void setTerm(unsigned int);
+        void setNeighborPosition(geometry_msgs::msg::Point);
+        void setDropoffPosition(geometry_msgs::msg::Point);
+        // Flags
+        void setFlyingStatus();
+        void unsetFlyingStatus();
+        void setCarryingStatus();
+        void unsetCarryingStatus();
+        void setLastCmdStatus();
+        void unsetLastCmdStatus();
+        void setAndNotifyRendezvousHandled();
+        void unsetAndNotifyRendezvousHandled();
+        void setAndNotifyFormationHandled();
+        void unsetAndNotifyFormationHandled();
+        void setFormationAchieved();
+        void unsetFormationAchieved();
 
     private: // Attributes
         LoggerModule logger_;
@@ -189,11 +216,13 @@ class Pelican : public rclcpp::Node {
         bool carrying_ {false};
         bool mission_in_progress_ {false};
         bool last_cmd_result_ {false};
+        bool formation_achieved_ {false};
         unsigned int id_;
         unsigned int current_term_ {0};
         double mass_ {0.0};
         double roi_;
         std::string model_;
+        // Map with pairs: agent ID - agent position
         std::unordered_map<unsigned int, geometry_msgs::msg::Point> copters_positions_;
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
         std::vector<comms::msg::NetworkVertex> discovery_vector_;
@@ -201,11 +230,14 @@ class Pelican : public rclcpp::Node {
         std::vector<unsigned int> agents_in_formation_;
         geometry_msgs::msg::Point des_formation_pos_ = NAN_point;
         geometry_msgs::msg::Point neigh_des_pos_ = NAN_point;
+        geometry_msgs::msg::Point dropoff_position_ = NAN_point;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>>
             last_goal_handle_;
         std::condition_variable rendezvous_handled_cv_;
+        std::condition_variable formation_handled_cv_;
         possible_roles role_ {tbd};
         TriState rendezvous_handled_ {TriState::Floating};
+        TriState formation_handled_ {TriState::Floating};
 
         mutable std::mutex id_mutex_;              // Used to access id_
         mutable std::mutex term_mutex_;            // Used to access current_term_
@@ -218,9 +250,12 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex last_cmd_result_mutex_; // To be used with last_cmd_result_
         mutable std::mutex last_goal_mutex_;       // To be used with last_goal_handle_
         mutable std::mutex rendez_tristate_mutex_; // to be used with rendezvous_handled_
+        mutable std::mutex form_tristate_mutex_;   // to be used with rendezvous_handled_
         mutable std::mutex formation_mutex_;       // to be used with des_formation_pos_
         mutable std::mutex neigh_mutex_;           // to be used with neigh_des_pos_
+        mutable std::mutex dropoff_mutex_;         // to be used with neigh_des_pos_
         mutable std::mutex form_reached_mutex_;    // to be used with agents_in_formation_
+        mutable std::mutex form_achieved_mutex_;   // to be used with agents_in_formation_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -269,6 +304,10 @@ class Pelican : public rclcpp::Node {
         std::string formation_topic_ {"/fleet/formation"};
         rclcpp::Subscription<comms::msg::FormationDesired>::SharedPtr sub_to_formation_;
         rclcpp::Publisher<comms::msg::FormationDesired>::SharedPtr pub_to_formation_;
+
+        std::string sync_topic_ {"/fleet/synchronization"};
+        rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr sub_to_sync_;
+        rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr pub_to_sync_;
 
         rclcpp::TimerBase::SharedPtr netsize_timer_;
         std::chrono::seconds netsize_timeout_ {constants::ROLLCALL_TIME_SECS};

@@ -67,3 +67,32 @@ void UNSCModule::unblockFormation() {
     this->neighbor_gathered_ = true;
     this->formation_cv_.notify_all();
 }
+
+void UNSCModule::increaseSyncCount() {
+    std::lock_guard lock(this->sync_mutex_);
+    this->sync_count_++;
+}
+
+void UNSCModule::decreaseSyncCount() {
+    std::lock_guard lock(this->sync_mutex_);
+    if (this->sync_count_ > 0)
+        this->sync_count_--;
+}
+
+void UNSCModule::waitForSyncCount() {
+    bool go_ahead = false;
+    while (!go_ahead) {
+        this->sync_mutex_.lock();
+        go_ahead = (this->sync_count_ > 0);
+        this->sync_mutex_.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+    }
+}
+
+bool UNSCModule::safeOrderFind(unsigned int id) {
+    std::lock_guard lock(this->order_mutex_);
+    if (this->fleet_order_.find(id) == this->fleet_order_.end())
+        return true;
+    else
+        return false;
+}

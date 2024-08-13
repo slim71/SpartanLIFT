@@ -30,6 +30,11 @@ void Pelican::setNeighborPosition(geometry_msgs::msg::Point p) {
     this->neigh_des_pos_ = p;
 }
 
+void Pelican::setDropoffPosition(geometry_msgs::msg::Point p) {
+    std::lock_guard lock(this->dropoff_mutex_);
+    this->dropoff_position_ = p;
+}
+
 /**************************** Flag setters ****************************/
 void Pelican::setFlyingStatus() {
     std::lock_guard lock(this->flying_mutex_);
@@ -71,4 +76,26 @@ void Pelican::unsetAndNotifyRendezvousHandled() {
     std::lock_guard rd_lock(this->rendez_tristate_mutex_);
     this->rendezvous_handled_ = TriState::False;
     this->rendezvous_handled_cv_.notify_all();
+}
+
+void Pelican::setAndNotifyFormationHandled() {
+    std::lock_guard rd_lock(this->form_tristate_mutex_);
+    this->formation_handled_ = TriState::True;
+    this->formation_handled_cv_.notify_all();
+}
+
+void Pelican::unsetAndNotifyFormationHandled() {
+    std::lock_guard rd_lock(this->form_tristate_mutex_);
+    this->formation_handled_ = TriState::False;
+    this->formation_handled_cv_.notify_all();
+}
+
+void Pelican::setFormationAchieved() {
+    std::lock_guard rd_lock(this->form_achieved_mutex_);
+    this->formation_achieved_ = true;
+}
+
+void Pelican::unsetFormationAchieved() {
+    std::lock_guard rd_lock(this->form_achieved_mutex_);
+    this->formation_achieved_ = false;
 }

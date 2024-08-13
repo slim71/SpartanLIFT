@@ -44,6 +44,7 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <regex>
 #include <signal.h>
+#include <std_msgs/msg/empty.hpp>
 #include <string>
 #include <unordered_map>
 #include <utility>

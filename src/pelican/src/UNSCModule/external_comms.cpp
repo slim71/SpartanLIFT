@@ -122,6 +122,14 @@ geometry_msgs::msg::Point UNSCModule::gatherNeighborDesiredPosition() {
     return this->node_->getNeighborDesiredPosition();
 }
 
+geometry_msgs::msg::Point UNSCModule::gatherDropoffPosition() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getDropoffPosition();
+}
+
 /************* To make other modules carry on an action ************/
 void UNSCModule::signalPublishVehicleCommand(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
@@ -183,9 +191,10 @@ void UNSCModule::signalCargoAttachment() {
         throw MissingExternModule();
     }
 
-    this->node_->cargoAttachment();
+    this->node_->commenceCargoAttachment();
 }
 
+// Map with pairs: agent ID - agent's position
 void UNSCModule::signalSendDesiredFormationPositions(
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> pos
 ) {
@@ -193,7 +202,7 @@ void UNSCModule::signalSendDesiredFormationPositions(
         throw MissingExternModule();
     }
 
-    this->node_->sendDesiredFormationPositions(pos);
+    this->node_->commenceSendDesiredFormationPositions(pos);
 }
 
 void UNSCModule::signalAskDesPosToNeighbor(unsigned int id) {
@@ -201,7 +210,7 @@ void UNSCModule::signalAskDesPosToNeighbor(unsigned int id) {
         throw MissingExternModule();
     }
 
-    this->node_->askDesPosToNeighbor(id);
+    this->node_->commenceAskDesPosToNeighbor(id);
 }
 
 void UNSCModule::signalNotifyAgentInFormation() {
@@ -212,6 +221,14 @@ void UNSCModule::signalNotifyAgentInFormation() {
     this->node_->commenceNotifyAgentInFormation();
 }
 
+void UNSCModule::signalSyncTrigger() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceSyncTrigger();
+}
+
 /*************************** Flag checks ***************************/
 bool UNSCModule::confirmAgentIsLeader() const {
     if (!this->node_) {
@@ -219,4 +236,12 @@ bool UNSCModule::confirmAgentIsLeader() const {
     }
 
     return this->node_->isLeader();
+}
+
+bool UNSCModule::confirmFormationAchieved() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->isFormationAchieved();
 }

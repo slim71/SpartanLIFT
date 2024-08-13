@@ -171,6 +171,7 @@ void Pelican::storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr msg) {
     this->storeAttendance(msg);
 }
 
+// Publisher to "/fleet/network"
 void Pelican::sharePosition(geometry_msgs::msg::Point pos) {
     this->sendLogDebug("Sharing pos: {}", pos);
 
@@ -241,24 +242,27 @@ void Pelican::cargoAttachment() {
 
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
+    std::string service_name = this->cargo_attachment_client_->get_service_name();
     while (!this->cargo_attachment_client_->wait_for_service(
                std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
-            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            this->sendLogError(
+                "Client interrupted while waiting for the {} service. Terminating...", service_name
+            );
             return;
         }
 
-        this->sendLogDebug("Service not available; waiting some more...");
+        this->sendLogDebug("Service {} not available; waiting some more...", service_name);
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
     if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
         return;
     }
-    this->sendLogDebug("CargoLinkage server available");
+    this->sendLogDebug("{} server available", service_name);
 
     // Send request
     auto async_request_result = this->cargo_attachment_client_->async_send_request(
@@ -268,7 +272,7 @@ void Pelican::cargoAttachment() {
     auto future_status =
         async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
     if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-        this->sendLogWarning("Failed to receive confirmation from the CargoLinkage server!");
+        this->sendLogWarning("Failed to receive confirmation from the {} server!", service_name);
         this->cargo_attachment_client_->prune_pending_requests();
         return;
     }
@@ -286,9 +290,10 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
     }
 
     auto response = future.get();
-    if (response->done)
+    if (response->done) {
         this->sendLogDebug("Cargo attachment completed");
-    else
+        this->syncTrigger();
+    } else
         this->sendLogWarning("Issues with cargo attachment!");
 }
 
@@ -315,28 +320,28 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
 
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
+    std::string service_name = this->des_pos_client_->get_service_name();
     while (!this->des_pos_client_->wait_for_service(
                std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
             this->sendLogError(
-                "Client interrupted while waiting for neighbor's {} des_pos server. Terminating...",
-                id
+                "Client interrupted while waiting for {} server. Terminating...", service_name
             );
             return;
         }
 
-        this->sendLogDebug("Service not available; waiting some more...");
+        this->sendLogDebug("Service {} not available; waiting some more...", service_name);
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
     if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
         return;
     }
 
-    this->sendLogDebug("Neighbor's {} des_pos server available", id);
+    this->sendLogDebug("{} server available", service_name);
     // Send request
     auto request = std::make_shared<comms::srv::FleetInfo::Request>();
     auto async_request_result = this->des_pos_client_->async_send_request(
@@ -347,7 +352,7 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
         async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
     if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
         this->sendLogWarning(
-            "Failed to receive confirmation from the FleetInfo server (desired position)!"
+            "Failed to receive confirmation from the {} server (desired position)!", service_name
         );
         this->des_pos_client_->prune_pending_requests();
         return;
@@ -389,6 +394,9 @@ void Pelican::
         this->sendLogDebug("New agent in formation to be registered: {}", request->agent_id);
         this->agents_in_formation_.push_back(request->agent_id);
     }
+
+    if (this->agents_in_formation_.size() == this->getNetworkSize() - 1)
+        this->setFormationAchieved();
 }
 
 // FormationReached request generator - executed by the followers
@@ -412,12 +420,11 @@ void Pelican::notifyAgentInFormation() {
             );
             return;
         }
-        this->sendLogDebug("{} service not available; waiting some more...", service_name);
+        this->sendLogDebug("Service {} not available; waiting some more...", service_name);
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
     if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-        // TODO: specify these messages for all services
         this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
         return;
     }
@@ -433,4 +440,13 @@ void Pelican::notifyAgentInFormation() {
         this->form_reached_client_->prune_pending_requests();
         return;
     }
+}
+
+void Pelican::syncTrigger() {
+    auto msg = std_msgs::msg::Empty();
+    this->pub_to_sync_->publish(msg);
+}
+
+void Pelican::handleSyncSignal(std_msgs::msg::Empty) {
+    this->unsc_core_.increaseSyncCount();
 }

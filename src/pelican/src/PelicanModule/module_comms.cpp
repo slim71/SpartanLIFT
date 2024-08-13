@@ -51,8 +51,12 @@ bool Pelican::initiateReturnToLaunchPosition() {
     return this->unsc_core_.returnToLaunchPosition();
 }
 
-void Pelican::initiateOffboardMode() {
-    this->unsc_core_.activateOffboardMode();
+void Pelican::initiateConsensus() {
+    this->unsc_core_.activateConsensus();
+}
+
+void Pelican::initiatePreFormationActions() {
+    this->unsc_core_.preFormationActions();
 }
 
 std::optional<geometry_msgs::msg::Point> Pelican::initiateGetPositionSetpoint() const {
@@ -161,4 +165,23 @@ void Pelican::commenceSharePosition(geometry_msgs::msg::Point pos) {
 
 void Pelican::commenceNotifyAgentInFormation() {
     this->notifyAgentInFormation();
+}
+
+void Pelican::commenceSyncTrigger() {
+    this->syncTrigger();
+}
+
+// Map with pairs: agent ID - agent desired position
+void Pelican::commenceSendDesiredFormationPositions(
+    std::unordered_map<unsigned int, geometry_msgs::msg::Point> positions
+) {
+    this->sendDesiredFormationPositions(positions);
+}
+
+void Pelican::commenceAskDesPosToNeighbor(unsigned int id) {
+    this->askDesPosToNeighbor(id);
+}
+
+void Pelican::commenceCargoAttachment() {
+    this->cargoAttachment();
 }

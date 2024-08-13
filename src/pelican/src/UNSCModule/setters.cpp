@@ -18,16 +18,16 @@ void UNSCModule::setHeightSetpoint(double h) {
     this->setpoint_position_.z = h;
 }
 
-void UNSCModule::setVelocitySetpoint(geometry_msgs::msg::Point v) {
+void UNSCModule::setVelocitySetpoint(geometry_msgs::msg::Point v, double max_vel) {
     // Velocity is capped to keep copter's movement smoother and
     // to allow a better control of setpoint tracking
     auto v_capped = v;
-    if (v.x > 1)
-        v_capped.set__x(1);
-    if (v.y > 1)
-        v_capped.set__y(1);
-    if (v.z > 1)
-        v_capped.set__z(1);
+    if (abs(v.x) > max_vel)
+        v_capped.set__x(signum(v.x) * max_vel);
+    if (abs(v.y) > max_vel)
+        v_capped.set__y(signum(v.y) * max_vel);
+    if (abs(v.z) > max_vel)
+        v_capped.set__z(signum(v.z) * max_vel);
 
     std::lock_guard lock(this->setpoint_velocity_mutex_);
     this->sendLogDebug("Setting velocity setpoint to {}", v_capped);
@@ -49,4 +49,29 @@ void UNSCModule::setTargetPosition(geometry_msgs::msg::Point p) {
 void UNSCModule::unsetNeighborGathered() {
     std::lock_guard lock(this->formation_cv_mutex_);
     this->neighbor_gathered_ = false;
+}
+
+void UNSCModule::setClosestAgent(unsigned int id) {
+    std::lock_guard lock(this->closest_agent_mutex_);
+    this->closest_agent_ = id;
+}
+
+void UNSCModule::setClosestAngle(double angle) {
+    std::lock_guard lock(this->closest_angle_mutex_);
+    this->closest_angle_ = angle;
+}
+
+void UNSCModule::setFleetOrder(unsigned int id, unsigned int order) {
+    std::lock_guard lock(this->order_mutex_);
+    this->fleet_order_[id] = order;
+}
+
+void UNSCModule::increaseTargetCount() {
+    std::lock_guard lock(this->target_count_mutex_);
+    this->near_target_counter_++;
+}
+
+void UNSCModule::resetTargetCount() {
+    std::lock_guard lock(this->target_count_mutex_);
+    this->near_target_counter_ = 0;
 }

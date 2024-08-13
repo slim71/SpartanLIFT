@@ -167,7 +167,7 @@ void Cargo::followReference() {
     }
     this->reference_buffer_.pop_front();
     this->reference_mutex_.unlock();
-    this->sendLogDebug("got and removed {}", to_follow);
+    this->sendLogDebug("Got and removed {}", to_follow);
 
     // Build request
     ros_gz_interfaces::srv::SetEntityPose::Request req;
@@ -185,24 +185,27 @@ void Cargo::followReference() {
     // Send request
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
+    std::string service_name = this->set_pose_client_->get_service_name();
     while (!this->set_pose_client_->wait_for_service(
                std::chrono::seconds(constants::SEARCH_SERVER_STEP_SECS)
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
-            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            this->sendLogError(
+                "Client interrupted while waiting for the {} service. Terminating...", service_name
+            );
             return;
         }
 
-        this->sendLogDebug("Service not available; waiting some more...");
+        this->sendLogDebug("Service {} not available; waiting some more...", service_name);
         total_search_time += constants::SEARCH_SERVER_STEP_SECS;
     };
 
     if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
         return;
     }
-    this->sendLogDebug("SetPoseEntity server available");
+    this->sendLogDebug("{} server available", service_name);
 
     // Send request
     auto request = std::make_shared<ros_gz_interfaces::srv::SetEntityPose::Request>(req);
@@ -213,7 +216,7 @@ void Cargo::followReference() {
     auto future_status =
         async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
     if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-        this->sendLogWarning("Failed to receive confirmation from the SetEntityPose server!");
+        this->sendLogWarning("Failed to receive confirmation from the {} server!", service_name);
         this->set_pose_client_->prune_pending_requests();
         return;
     }

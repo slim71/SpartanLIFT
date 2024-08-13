@@ -103,7 +103,7 @@ bool UNSCModule::loiter() {
     );
 }
 
-void UNSCModule::activateOffboardMode() {
+void UNSCModule::activateConsensus() {
     this->offboard_timer_ = this->node_->create_wall_timer(
         this->offboard_period_, std::bind(&UNSCModule::setAndMaintainOffboardMode, this),
         this->gatherOffboardExclusiveGroup()
@@ -115,12 +115,13 @@ void UNSCModule::activateOffboardMode() {
 }
 
 void UNSCModule::setAndMaintainOffboardMode() {
-    auto opt_target = this->getPositionSetpoint();
-    if (!opt_target) {
+    auto maybe_pos = this->getPositionSetpoint();
+    if (!maybe_pos) {
         this->sendLogDebug("No target pose found");
         return;
     }
-    auto target_pos = opt_target.value();
+    auto target_pos = maybe_pos.value();
+
     auto maybe_vel = this->getSetpointVelocity();
     if (!maybe_vel) {
         this->sendLogDebug("No target vel found");

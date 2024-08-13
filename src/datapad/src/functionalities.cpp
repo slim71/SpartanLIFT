@@ -234,7 +234,8 @@ void Datapad::payloadDropoff() {
     this->teleopTaskClient(Flags().SetDropoff());
 }
 
-void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData action
+// TeleopData - request generator
+void Datapad::teleopTaskClient(Flags flags) {
     auto request = comms::action::TeleopData::Goal();
     request.presence = flags.GetPresence();
     request.takeoff = flags.GetTakeoff();
@@ -265,12 +266,12 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
         request.z = this->cargo_odom_.z + 3.0;
 
     } else if (flags.GetDropoff()) {
-        float coordinates[3];
-        char coord_names[] = {'x', 'y', 'z'};
+        float coordinates[2];
+        char coord_names[] = {'x', 'y'};
         this->sendLogDebug("Enter desired coordinates: ");
         std::cout << "Enter desired coordinates" << std::endl;
         int i = 0;
-        while (i < 3) {
+        while (i < sizeof(coordinates) / sizeof(float)) {
             std::cout << coord_names[i] << ": " << std::endl;
             std::cin >> coordinates[i];
             if (std::cin.fail()) {
@@ -286,9 +287,10 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
 
         request.x = coordinates[0];
         request.y = coordinates[1];
-        request.z = coordinates[2];
+        request.z = 0;
     }
 
+    // Bind callbacks for feedback handling
     auto send_goal_options = rclcpp_action::Client<comms::action::TeleopData>::SendGoalOptions();
     send_goal_options.goal_response_callback =
         std::bind(&Datapad::analyzeTeleopDataResponse, this, std::placeholders::_1);
@@ -305,24 +307,28 @@ void Datapad::teleopTaskClient(Flags flags) { // Server side of TeleopData actio
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
-            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            this->sendLogError(
+                "Client interrupted while waiting for TeleopData action service. Terminating..."
+            );
             return;
         }
 
-        this->sendLogDebug("Service not available; waiting some more...");
+        this->sendLogDebug("TeleopData action service not available; waiting some more...");
         total_search_time += constants::SEARCH_LEADER_STEP_SECS;
     };
 
     if (total_search_time < constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogDebug("Server available");
+        this->sendLogDebug("TeleopData action server available");
         // Send request
         auto result = this->teleopdata_client_->async_send_goal(request, send_goal_options);
     } else {
-        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->sendLogWarning("The TeleopData action server seems to be down. Please try again.");
     }
 }
 
+// CargoPoint - request generator
 void Datapad::askForCargoPoint() {
+    auto service_name = this->cargopoint_client_->get_service_name();
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
     while (!this->cargopoint_client_->wait_for_service(
@@ -330,21 +336,23 @@ void Datapad::askForCargoPoint() {
            ) &&
            total_search_time < constants::MAX_SEARCH_TIME_SECS) {
         if (!rclcpp::ok()) {
-            this->sendLogError("Client interrupted while waiting for service. Terminating...");
+            this->sendLogError(
+                "Client interrupted while waiting for {} service. Terminating...", service_name
+            );
             this->unsetAndNotifyCargoHandled();
             return;
         }
 
-        this->sendLogDebug("Service not available; waiting some more...");
+        this->sendLogDebug("{} service not available; waiting some more...", service_name);
         total_search_time += constants::SEARCH_LEADER_STEP_SECS;
     };
 
     if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-        this->sendLogWarning("The server seems to be down. Please try again.");
+        this->sendLogWarning("The {} server seems to be down. Please try again.", service_name);
         this->unsetAndNotifyCargoHandled();
         return;
     }
-    this->sendLogDebug("CargoPoint server available");
+    this->sendLogDebug("{} server available", service_name);
 
     // Send request
     auto request = std::make_shared<comms::srv::CargoPoint::Request>();
@@ -355,7 +363,7 @@ void Datapad::askForCargoPoint() {
     auto future_status =
         async_request_result.wait_for(std::chrono::seconds(constants::SERVICE_FUTURE_WAIT_SECS));
     if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
-        this->sendLogWarning("Failed to receive confirmation from the CargoPoint server!");
+        this->sendLogWarning("Failed to receive confirmation from the {} server!", service_name);
         this->cargopoint_client_->prune_pending_requests();
         return;
     }

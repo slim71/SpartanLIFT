@@ -143,12 +143,10 @@ geometry_msgs::msg::Point closestCirclePoint(
         .set__z(p.z);
 }
 
-std::vector<geometry_msgs::msg::Point> homPointsOnCircle(
-    geometry_msgs::msg::Point start, geometry_msgs::msg::Point center, int radius, int number
-) {
+std::vector<geometry_msgs::msg::Point>
+homPointsOnCircle(double start_angle, geometry_msgs::msg::Point center, int radius, int number) {
     std::vector<geometry_msgs::msg::Point> v;
     double angle_increment = 2 * M_PI / number;
-    double start_angle = std::atan2(start.y, start.x);
 
     for (int i = 0; i < number; ++i) {
         double angle = start_angle + i * angle_increment;
