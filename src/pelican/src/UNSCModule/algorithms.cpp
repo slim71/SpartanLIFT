@@ -5,18 +5,15 @@
 void UNSCModule::consensusToRendezvous() {
     // Be sure to have all needed data
     std::optional<geometry_msgs::msg::Point> maybe_target_pos = this->getTargetPosition();
-    std::optional<nav_msgs::msg::Odometry> maybe_odom = this->gatherENUOdometry();
-    if (!maybe_odom || !maybe_target_pos) {
+    if (!maybe_target_pos) {
         this->sendLogWarning("Needed data not available!");
         return;
     }
 
     // Gather initial position of the agent and duplicate it
-    // CHECK: use current NED measurement instead?
     geometry_msgs::msg::Point init_pos = this->gatherCopterPosition(this->gatherAgentID());
     geometry_msgs::msg::Point updated_pos = init_pos;
     geometry_msgs::msg::Point target_pos = maybe_target_pos.value();
-    nav_msgs::msg::Odometry last_enu_odom = maybe_odom.value();
     double target_height = this->getActualTargetHeight();
     this->sendLogDebug("Own pos at start of rendezvous iteration: {}", init_pos);
 
@@ -49,15 +46,14 @@ void UNSCModule::consensusToRendezvous() {
     auto z_diff = abs(target_height - init_pos.z);
 
     // If the new position is close enough to target setpoint, go to the next step
-    if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
-        (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
-        (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
+    if ((x_diff <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (y_diff <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (z_diff <= constants::SETPOINT_REACHED_DISTANCE)) {
         cancelTimer(this->rendezvous_timer_); // Do not call this function again
         this->sendLogDebug("Finished Rendezvous successfully");
 
-        this->preFormationActions();
-
-        // The last setpoints update is not actually needed, so don't perform it
+        // The last setpoints update is not actually needed; PX4 will manage the stabilization on
+        // its own
         return;
     }
 
@@ -85,6 +81,7 @@ void UNSCModule::preFormationActions() {
     // The leader agent has some more instructions to follow, before starting the formation control
 
     // Move leader to target position
+    // TODO: also add collision avoidance to the leader movements
     if (this->confirmAgentIsLeader()) {
         std::optional<geometry_msgs::msg::Point> maybe_target = this->getTargetPosition();
         if (!maybe_target) {
@@ -93,15 +90,18 @@ void UNSCModule::preFormationActions() {
         }
         geometry_msgs::msg::Point target_pos = maybe_target.value();
         this->sendLogDebug("Positioning to the target position: {}", target_pos);
-        this->setPositionSetpoint(maybe_target.value());
+        this->setPositionSetpoint(target_pos);
+        double target_height = this->getActualTargetHeight();
 
         while (true) {
             this->sendLogDebug("Checking if target position has been reached");
             geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
             this->sendLogDebug("Target: {}, last recorded: {}", target_pos, pos);
-            if ((abs(target_pos.x - pos.x) < constants::SETPOINT_REACHED_DISTANCE) &&
-                (abs(target_pos.y - pos.y) < constants::SETPOINT_REACHED_DISTANCE)) {
+            if ((abs(target_pos.x - pos.x) <= constants::SETPOINT_REACHED_DISTANCE) &&
+                (abs(target_pos.y - pos.y) <= constants::SETPOINT_REACHED_DISTANCE) &&
+                (abs(target_height - pos.z) <= constants::SETPOINT_REACHED_DISTANCE)) {
                 this->sendLogDebug("Reached");
+                this->signalSyncTrigger();
                 break;
             } else {
                 geometry_msgs::msg::Point vel =
@@ -121,11 +121,14 @@ void UNSCModule::preFormationActions() {
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
         }
+    } else {
+        this->waitForSyncCount();
+        this->decreaseSyncCount();
     }
 
     // Descend
     this->sendLogDebug("Getting lower");
-    this->signalSetReferenceHeight(2.0);
+    this->signalSetReferenceHeight(constants::EXTRACTION_HEIGHT);
     while (true) {
         this->sendLogDebug("Checking if new target height has been reached");
         geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
@@ -141,20 +144,117 @@ void UNSCModule::preFormationActions() {
     if (this->confirmAgentIsLeader()) {
         this->sendLogDebug("Attaching cargo to leader");
         this->signalCargoAttachment();
+    } else {
+        this->waitForSyncCount();
+        this->decreaseSyncCount();
     }
 
-    // Start formation control
+    // Make the agents fly higher
+    this->sendLogDebug("Getting higher");
+    this->signalSetReferenceHeight(constants::EXTRACTION_HEIGHT + 1);
+    while (true) {
+        this->sendLogDebug("Checking if new target height has been reached");
+        geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
+        this->sendLogDebug("Last height recorded: {}", pos.z);
+        if (abs(pos.z - 3.0) < 0.1) {
+            this->sendLogDebug("Reached");
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+    }
+
+    // Start actual formation control
     this->sendLogDebug("Ready for formation control!");
     if (this->confirmAgentIsLeader()) {
-        this->assignFormationPositions();
+        this->assignFormationPositions(); // To quickly send the first reference
+
+        std::this_thread::sleep_for(std::chrono::seconds(constants::FORMATION_WAIT_TIME_SECS));
+
+        this->formation_timer_ = this->node_->create_wall_timer(
+            this->formation_period_, std::bind(&UNSCModule::assignFormationPositions, this),
+            this->gatherFormationExclusiveGroup()
+        );
     } else {
+        this->sendLogDebug("Calling formationControl");
         this->formation_timer_ = this->node_->create_wall_timer(
             this->formation_period_, std::bind(&UNSCModule::formationControl, this),
             this->gatherFormationExclusiveGroup()
         );
     }
+
+    // Move the leader to the dropoff position
+    if (this->confirmAgentIsLeader()) {
+        while (!this->confirmFormationAchieved()) {
+            this->sendLogDebug("Formation not yet achieved");
+            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+        }
+        this->linear_timer_ = this->node_->create_wall_timer(
+            this->linear_period_, std::bind(&UNSCModule::linearP2P, this),
+            this->gatherFormationExclusiveGroup()
+        );
+    }
 }
 
+void UNSCModule::linearP2P() {
+    // Gather dropoff position
+    geometry_msgs::msg::Point dropoff_pos = this->gatherDropoffPosition();
+    // Gather current position
+    geometry_msgs::msg::Point curr_pos = this->gatherCopterPosition(this->gatherAgentID());
+    // Gather target height
+    double target_height = this->getActualTargetHeight();
+
+    geometry_msgs::msg::Point diff = dropoff_pos - curr_pos;
+    if ((abs(diff.x) <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (abs(diff.y) <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (abs(target_height - curr_pos.z) <= constants::SETPOINT_REACHED_DISTANCE)) {
+        this->increaseTargetCount();
+        this->sendLogDebug("Near target enough; count: {}", this->getTargetCount());
+    } else {
+        this->sendLogDebug("Distance from dropoff_pos: {}", diff);
+        this->resetTargetCount();
+
+        // Compute distance and normalize it
+        double dx = dropoff_pos.x - curr_pos.x;
+        double dy = dropoff_pos.y - curr_pos.y;
+        double distance = std::hypot(dx, dy);
+        // Compute intermediate setpoint
+        geometry_msgs::msg::Point next_setpoint =
+            geometry_msgs::msg::Point()
+                .set__x(curr_pos.x + dx / distance * constants::STEP_SIZE)
+                .set__y(curr_pos.y + dy / distance * constants::STEP_SIZE)
+                .set__z(std::nanf("")); // Do not handle the z axis (height)
+        this->sendLogDebug("Computed P2P position: {}", next_setpoint);
+
+        // Add collision avoidance
+        geometry_msgs::msg::Point coll_adj =
+            adjustmentForCollisionAvoidance(next_setpoint, constants::FORM_COLL_THRESHOLD);
+        next_setpoint.x += constants::REND_COLL_WEIGHT * coll_adj.x;
+        next_setpoint.y += constants::REND_COLL_WEIGHT * coll_adj.y;
+        this->sendLogDebug("Updated P2P position after collision adjustments: {}", next_setpoint);
+
+        geometry_msgs::msg::Point vel =
+            geometry_msgs::msg::Point()
+                .set__x(
+                    (next_setpoint.x - curr_pos.x) /
+                    (constants::P2P_PERIOD_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
+                )
+                .set__y(
+                    (next_setpoint.y - curr_pos.y) /
+                    (constants::P2P_PERIOD_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
+                )
+                .set__z(std::nanf("")); // Do not handle the z axis (height)
+        this->sendLogDebug("Computed next velocity setpoint for pre-formation operations: {}", vel);
+
+        this->setPositionSetpoint(next_setpoint);
+        this->setVelocitySetpoint(vel, constants::FORM_CLOSING_VEL);
+    }
+    if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
+        this->sendLogDebug("Static formation achieved successfully");
+        cancelTimer(this->linear_timer_); // Do not call this function again
+    }
+}
+
+// Only executed by non-leaders
 void UNSCModule::formationControl() {
     /************** Preparations ***************/
     // Make sure neighbors are determined
@@ -166,11 +266,13 @@ void UNSCModule::formationControl() {
 
     // Make sure we also have the desired positions of each neighbor
     this->neighbors_despos_mutex_.lock();
+    // Pairs: neighbor ID - neighbor's desired position
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> neigh_des =
         this->neigh_des_positions_;
     this->neighbors_despos_mutex_.unlock();
 
     // Make sure we have all neighbors' current position
+    // Pairs: neighbor ID - neighbor's current position
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> neigh_pos;
     for (auto& neighbor : this->getNeighborsIDs()) {
         auto p = this->gatherCopterPosition(neighbor);
@@ -181,7 +283,16 @@ void UNSCModule::formationControl() {
     }
 
     // Gather own current and desired position
-    geometry_msgs::msg::Point my_curr_pos = this->gatherCopterPosition(this->gatherAgentID());
+    auto maybe_curr_pos = this->gatherENUOdometry();
+    if (!maybe_curr_pos) {
+        this->sendLogWarning("Needed data not available!");
+        return;
+    }
+    auto enu = maybe_curr_pos.value();
+    geometry_msgs::msg::Point my_curr_pos = geometry_msgs::msg::Point()
+                                                .set__x(enu.pose.pose.position.x)
+                                                .set__y(enu.pose.pose.position.y)
+                                                .set__z(enu.pose.pose.position.z);
     geometry_msgs::msg::Point my_des_pos = this->gatherDesiredPosition();
     this->sendLogDebug("Own current position: {}, desired position: {}", my_curr_pos, my_des_pos);
     if (geomPointHasNan(my_des_pos))
@@ -219,44 +330,23 @@ void UNSCModule::formationControl() {
                                             .set__z(my_curr_pos.z); // Not generally used
     this->sendLogDebug("New formation position to move to: {}", new_pos);
 
+    // Introduce a maximum step size to prevent large movements
+    double dx = new_pos.x - my_curr_pos.x;
+    double dy = new_pos.y - my_curr_pos.y;
+    double step = std::sqrt(dx * dx + dy * dy);
+    if (step > constants::STEP_SIZE) {
+        new_pos.x = my_curr_pos.x + (dx / step) * constants::STEP_SIZE;
+        new_pos.y = my_curr_pos.y + (dy / step) * constants::STEP_SIZE;
+    }
+
     // Compute adjustment vector for collision avoidance with nearby agents
-    geometry_msgs::msg::Point coll_adj =
-        adjustmentForCollisionAvoidance(my_curr_pos, constants::FORM_COLL_THRESHOLD);
+    geometry_msgs::msg::Point coll_adj = adjustmentForCollisionAvoidance(new_pos, 1);
     this->sendLogDebug("Collision adjustment for formation control: {}", coll_adj);
     // Apply influence of the adjustment vector for collision avoidance
     new_pos.x += constants::FORM_COLL_WEIGHT * coll_adj.x;
     new_pos.y += constants::FORM_COLL_WEIGHT * coll_adj.y;
     this->sendLogDebug("Updated formation position after collision adjustments: {}", new_pos);
 
-    // Compute distance from setpoint
-    auto x_diff = abs(new_pos.x - my_curr_pos.x);
-    auto y_diff = abs(new_pos.y - my_curr_pos.y);
-    auto z_diff = abs(target_height - my_curr_pos.z);
-
-    // If the new position is close enough to the target setpoint, go to the next step
-    if ((x_diff < constants::SETPOINT_REACHED_DISTANCE) &&
-        (y_diff < constants::SETPOINT_REACHED_DISTANCE) &&
-        (z_diff < constants::SETPOINT_REACHED_DISTANCE)) {
-        this->near_target_counter_++;
-        this->sendLogDebug("Near target enough; count: {}", this->near_target_counter_);
-    } else {
-        this->near_target_counter_ = 0;
-        this->sendLogDebug("Not near target; reset counter");
-    }
-    if (this->near_target_counter_ >= constants::FORM_TARGET_COUNT) {
-        this->sendLogDebug("Static formation achieved successfully");
-
-        if (this->confirmAgentIsLeader()) {
-            cancelTimer(this->formation_timer_); // Do not call this function again
-
-            // The last setpoints update is not actually needed, so don't perform it
-            return;
-        } else {
-            this->signalNotifyAgentInFormation();
-        }
-    }
-
-    // Small velocity to help a more precise tracking (if needed)
     geometry_msgs::msg::Point vel =
         geometry_msgs::msg::Point()
             .set__x(
@@ -270,8 +360,36 @@ void UNSCModule::formationControl() {
             .set__z(std::nanf(""));
     this->sendLogDebug("Updated velocity for last formation setpoint: {}", vel);
 
+    // Compute distance from desired position
+    auto x_diff = abs(my_des_pos.x - my_curr_pos.x);
+    auto y_diff = abs(my_des_pos.y - my_curr_pos.y);
+    auto z_diff = abs(target_height - my_curr_pos.z);
+
+    // If the new position is close enough to the target setpoint, go to the next step
+    if ((x_diff <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (y_diff <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (z_diff <= constants::SETPOINT_REACHED_DISTANCE)) {
+        this->increaseTargetCount();
+        this->sendLogDebug(
+            "Formation|Near enough to the desired position; count: {}", this->getTargetCount()
+        );
+
+        // Small velocity to help a more precise tracking (if needed)
+        this->setVelocitySetpoint(vel, 0.2);
+
+    } else {
+        this->sendLogDebug("Formation|Distance from desired position: {}, {}", x_diff, y_diff);
+        this->resetTargetCount();
+
+        this->setVelocitySetpoint(vel);
+    }
+
+    if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
+        this->sendLogDebug("Formation achieved successfully");
+        this->signalNotifyAgentInFormation();
+    }
+
     this->setPositionSetpoint(new_pos);
-    this->setVelocitySetpoint(vel);
 }
 
 /*********************** Collision avoidance ***********************/
@@ -296,15 +414,9 @@ geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
                 // Euclidean distance between the agent and the neighbor
                 double dx = neigh_position.x - agentPosition.x;
                 double dy = neigh_position.y - agentPosition.y;
+                // No problem: never exactly zero, since my own position is excluded
                 double distance = std::hypot(dx, dy);
 
-                // Ensure distance is not zero to avoid division by zero
-                if (distance == 0) {
-                    this->sendLogWarning(
-                        "Distance to copter {} is zero, skipping adjustment", copter_id
-                    );
-                    continue;
-                }
                 this->sendLogDebug(
                     "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
                     neigh_position, distance, dx, dy
@@ -387,6 +499,7 @@ void UNSCModule::findNeighbors() {
 }
 
 void UNSCModule::assignFormationPositions() {
+    // Pairs: agent ID - agent's position
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> positions;
     double circle_radius = this->gatherROI();
     unsigned int my_id = this->gatherAgentID(); // to reduce function calls
@@ -396,41 +509,58 @@ void UNSCModule::assignFormationPositions() {
     for (auto& id : ids) {
         positions[id] = this->gatherCopterPosition(id);
     }
-
-    // Compute the distance of each copter from my own, aka the
-    // center of the desired circle, and find the closest one
-    unsigned int closest_id = 0;
-    double min_distance = std::numeric_limits<double>::max();
-    for (auto& id : ids) {
-        // Skip me
-        if (id == my_id)
-            continue;
-
-        double dist = circleDistance(positions.at(my_id), positions.at(id), circle_radius);
-        if (dist < min_distance) {
-            min_distance = dist;
-            closest_id = id;
-        }
-        this->sendLogDebug("Agent {} position: {}, distance: {}", id, positions.at(id), dist);
+    // Get my latest position, for more up-to-date computations
+    auto maybe_enu = this->gatherENUOdometry();
+    if (!maybe_enu) {
+        this->sendLogDebug("ENU odometry not available!");
+        return;
     }
-    this->sendLogDebug("Closest agent is {}", closest_id);
+    auto enu = maybe_enu.value();
+    positions.at(my_id) = geometry_msgs::msg::Point()
+                              .set__x(enu.pose.pose.position.x)
+                              .set__y(enu.pose.pose.position.y)
+                              .set__z(enu.pose.pose.position.z);
 
-    // Determine closest point on circle
-    geometry_msgs::msg::Point closest_desired_pos =
-        closestCirclePoint(positions.at(closest_id), positions.at(my_id), circle_radius);
+    if (this->getClosestAgent() == 0) {
+        // Compute the distance of each copter from my own, aka the
+        // center of the desired circle, and find the closest one
+        unsigned int closest_id = 0;
+        double min_distance = std::numeric_limits<double>::max();
+        for (auto& id : ids) {
+            // Skip me
+            if (id == my_id)
+                continue;
+
+            double dist = circleDistance(positions.at(id), positions.at(my_id), circle_radius);
+            if (dist < min_distance) {
+                min_distance = dist;
+                closest_id = id;
+            }
+            this->sendLogDebug(
+                "Agent {} position: {}, circle distance: {}", id, positions.at(id), dist
+            );
+        }
+        this->setClosestAgent(closest_id);
+        this->setFleetOrder(closest_id, 0);
+        this->setClosestAngle(std::atan2(positions.at(closest_id).y, positions.at(closest_id).x));
+        this->sendLogDebug("Closest agent is {}, at angle {}", closest_id, this->getClosestAngle());
+    }
 
     // Determine all desired positions on the circle
     std::vector<geometry_msgs::msg::Point> desired_positions = homPointsOnCircle(
-        closest_desired_pos, positions.at(my_id), circle_radius, this->gatherNetworkSize() - 1
+        this->getClosestAngle(), positions.at(my_id), circle_radius, this->gatherNetworkSize() - 1
     );
     // Add leader position
     desired_positions.push_back(positions.at(my_id));
+    this->setFleetOrder(my_id, desired_positions.size() - 1);
 
+    // Pairs: agent ID - associated position
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> associated_pos;
     // Make sure the leader and the closest agent have the correct position
     associated_pos[my_id] = positions.at(my_id);
-    associated_pos[closest_id] = desired_positions[0]; // == closest_desired_pos
+    associated_pos[this->getClosestAgent()] = desired_positions[0];
 
+    // Some presets...
     std::vector<bool> assigned(desired_positions.size(), false);
     assigned[0] = true;
     assigned[assigned.size() - 1] = true;
@@ -438,26 +568,32 @@ void UNSCModule::assignFormationPositions() {
     // Compute closest desired position to each agent
     for (auto& id : ids) {
         // Skip leader and "chosen" agent
-        if ((id == my_id) || (id == closest_id))
+        if ((id == my_id) || (id == this->getClosestAgent()))
             continue;
 
-        double min_distance = std::numeric_limits<double>::max();
-        int min_index = -1;
+        // Element-agent pair not yet created
+        if (this->safeOrderFind(id)) {
+            double min_distance = std::numeric_limits<double>::max();
+            int min_index = -1;
 
-        // Associate each remaining position to an agent
-        for (unsigned int j = 0; j < desired_positions.size(); j++) {
-            // Skip leader's and "chosen" agent's positions
-            if (!assigned[j]) {
-                double dist = p2p2DDistance(positions.at(id), desired_positions[j]);
-                if (dist < min_distance) {
-                    min_distance = dist;
-                    min_index = j;
+            // Associate each remaining position to an agent
+            for (unsigned int j = 0; j < desired_positions.size(); j++) {
+                // Skip leader's and "chosen" agent's positions
+                if (!assigned[j]) {
+                    double dist = p2p2DDistance(positions.at(id), desired_positions[j]);
+                    if (dist < min_distance) {
+                        min_distance = dist;
+                        min_index = j;
+                    }
                 }
             }
-        }
 
-        associated_pos[id] = desired_positions[min_index];
-        assigned[min_index] = true;
+            associated_pos[id] = desired_positions[min_index];
+            this->setFleetOrder(id, min_index);
+            assigned[min_index] = true;
+        } else {
+            associated_pos[id] = desired_positions[this->getFleetOrder(id)];
+        }
     }
 
     // Output the sorted desired positions with distances

@@ -110,6 +110,36 @@ void Pelican::rogerWillCo(
             goal_handle->abort(response);
         }
     }
+
+    // Handling paylod dropoff position
+    if (request->dropoff) {
+        response->dropoff = true;
+
+        if (this->isCarrying()) {
+            this->sendLogDebug("Notifying start of payload dropoff operations!");
+            this->sendLogInfo(
+                "Dropoff position is at {}",
+                geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
+            );
+
+            this->setDropoffPosition(
+                geometry_msgs::msg::Point().set__x(request->x).set__y(request->y).set__z(request->z)
+            );
+
+            std::thread dropoff_thread(&Pelican::handleCommandDispatch, this, FORMATION);
+            dropoff_thread.join();
+            if (this->isLastCmdExecuted()) {
+                this->sendLogInfo("Dropoff initiated!");
+                goal_handle->succeed(response);
+            } else {
+                goal_handle->abort(response);
+            }
+
+        } else {
+            this->sendLogWarning("The fleet is not carrying a payload!");
+            goal_handle->abort(response);
+        }
+    }
 }
 
 // Leader-side; Receiver of FleetInfo requests - Target position
@@ -133,25 +163,29 @@ void Pelican::rendezvousFleet() {
     if (!this->isLeader()) {
         // Search for a second, then log and search again if needed
         unsigned int total_search_time = 0;
+        std::string service_name = this->fleetinfo_client_->get_service_name();
         while (!this->fleetinfo_client_->wait_for_service(
                    std::chrono::seconds(constants::SEARCH_LEADER_STEP_SECS)
                ) &&
                total_search_time < constants::MAX_SEARCH_TIME_SECS) {
             if (!rclcpp::ok()) {
-                this->sendLogError("Client interrupted while waiting for service. Terminating...");
+                this->sendLogError(
+                    "Client interrupted while waiting for the {} service. Terminating...",
+                    service_name
+                );
                 return;
             }
 
-            this->sendLogDebug("Service not available; waiting some more...");
+            this->sendLogDebug("Service {} not available; waiting some more...", service_name);
             total_search_time += constants::SEARCH_LEADER_STEP_SECS;
         };
 
         if (total_search_time >= constants::MAX_SEARCH_TIME_SECS) {
-            this->sendLogWarning("The server seems to be down. Please try again.");
+            this->sendLogWarning("The server {} seems to be down. Please try again.", service_name);
             this->unsetAndNotifyRendezvousHandled();
             return;
         }
-        this->sendLogDebug("Rendezvous server available");
+        this->sendLogDebug("{} server available", service_name);
 
         // Send request
         auto request = std::make_shared<comms::srv::FleetInfo::Request>();
@@ -164,7 +198,7 @@ void Pelican::rendezvousFleet() {
             );
         if (!async_request_result.valid() || (future_status != std::future_status::ready)) {
             this->sendLogWarning(
-                "Failed to receive confirmation from the FleetInfo server (target)!"
+                "Failed to receive confirmation from the {} server (target)!", service_name
             );
             this->fleetinfo_client_->prune_pending_requests();
             return;
@@ -172,7 +206,7 @@ void Pelican::rendezvousFleet() {
     }
 
     this->setAndNotifyRendezvousHandled();
-    this->initiateOffboardMode();
+    this->initiateConsensus();
 }
 
 // This is only executed by non-leaders; FleetInfo response handling - Target position
@@ -338,6 +372,9 @@ void Pelican::handleCommandDispatch(uint16_t command) {
                 break;
             case RENDEZVOUS:
                 this->setCarryingStatus();
+                break;
+            case FORMATION:
+                // Nothing special to do here...
                 break;
             default:
                 this->sendLogDebug("Handling operations for command {} unknown", command);
@@ -529,6 +566,14 @@ bool Pelican::executeRPCCommand(uint16_t command) {
             return res;
             break;
         }
+        case FORMATION: {
+            std::thread form_thread(&Pelican::initiatePreFormationActions, this);
+            form_thread.detach();
+
+            this->sendLogDebug("Waiting for the formation control to start...");
+            return true;
+            break;
+        }
         default:
             this->sendLogWarning("Command received is not supported!");
             return false;
@@ -536,6 +581,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
 }
 
 // Function to publish FormationDesired messages
+// Map with pairs: agent ID - agent's desired position
 void Pelican::sendDesiredFormationPositions(
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> desired_positions
 ) {
