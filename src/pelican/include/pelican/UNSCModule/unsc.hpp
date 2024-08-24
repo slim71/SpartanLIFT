@@ -120,6 +120,7 @@ class UNSCModule {
         void signalAskDesPosToNeighbor(unsigned int);
         void signalNotifyAgentInFormation();
         void signalSyncTrigger();
+        void signalUnsetCarryingStatus();
 
         // External communications - flag checks
         bool confirmAgentIsLeader() const;

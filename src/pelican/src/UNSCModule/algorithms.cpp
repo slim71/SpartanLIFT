@@ -141,6 +141,32 @@ void UNSCModule::preFormationActions() {
         std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
     }
 
+    // Establish formation positions while static
+    if (this->confirmAgentIsLeader()) {
+        this->formation_timer_ = this->node_->create_wall_timer(
+            this->formation_period_, std::bind(&UNSCModule::assignFormationPositions, this),
+            this->gatherFormationExclusiveGroup()
+        );
+    } else {
+        this->collision_timer_ = this->node_->create_wall_timer(
+            this->tight_coll_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
+            this->gatherReentrantGroup()
+        );
+        this->formation_timer_ = this->node_->create_wall_timer(
+            this->formation_period_, std::bind(&UNSCModule::formationControl, this),
+            this->gatherFormationExclusiveGroup()
+        );
+    }
+
+    // Wait for static formation to be achieved
+    this->sendLogDebug("Ready for formation control!");
+    if (this->confirmAgentIsLeader()) {
+        while (!this->confirmFormationAchieved()) {
+            this->sendLogDebug("Formation not yet achieved");
+            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+        }
+    }
+
     // Attach cargo to leader
     if (this->confirmAgentIsLeader()) {
         this->sendLogDebug("Attaching cargo to leader");
@@ -157,7 +183,7 @@ void UNSCModule::preFormationActions() {
         this->sendLogDebug("Checking if new target height has been reached");
         geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
         this->sendLogDebug("Last height recorded: {}", pos.z);
-        if (abs(pos.z - 3.0) < 0.1) {
+        if (abs(pos.z - (constants::EXTRACTION_HEIGHT + 1)) < 0.1) {
             this->sendLogDebug("Reached");
             break;
         }
@@ -165,14 +191,10 @@ void UNSCModule::preFormationActions() {
     }
 
     // Start actual formation control
-    this->sendLogDebug("Ready for formation control!");
+    // Move the leader to the dropoff position
     if (this->confirmAgentIsLeader()) {
-        this->assignFormationPositions(); // To quickly send the first reference
-
-        std::this_thread::sleep_for(std::chrono::seconds(constants::FORMATION_WAIT_TIME_SECS));
-
-        this->formation_timer_ = this->node_->create_wall_timer(
-            this->formation_period_, std::bind(&UNSCModule::assignFormationPositions, this),
+        this->linear_timer_ = this->node_->create_wall_timer(
+            this->linear_period_, std::bind(&UNSCModule::linearP2P, this),
             this->gatherFormationExclusiveGroup()
         );
     } else {
@@ -182,18 +204,6 @@ void UNSCModule::preFormationActions() {
         );
         this->formation_timer_ = this->node_->create_wall_timer(
             this->formation_period_, std::bind(&UNSCModule::formationControl, this),
-            this->gatherFormationExclusiveGroup()
-        );
-    }
-
-    // Move the leader to the dropoff position
-    if (this->confirmAgentIsLeader()) {
-        while (!this->confirmFormationAchieved()) {
-            this->sendLogDebug("Formation not yet achieved");
-            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-        }
-        this->linear_timer_ = this->node_->create_wall_timer(
-            this->linear_period_, std::bind(&UNSCModule::linearP2P, this),
             this->gatherFormationExclusiveGroup()
         );
     }
@@ -257,6 +267,7 @@ void UNSCModule::linearP2P() {
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
         this->sendLogDebug("Static formation achieved successfully");
         cancelTimer(this->linear_timer_); // Do not call this function again
+        this->signalUnsetCarryingStatus();
     }
 }
 
@@ -401,10 +412,7 @@ void UNSCModule::formationControl() {
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
         this->sendLogDebug("Formation achieved successfully");
         resetTimer(this->collision_timer_);
-        this->collision_timer_ = this->node_->create_wall_timer(
-            this->loose_coll_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
-            this->gatherReentrantGroup()
-        );
+        resetTimer(this->formation_timer_);
         this->signalNotifyAgentInFormation();
     }
 
@@ -477,10 +485,12 @@ void UNSCModule::tightSpaceCollisionAvoidance() {
         this->sendLogWarning("Needed data not available!");
         return;
     }
-    auto enu = maybe_curr_pos.value();
+    nav_msgs::msg::Odometry enu = maybe_curr_pos.value();
     geometry_msgs::msg::Point my_curr_pos = nav2Geom(enu);
     // Gather desired position
-    auto des_pos = this->gatherDesiredPosition();
+    geometry_msgs::msg::Point des_pos = this->gatherDesiredPosition();
+    if (geomPointHasNan(des_pos))
+        return;
     // To reduce function calls
     unsigned int my_id = this->gatherAgentID();
     std::vector<unsigned int> ids = this->gatherCoptersIDs();

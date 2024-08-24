@@ -229,6 +229,14 @@ void UNSCModule::signalSyncTrigger() {
     this->node_->commenceSyncTrigger();
 }
 
+void UNSCModule::signalUnsetCarryingStatus() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceUnsetCarryingStatus();
+}
+
 /*************************** Flag checks ***************************/
 bool UNSCModule::confirmAgentIsLeader() const {
     if (!this->node_) {

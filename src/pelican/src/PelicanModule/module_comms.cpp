@@ -185,3 +185,7 @@ void Pelican::commenceAskDesPosToNeighbor(unsigned int id) {
 void Pelican::commenceCargoAttachment() {
     this->cargoAttachment();
 }
+
+void Pelican::commenceUnsetCarryingStatus() {
+    this->unsetCarryingStatus();
+}

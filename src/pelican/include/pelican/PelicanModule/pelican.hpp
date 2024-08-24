@@ -101,6 +101,7 @@ class Pelican : public rclcpp::Node {
                                                    geometry_msgs::msg::Point>); // UNSC module
         void commenceAskDesPosToNeighbor(unsigned int);                         // UNSC module
         void commenceCargoAttachment();                                         // UNSC module
+        void commenceUnsetCarryingStatus();
         bool commenceCheckOffboardEngagement();                // TacMap and UNSC modules
         bool commenceWaitForCommanderAck(uint16_t);            // TacMap module
         void commenceHeightCompensation(double);               // TacMap module
