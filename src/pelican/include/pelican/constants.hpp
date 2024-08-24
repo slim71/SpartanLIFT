@@ -27,9 +27,14 @@ namespace constants {
     // Others
     // Standard heartbeat period is 100ms, so this would keep a log of 10s
     static constexpr double STEP_SIZE = 0.5;                 // [m]
+    static constexpr double K_REPULSIVE = 1;                 // Repulsive gain factor
+    static constexpr double SMOOTHING_FACTOR = 0.7;          // Smoothing factor
     static constexpr double EXTRACTION_HEIGHT = 2.0;         // [m]
+    static constexpr double STUCK_AGENT_SPEED = 0.1;         // [m/s]
+    static constexpr double TIGHT_DISTANCE_THRESHOLD = 1.5;  // [m]
     static constexpr double SETPOINT_REACHED_DISTANCE = 0.4; // [m]
     static constexpr unsigned int MAX_HB_NUM = 100;
+    static constexpr unsigned int STUCK_AGENT_NUM = 5;
     static constexpr unsigned int QOS_HISTORY_AMOUNT = 5;
     static constexpr unsigned int MAX_GET_ACK_RETRIES = 10;
     static constexpr unsigned int MAX_BROADCAST_RETRIES = 10;
@@ -56,7 +61,10 @@ namespace constants {
     static constexpr double REND_COLL_THRESHOLD = 1.0; // [m]
 
     // Formation-related
-    static constexpr double FORM_DIST_WEIGHT = 1.0;
+    // Proportional gain for a new formation position
+    static constexpr double FORM_PROP_WEIGHT = 1.0;
+    // Derivative gain for a new formation position
+    static constexpr double FORM_DER_WEIGHT = 0.5;
     static constexpr double FORM_COLL_WEIGHT = 1.0;
     static constexpr double FORM_CLOSING_VEL = 0.2;    // [m/s]
     static constexpr double FORM_COLL_THRESHOLD = 0.5; // [m]

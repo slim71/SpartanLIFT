@@ -25,6 +25,8 @@ template<typename T> void resetSharedPointer(std::shared_ptr<T>&);
 template<typename T> inline constexpr int signum(T, std::false_type);
 template<typename T> inline constexpr int signum(T, std::true_type);
 template<typename T> inline constexpr int signum(T);
+double random_perturbation();
+geometry_msgs::msg::Point nav2Geom(nav_msgs::msg::Odometry);
 
 #include "templates.tpp"
 

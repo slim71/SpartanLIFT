@@ -174,3 +174,20 @@ double p2p2DDistance(geometry_msgs::msg::Point p, geometry_msgs::msg::Point q) {
 bool geomPointHasNan(geometry_msgs::msg::Point& p) {
     return std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z);
 }
+
+double random_perturbation() {
+    // Generate a random value between -1.0 and 1.0
+    double random_value = static_cast<double>(std::rand()) / RAND_MAX * 2.0 - 1.0;
+
+    // Scale the random value to an angle perturbation in radians
+    double max_perturbation = M_PI / 32; // Maximum perturbation: 5.625 degrees
+
+    return random_value * max_perturbation;
+}
+
+geometry_msgs::msg::Point nav2Geom(nav_msgs::msg::Odometry nav) {
+    return geometry_msgs::msg::Point()
+        .set__x(nav.pose.pose.position.x)
+        .set__y(nav.pose.pose.position.y)
+        .set__z(nav.pose.pose.position.z);
+}

@@ -35,7 +35,9 @@ void UNSCModule::consensusToRendezvous() {
 
     // Compute adjustment vector for collision avoidance with nearby agents
     geometry_msgs::msg::Point coll_adj =
-        adjustmentForCollisionAvoidance(updated_pos, constants::REND_COLL_THRESHOLD);
+        standardCollisionAvoidance(updated_pos, constants::REND_COLL_THRESHOLD);
+    if (geomPointHasNan(coll_adj))
+        return;
     updated_pos.x += constants::REND_COLL_WEIGHT * coll_adj.x;
     updated_pos.y += constants::REND_COLL_WEIGHT * coll_adj.y;
     this->sendLogDebug("Updated rendezvous position after collision adjustments: {}", updated_pos);
@@ -81,7 +83,6 @@ void UNSCModule::preFormationActions() {
     // The leader agent has some more instructions to follow, before starting the formation control
 
     // Move leader to target position
-    // TODO: also add collision avoidance to the leader movements
     if (this->confirmAgentIsLeader()) {
         std::optional<geometry_msgs::msg::Point> maybe_target = this->getTargetPosition();
         if (!maybe_target) {
@@ -175,7 +176,10 @@ void UNSCModule::preFormationActions() {
             this->gatherFormationExclusiveGroup()
         );
     } else {
-        this->sendLogDebug("Calling formationControl");
+        this->collision_timer_ = this->node_->create_wall_timer(
+            this->collision_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
+            this->gatherReentrantGroup()
+        );
         this->formation_timer_ = this->node_->create_wall_timer(
             this->formation_period_, std::bind(&UNSCModule::formationControl, this),
             this->gatherFormationExclusiveGroup()
@@ -208,9 +212,9 @@ void UNSCModule::linearP2P() {
         (abs(diff.y) <= constants::SETPOINT_REACHED_DISTANCE) &&
         (abs(target_height - curr_pos.z) <= constants::SETPOINT_REACHED_DISTANCE)) {
         this->increaseTargetCount();
-        this->sendLogDebug("Near target enough; count: {}", this->getTargetCount());
+        this->sendLogDebug("LinearP2P|Near target enough; count: {}", this->getTargetCount());
     } else {
-        this->sendLogDebug("Distance from dropoff_pos: {}", diff);
+        this->sendLogDebug("LinearP2P|Distance from dropoff position: {}", diff);
         this->resetTargetCount();
 
         // Compute distance and normalize it
@@ -227,7 +231,9 @@ void UNSCModule::linearP2P() {
 
         // Add collision avoidance
         geometry_msgs::msg::Point coll_adj =
-            adjustmentForCollisionAvoidance(next_setpoint, constants::FORM_COLL_THRESHOLD);
+            standardCollisionAvoidance(next_setpoint, constants::FORM_COLL_THRESHOLD);
+        if (geomPointHasNan(coll_adj))
+            return;
         next_setpoint.x += constants::REND_COLL_WEIGHT * coll_adj.x;
         next_setpoint.y += constants::REND_COLL_WEIGHT * coll_adj.y;
         this->sendLogDebug("Updated P2P position after collision adjustments: {}", next_setpoint);
@@ -289,10 +295,7 @@ void UNSCModule::formationControl() {
         return;
     }
     auto enu = maybe_curr_pos.value();
-    geometry_msgs::msg::Point my_curr_pos = geometry_msgs::msg::Point()
-                                                .set__x(enu.pose.pose.position.x)
-                                                .set__y(enu.pose.pose.position.y)
-                                                .set__z(enu.pose.pose.position.z);
+    geometry_msgs::msg::Point my_curr_pos = nav2Geom(enu);
     geometry_msgs::msg::Point my_des_pos = this->gatherDesiredPosition();
     this->sendLogDebug("Own current position: {}, desired position: {}", my_curr_pos, my_des_pos);
     if (geomPointHasNan(my_des_pos))
@@ -306,7 +309,7 @@ void UNSCModule::formationControl() {
     // Gather target height
     double target_height = this->getActualTargetHeight();
 
-    /************* Actual algorith *************/
+    /************* Actual algorithm *************/
     // Compute control input u_i = K_p * \sum_j (p_j - p_i - (p_j^{desired} - p_i^{desired}))
     double ux = 0, uy = 0;
     // Neighbors' contribution
@@ -318,18 +321,29 @@ void UNSCModule::formationControl() {
     // The leader current and desired position correspond, since it is guiding the fleet
     ux += my_curr_pos.x - leader_pos.x - (my_des_pos.x - leader_pos.x);
     uy += my_curr_pos.y - leader_pos.y - (my_des_pos.y - leader_pos.y);
-    // Account for the gain
-    ux *= constants::FORM_DIST_WEIGHT;
-    uy *= constants::FORM_DIST_WEIGHT;
-    this->sendLogDebug("current: {}, ux: {}, uy: {}", my_curr_pos, ux, uy);
+    this->sendLogDebug("Current position: {}, ux: {}, uy: {}", my_curr_pos, ux, uy);
 
-    // Compute udpated reference position
+    // Calculate the derivative of the error
+    double dux_dt = (ux - prev_ux) /
+                    (constants::FORMATION_PERIOD_MILLIS / constants::MILLIS_TO_SECS_CONVERSION);
+    double duy_dt = (uy - prev_uy) /
+                    (constants::FORMATION_PERIOD_MILLIS / constants::MILLIS_TO_SECS_CONVERSION);
+    // Apply both proportional and derivative control
+    double total_ux = constants::FORM_PROP_WEIGHT * ux + constants::FORM_DER_WEIGHT * dux_dt;
+    double total_uy = constants::FORM_PROP_WEIGHT * uy + constants::FORM_DER_WEIGHT * duy_dt;
+    this->sendLogDebug(
+        "dux_dt: {}, duy_dt: {}, total_ux: {}, total_uy: {}", dux_dt, duy_dt, total_ux, total_uy
+    );
+
+    // Update previous data
+    this->prev_ux = ux;
+    this->prev_uy = uy;
+
+    // Compute updated reference position
     geometry_msgs::msg::Point new_pos = geometry_msgs::msg::Point()
-                                            .set__x(my_curr_pos.x - ux)
-                                            .set__y(my_curr_pos.y - uy)
-                                            .set__z(my_curr_pos.z); // Not generally used
-    this->sendLogDebug("New formation position to move to: {}", new_pos);
-
+                                            .set__x(my_curr_pos.x - total_ux)
+                                            .set__y(my_curr_pos.y - total_uy)
+                                            .set__z(std::nanf("")); // Not generally used
     // Introduce a maximum step size to prevent large movements
     double dx = new_pos.x - my_curr_pos.x;
     double dy = new_pos.y - my_curr_pos.y;
@@ -338,9 +352,10 @@ void UNSCModule::formationControl() {
         new_pos.x = my_curr_pos.x + (dx / step) * constants::STEP_SIZE;
         new_pos.y = my_curr_pos.y + (dy / step) * constants::STEP_SIZE;
     }
+    this->sendLogDebug("New formation position to move to: {}", new_pos);
 
     // Compute adjustment vector for collision avoidance with nearby agents
-    geometry_msgs::msg::Point coll_adj = adjustmentForCollisionAvoidance(new_pos, 1);
+    geometry_msgs::msg::Point coll_adj = standardCollisionAvoidance(new_pos, 1);
     this->sendLogDebug("Collision adjustment for formation control: {}", coll_adj);
     // Apply influence of the adjustment vector for collision avoidance
     new_pos.x += constants::FORM_COLL_WEIGHT * coll_adj.x;
@@ -375,17 +390,17 @@ void UNSCModule::formationControl() {
         );
 
         // Small velocity to help a more precise tracking (if needed)
-        this->setVelocitySetpoint(vel, 0.2);
+        this->setVelocitySetpoint(vel, constants::FORM_CLOSING_VEL);
 
     } else {
         this->sendLogDebug("Formation|Distance from desired position: {}, {}", x_diff, y_diff);
         this->resetTargetCount();
-
         this->setVelocitySetpoint(vel);
     }
 
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
         this->sendLogDebug("Formation achieved successfully");
+        resetTimer(this->collision_timer_);
         this->signalNotifyAgentInFormation();
     }
 
@@ -393,9 +408,8 @@ void UNSCModule::formationControl() {
 }
 
 /*********************** Collision avoidance ***********************/
-geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
-    geometry_msgs::msg::Point agentPosition, double threshold
-) {
+geometry_msgs::msg::Point
+UNSCModule::standardCollisionAvoidance(geometry_msgs::msg::Point agentPosition, double threshold) {
     // Initialize the total adjustment vector to zero
     double totalAdjustmentX = 0.0;
     double totalAdjustmentY = 0.0;
@@ -407,47 +421,159 @@ geometry_msgs::msg::Point UNSCModule::adjustmentForCollisionAvoidance(
     // Compute adjustment vector for each neighbor
     for (auto& copter_id : ids) { // for each copter
         // Exclude my own position
-        if (copter_id != my_id) {
-            geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
+        if (copter_id == my_id)
+            continue;
 
-            if (!geomPointHasNan(neigh_position)) { // Copter position valid
-                // Euclidean distance between the agent and the neighbor
-                double dx = neigh_position.x - agentPosition.x;
-                double dy = neigh_position.y - agentPosition.y;
-                // No problem: never exactly zero, since my own position is excluded
-                double distance = std::hypot(dx, dy);
+        geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
+        if (geomPointHasNan(neigh_position)) { // Copter position valid
+            this->sendLogDebug(
+                "Cannot compute collision contribution: neighbor {} position contains NANs "
+                "({})",
+                copter_id, neigh_position
+            );
+            return NAN_point;
+        }
 
-                this->sendLogDebug(
-                    "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id,
-                    neigh_position, distance, dx, dy
-                );
+        // Euclidean distance between the agent and the neighbor
+        double dx = neigh_position.x - agentPosition.x;
+        double dy = neigh_position.y - agentPosition.y;
+        // No problem: never exactly zero, since my own position is excluded
+        double distance = std::hypot(dx, dy);
 
-                // Adjust only if the distance is less than the threshold
-                if (distance < threshold) {
-                    // Compute the adjustment direction (away from the neighbor)
-                    double adjustmentMagnitude = threshold - distance;
-                    double adjustmentDirectionX = dx / distance * adjustmentMagnitude;
-                    double adjustmentDirectionY = dy / distance * adjustmentMagnitude;
-                    this->sendLogDebug(
-                        "Collision avoidance adjustment contribution: {:.4f}, {:.4f} (mag: {:.4f})",
-                        adjustmentDirectionX, adjustmentDirectionY, adjustmentMagnitude
-                    );
+        this->sendLogDebug(
+            "2D distance from copter {} at {}: {:.4f} ({:.4f},{:.4f})", copter_id, neigh_position,
+            distance, dx, dy
+        );
 
-                    // Accumulate adjustments
-                    totalAdjustmentX -= adjustmentDirectionX;
-                    totalAdjustmentY -= adjustmentDirectionY;
-                }
-            } else {
-                this->sendLogDebug(
-                    "Cannot compute collision contribution: neighbor {} position contains NANs "
-                    "({})",
-                    copter_id, neigh_position
-                );
-            }
+        // Adjust only if the distance is less than the threshold
+        if (distance < threshold) {
+            // Compute the adjustment direction (away from the neighbor)
+            double adjustmentDirectionX =
+                (1 / pow(distance, 2)) * (1 / dx - 1 / threshold) * (dx / distance);
+            double adjustmentDirectionY =
+                (1 / pow(distance, 2)) * (1 / dy - 1 / threshold) * (dy / distance);
+            this->sendLogDebug(
+                "Collision avoidance adjustment contribution: {:.4f} (dx: {:.4f}, dy: {:.4f}, "
+                "threshold: {:.4f})",
+                adjustmentDirectionX, dx, dy, threshold
+            );
+
+            // Accumulate adjustments
+            totalAdjustmentX -= adjustmentDirectionX;
+            totalAdjustmentY -= adjustmentDirectionY;
         }
     }
-    // Return the normalized total adjustment vector
     return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
+}
+
+void UNSCModule::tightSpaceCollisionAvoidance() {
+    // Gather own current
+    auto maybe_curr_pos = this->gatherENUOdometry();
+    if (!maybe_curr_pos) {
+        this->sendLogWarning("Needed data not available!");
+        return;
+    }
+    auto enu = maybe_curr_pos.value();
+    geometry_msgs::msg::Point my_curr_pos = nav2Geom(enu);
+    // Gather desired position
+    auto des_pos = this->gatherDesiredPosition();
+    // To reduce function calls
+    unsigned int my_id = this->gatherAgentID();
+    std::vector<unsigned int> ids = this->gatherCoptersIDs();
+
+    // Compute direction and components to reach the desired position
+    double angle = atan2(des_pos.y - my_curr_pos.y, des_pos.x - my_curr_pos.x);
+    double dx = cos(angle);
+    double dy = sin(angle);
+    this->sendLogDebug(
+        "Start: {}, goal: {}, dx={:.4f}, dy={:.4f}, angle={:.4f}", my_curr_pos, des_pos, dx, dy,
+        angle
+    );
+
+    unsigned int count = 0;
+    // Compute adjustment vector for each neighbor
+    for (auto& copter_id : ids) { // for each copter
+        // Exclude my own position
+        if (copter_id == my_id) {
+            continue;
+        }
+
+        geometry_msgs::msg::Point neigh_position = this->gatherCopterPosition(copter_id);
+        if (geomPointHasNan(neigh_position)) { // Copter position is invalid
+            this->sendLogDebug(
+                "Cannot compute collision contribution: neighbor {} position contains NANs "
+                "({})",
+                copter_id, neigh_position
+            );
+            return;
+        }
+
+        // Adjust only if the distance from the neighbor is less than the threshold
+        double distance =
+            std::hypot(my_curr_pos.x - neigh_position.x, my_curr_pos.y - neigh_position.y);
+        if (distance < constants::TIGHT_DISTANCE_THRESHOLD) {
+            double d = pow(distance, 2);
+            double p = pow(constants::TIGHT_DISTANCE_THRESHOLD, 2);
+            // Compute direction and (weighted) components from the neighbor
+            angle = atan2(my_curr_pos.y - neigh_position.y, my_curr_pos.x - neigh_position.x);
+            dx += constants::K_REPULSIVE * cos(angle) / d * p;
+            dy += constants::K_REPULSIVE * sin(angle) / d * p;
+            this->sendLogDebug(
+                "2D distance from copter {} at {}: {:.4f} (angle: {:.4f})", copter_id,
+                neigh_position, distance, angle
+            );
+            count++;
+        }
+    }
+
+    // Only change the setpoints if at least one agent is too close
+    if (count <= 0)
+        return;
+
+    // Average the contributions
+    dx /= count;
+    dy /= count;
+    // Apply smoothing
+    dx = constants::SMOOTHING_FACTOR * dx + (1 - constants::SMOOTHING_FACTOR) * this->prev_dx;
+    dy = constants::SMOOTHING_FACTOR * dy + (1 - constants::SMOOTHING_FACTOR) * this->prev_dy;
+    // Save values
+    this->prev_dx = dx;
+    this->prev_dy = dy;
+
+    // Compute direction adjustments
+    angle = atan2(dy, dx);
+    double magnitude = std::hypot(dx, dy);
+    double speed = std::min(constants::FORM_CLOSING_VEL, magnitude);
+
+    // Detect if agent is stuck by checking if it's making progress
+    if (this->getStuckCount() > constants::STUCK_AGENT_NUM) {
+        // Add a small random perturbation to escape local minima
+        this->sendLogDebug("I got stuck while moving to my position!");
+        angle += random_perturbation();
+        this->resetStuckCount();
+    } else if (speed < constants::STUCK_AGENT_SPEED) {
+        this->increaseStuckCount();
+    } else {
+        this->resetStuckCount();
+    }
+
+    double deltax = cos(angle) * magnitude;
+    double deltay = sin(angle) * magnitude;
+    this->sendLogDebug(
+        "Final adjustments: angle: {:.4f}, magnitude: {:.4f}, deltax: {:.4f}, deltay: {:.4f}, "
+        "speed: {:.4f}",
+        angle, magnitude, deltax, deltay, speed
+    );
+    this->setPositionSetpoint(geometry_msgs::msg::Point()
+                                  .set__x(my_curr_pos.x + deltax)
+                                  .set__y(my_curr_pos.y + deltay)
+                                  .set__z(std::nanf("")) // Do not handle the z axis (height)
+    );
+    this->setVelocitySetpoint(geometry_msgs::msg::Point()
+                                  .set__x(cos(angle) * speed)
+                                  .set__y(sin(angle) * speed)
+                                  .set__z(std::nanf("")) // Do not touch the z component
+    );
 }
 
 /************************** Neighborhood ***************************/
@@ -516,10 +642,7 @@ void UNSCModule::assignFormationPositions() {
         return;
     }
     auto enu = maybe_enu.value();
-    positions.at(my_id) = geometry_msgs::msg::Point()
-                              .set__x(enu.pose.pose.position.x)
-                              .set__y(enu.pose.pose.position.y)
-                              .set__z(enu.pose.pose.position.z);
+    positions.at(my_id) = nav2Geom(enu);
 
     if (this->getClosestAgent() == 0) {
         // Compute the distance of each copter from my own, aka the

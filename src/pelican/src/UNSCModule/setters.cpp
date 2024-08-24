@@ -75,3 +75,13 @@ void UNSCModule::resetTargetCount() {
     std::lock_guard lock(this->target_count_mutex_);
     this->near_target_counter_ = 0;
 }
+
+void UNSCModule::increaseStuckCount() {
+    std::lock_guard lock(this->stuck_count_mutex_);
+    this->stuck_counter_++;
+}
+
+void UNSCModule::resetStuckCount() {
+    std::lock_guard lock(this->stuck_count_mutex_);
+    this->stuck_counter_ = 0;
+}

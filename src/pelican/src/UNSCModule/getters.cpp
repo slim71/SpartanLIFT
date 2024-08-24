@@ -80,3 +80,8 @@ uint64_t UNSCModule::getTargetCount() const {
     std::lock_guard lock(this->target_count_mutex_);
     return this->near_target_counter_;
 }
+
+uint64_t UNSCModule::getStuckCount() const {
+    std::lock_guard lock(this->stuck_count_mutex_);
+    return this->stuck_counter_;
+}

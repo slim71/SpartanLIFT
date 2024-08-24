@@ -51,6 +51,7 @@ class UNSCModule {
         double getClosestAngle() const;
         unsigned int getFleetOrder(unsigned int) const;
         uint64_t getTargetCount() const;
+        uint64_t getStuckCount() const;
 
         // Setters
         void setPositionSetpoint(geometry_msgs::msg::Point);
@@ -69,8 +70,7 @@ class UNSCModule {
             float = NAN
         );
         // Algorithms
-        geometry_msgs::msg::Point
-        adjustmentForCollisionAvoidance(geometry_msgs::msg::Point, double);
+        geometry_msgs::msg::Point standardCollisionAvoidance(geometry_msgs::msg::Point, double);
         void consensusToRendezvous();
         void formationControl();
         void linearP2P();
@@ -81,6 +81,7 @@ class UNSCModule {
 
         // Utilities
         bool safeOrderFind(unsigned int);
+        void tightSpaceCollisionAvoidance();
 
         // External communications - getters
         rclcpp::Time gatherTime() const;
@@ -132,6 +133,8 @@ class UNSCModule {
         void setFleetOrder(unsigned int, unsigned int);
         void increaseTargetCount();
         void resetTargetCount();
+        void increaseStuckCount();
+        void resetStuckCount();
         // Setters - flags
         void unsetNeighborGathered();
 
@@ -146,11 +149,14 @@ class UNSCModule {
         bool neighbor_gathered_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
         uint64_t near_target_counter_ {0};       // counter for subsequent setpoints near target
+        uint64_t stuck_counter_ {0};             // Counter for detecting being stuck
         unsigned int closest_agent_ {0};
         unsigned int sync_count_ {0};
-        double actual_target_height_ {0};  // needed in order to stabilize height tracking
+        double actual_target_height_ {0}; // needed in order to stabilize height tracking
         double closest_angle_ {0};
-        Eigen::Vector3d offset_ {0, 0, 0}; // [m, m, m]
+        double prev_ux = 0, prev_uy = 0;
+        double prev_dx = 0.0, prev_dy = 0.0;
+        Eigen::Vector3d offset_ {0, 0, 0};                      // [m, m, m]
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
         geometry_msgs::msg::Point setpoint_position_ = NAN_point;
         geometry_msgs::msg::Point setpoint_velocity_;
@@ -175,6 +181,7 @@ class UNSCModule {
         mutable std::mutex sync_mutex_;              // Used to access sync_count_
         mutable std::mutex order_mutex_;             // Used to access fleet_order_
         mutable std::mutex target_count_mutex_;      // Used to access near_target_counter_
+        mutable std::mutex stuck_count_mutex_;       // Used to access stuck_counter_
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
@@ -193,6 +200,9 @@ class UNSCModule {
         rclcpp::TimerBase::SharedPtr linear_timer_;
         std::chrono::milliseconds linear_period_ {
             std::chrono::milliseconds(constants::P2P_PERIOD_MILLIS)};
+
+        rclcpp::TimerBase::SharedPtr collision_timer_;
+        std::chrono::milliseconds collision_period_ {std::chrono::milliseconds(50)};
 };
 
 #include "unsc_template.tpp"
