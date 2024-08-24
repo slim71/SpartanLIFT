@@ -177,7 +177,7 @@ void UNSCModule::preFormationActions() {
         );
     } else {
         this->collision_timer_ = this->node_->create_wall_timer(
-            this->collision_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
+            this->tight_coll_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
             this->gatherReentrantGroup()
         );
         this->formation_timer_ = this->node_->create_wall_timer(
@@ -401,6 +401,10 @@ void UNSCModule::formationControl() {
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
         this->sendLogDebug("Formation achieved successfully");
         resetTimer(this->collision_timer_);
+        this->collision_timer_ = this->node_->create_wall_timer(
+            this->loose_coll_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
+            this->gatherReentrantGroup()
+        );
         this->signalNotifyAgentInFormation();
     }
 

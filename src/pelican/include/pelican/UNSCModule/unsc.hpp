@@ -202,7 +202,10 @@ class UNSCModule {
             std::chrono::milliseconds(constants::P2P_PERIOD_MILLIS)};
 
         rclcpp::TimerBase::SharedPtr collision_timer_;
-        std::chrono::milliseconds collision_period_ {std::chrono::milliseconds(50)};
+        std::chrono::milliseconds tight_coll_period_ {
+            std::chrono::milliseconds(constants::TIGHT_COLL_PERIOD_MILLIS)};
+        std::chrono::milliseconds loose_coll_period_ {
+            std::chrono::milliseconds(constants::LOOSE_COLL_PERIOD_MILLIS)};
 };
 
 #include "unsc_template.tpp"
