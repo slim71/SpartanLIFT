@@ -12,12 +12,11 @@ from matplotlib import gridspec
 
 CMAP = mpl.colormaps["Set1"]
 COLORS = CMAP.colors[1:]
-FILE_PATH = "/home/slim71/.ros/log/2024-08-13-12-15-43-541220-slim71-Ubuntu-28134/"
-LEADER = 3
+FILE_PATH = "/home/slim71/.ros/log/2024-08-24-18-31-11-075701-slim71-Ubuntu-35197/"
 FILE_NAME = "launch.log"
 N_AGENTS = 5
-XMIN, XMAX, YMIN, YMAX = -10, 0, -5, 5
-TICKS_FREQUENCY = 1
+XMIN, XMAX, YMIN, YMAX = -9, -3, -3, 3
+TICKS_FREQUENCY = 0.5
 ROWS = 2
 COLS = N_AGENTS
 
@@ -27,41 +26,51 @@ x_despos = [[] for _ in range(N_AGENTS)]
 y_despos = [[] for _ in range(N_AGENTS)]
 x_pos = [[] for _ in range(N_AGENTS)]
 y_pos = [[] for _ in range(N_AGENTS)]
+x_setpoints = [[] for _ in range(N_AGENTS)]
+y_setpoints = [[] for _ in range(N_AGENTS)]
 plots = []
 form_index = {}
 
 
 if __name__ == "__main__":
+    leader = 0
     with open(os.path.join(FILE_PATH, FILE_NAME), "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
 
-    # Gather positions assigned by the leader to each agent
     with open(
         os.path.join(FILE_PATH, "desired_positions.log"), "w", encoding="utf8"
-    ) as output_file:
+    ) as despos_file, open(
+        os.path.join(FILE_PATH, "real_positions.log"), "w", encoding="utf8"
+    ) as realpos_file, open(
+        os.path.join(FILE_PATH, "setpoints.log"), "w", encoding="utf8"
+    ) as setpoints_file:
+        for line in reversed(lines):
+            # Detect leader agent
+            if re.search(r"Agent \d+\|.+\|leader\|\d+", line):
+                matches = re.findall(r"Agent (\d)+\|.+\|leader\|\d+", line)
+                leader = int(matches[0])
+                break
+
         for line in lines:
+            # Gather positions assigned by the leader to each agent
             if re.search(r"assigned to position:", line):
                 matches = re.findall(
-                    r"Agent (\d) assigned to position: \((-*\d+\.\d+), (-*\d+\.\d+), -*\d+\.\d+\)",
+                    r"Agent (\d) assigned to position: \((-*\d+\.\d+), (-*\d+\.\d+)",
                     line,
                 )[0]
                 x_despos[int(matches[0]) - 1].append(float(matches[1]))
                 y_despos[int(matches[0]) - 1].append(float(matches[2]))
-                output_file.write(re.findall(r"Agent \d assigned .*", line)[0] + "\n")
+                despos_file.write(re.findall(r"Agent \d assigned .*", line)[0] + "\n")
 
-    # Gather each agent's real positions
-    with open(
-        os.path.join(FILE_PATH, "real_positions.log"), "w", encoding="utf8"
-    ) as output_file:
-        for line in lines:
+            # Gather each agent's real positions
             if re.search(r"Sharing pos:", line):
                 matches = re.findall(
-                    r"Agent (\d*).* Sharing pos: \((-*\d+\.\d+), (-*\d+\.\d+), -*\d+\.\d+\)",
+                    r"Agent (\d*).* Sharing pos: \((-*\d+\.\d+), (-*\d+\.\d+)",
                     line,
                 )[0]
                 x_pos[int(matches[0]) - 1].append(float(matches[1]))
                 y_pos[int(matches[0]) - 1].append(float(matches[2]))
-                output_file.write(
+                realpos_file.write(
                     f"Agent {matches[0]}| "
                     + re.findall(r"Sharing pos: .*", line)[0]
                     + "\n"
@@ -71,6 +80,22 @@ if __name__ == "__main__":
                     r"Agent (\d*).* Finished Rendezvous successfully", line
                 )[0]
                 form_index[int(matches[0])] = len(x_pos[int(matches[0]) - 1])
+
+            # Gather each agent's setpoints
+            if re.search(r"New formation position to move to:", line):
+                matches = re.findall(
+                    r"Agent (\d*).* New formation position to move to: \((-*\d+\.\d+), (-*\d+\.\d+)",
+                    line,
+                )[0]
+                x_setpoints[int(matches[0]) - 1].append(float(matches[1]))
+                y_setpoints[int(matches[0]) - 1].append(float(matches[2]))
+                setpoints_file.write(
+                    f"Agent {matches[0]}| "
+                    + re.findall(r"New formation position to move to: .*", line)[0]
+                    + "\n"
+                )
+
+    ######################### Plots setup ##########################
 
     # Create the figure and the subplots
     fig = plt.figure()
@@ -104,50 +129,80 @@ if __name__ == "__main__":
         # Add a grid
         plot.grid(which="both", color="grey", linewidth=1, linestyle="-", alpha=0.2)
 
+    # Actually plot stuff
     for i in range(N_AGENTS):
-        # Plot everything together
-        plots[0].plot(
-            x_despos[i][1:], y_despos[i][1:], linewidth=2, label=f"agent{i+1}"
-        )
-        plots[0].plot(x_despos[i][0], y_despos[i][0], "b", linewidth=2, marker="o")
-        # Plot everything together
-        plots[1].plot(
-            x_pos[i][form_index[i + 1] + 1 :],
-            y_pos[i][form_index[i + 1] + 1 :],
-            linewidth=2,
-            label=f"agent{i+1}",
-        )
-        plots[1].plot(
-            x_pos[i][form_index[i + 1]],
-            y_pos[i][form_index[i + 1]],
-            "g",
-            linewidth=2,
-            marker="o",
-        )
-
-        # Separate each agent's plot
+        ###### Plot everything together
         # Desired positions
-        plots[i + 2].plot(
-            x_despos[i][1:], y_despos[i][1:], "b", linewidth=2, label="desired"
-        )
-        plots[i + 2].plot(x_despos[i][0], y_despos[i][0], "b", linewidth=2, marker="o")
+        if len(x_despos[i]) > 0:
+            plots[0].plot(
+                x_despos[i][1:], y_despos[i][1:], linewidth=2, label=f"agent{i+1}"
+            )
+            plots[0].plot(x_despos[i][0], y_despos[i][0], "b", linewidth=2, marker="o")
+
         # Real positions
-        plots[i + 2].plot(
-            x_pos[i][form_index[i + 1] + 1 :],
-            y_pos[i][form_index[i + 1] + 1 :],
-            "g",
-            linewidth=2,
-            label="real",
-        )
-        plots[i + 2].plot(
-            x_pos[i][form_index[i + 1]],
-            y_pos[i][form_index[i + 1]],
-            "g",
-            linewidth=2,
-            marker="o",
-        )
+        try:
+            plots[1].plot(
+                x_pos[i][form_index[i + 1] + 1 :],
+                y_pos[i][form_index[i + 1] + 1 :],
+                linewidth=2,
+                label=f"agent{i+1}",
+            )
+            plots[1].plot(
+                x_pos[i][form_index[i + 1]],
+                y_pos[i][form_index[i + 1]],
+                "g",
+                linewidth=2,
+                marker="o",
+            )
+        except KeyError:
+            continue
+
+        ###### Separate each agent's plot
+        # Desired positions
+        if len(x_despos[i]) > 0:
+            plots[i + 2].plot(
+                x_despos[i][1:], y_despos[i][1:], "b", linewidth=2, label="desired"
+            )
+            plots[i + 2].plot(
+                x_despos[i][0], y_despos[i][0], "b", linewidth=2, marker="o"
+            )
+
+        # Real positions
+        try:
+            plots[i + 2].plot(
+                x_pos[i][form_index[i + 1] + 1 :],
+                y_pos[i][form_index[i + 1] + 1 :],
+                "g",
+                linewidth=2,
+                label="real",
+            )
+            plots[i + 2].plot(
+                x_pos[i][form_index[i + 1]],
+                y_pos[i][form_index[i + 1]],
+                "g",
+                linewidth=2,
+                marker="o",
+            )
+            plots[i + 2].plot(
+                x_setpoints[i],
+                y_setpoints[i],
+                "c",
+                linewidth=2,
+                marker="2",
+                label="setpoints",
+            )
+            plots[i + 2].plot(
+                x_setpoints[i][0],
+                y_setpoints[i][0],
+                "c",
+                linewidth=2,
+                marker="o",
+            )
+        except (KeyError, IndexError):
+            pass
+
         # Configuration
-        plots[i + 2].set_title(f"Agent {i+1}")
+        plots[i + 2].set_title(f"Agent {i+1}{' (leader)' if leader == i+1 else ''}")
         plots[i + 2].legend()
 
     # Set things up for the overall graphs
