@@ -3,6 +3,7 @@ namespace constants {
     static constexpr unsigned int DELAY_MILLIS = 100;
     static constexpr unsigned int ACK_WAIT_MILLIS = 100;
     static constexpr unsigned int P2P_PERIOD_MILLIS = 200;
+    static constexpr unsigned int CHECK_PERIOD_MILLIS = 500;
     static constexpr unsigned int OFFBOARD_PERIOD_MILLIS = 20;
     static constexpr unsigned int FORMATION_PERIOD_MILLIS = 200;
     static constexpr unsigned int TIGHT_COLL_PERIOD_MILLIS = 50;

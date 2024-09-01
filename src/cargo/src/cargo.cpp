@@ -130,7 +130,10 @@ void Cargo::notifyAttachment(
         this->leader_odom_exc_group_opt_
     );
 
-    this->startFollowing();
+    if (req->attach)
+        this->startFollowing();
+    else
+        this->stopFollowing();
     response->done = true;
 }
 

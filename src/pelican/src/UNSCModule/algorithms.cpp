@@ -52,7 +52,7 @@ void UNSCModule::consensusToRendezvous() {
         (y_diff <= constants::SETPOINT_REACHED_DISTANCE) &&
         (z_diff <= constants::SETPOINT_REACHED_DISTANCE)) {
         cancelTimer(this->rendezvous_timer_); // Do not call this function again
-        this->sendLogDebug("Finished Rendezvous successfully");
+        this->sendLogInfo("Finished Rendezvous successfully");
 
         // The last setpoints update is not actually needed; PX4 will manage the stabilization on
         // its own
@@ -77,8 +77,66 @@ void UNSCModule::consensusToRendezvous() {
     this->setVelocitySetpoint(vel);
 }
 
+void UNSCModule::checkFormationAchieved() {
+    if (this->confirmFormationAchieved()) {
+        this->sendLogDebug("Formation achieved!");
+
+        cancelTimer(this->formation_check_timer_);
+        this->fa_promise_.set_value(); // Fulfill the promise
+    } else {
+        this->sendLogDebug("Formation not yet achieved");
+    }
+}
+
+void UNSCModule::checkHeightReached() {
+    if (abs(this->getActualTargetHeight() - this->gatherCopterPosition(this->gatherAgentID()).z) <
+        0.1) {
+        this->sendLogDebug("Height reached!");
+
+        cancelTimer(this->height_check_timer_);
+        this->fa_promise_.set_value(); // Fulfill the promise
+    } else {
+        this->sendLogDebug("Formation not yet achieved");
+    }
+}
+
+void UNSCModule::checkTargetReached() {
+    std::optional<geometry_msgs::msg::Point> maybe_target = this->getTargetPosition();
+    if (!maybe_target) {
+        this->sendLogWarning("Target data not available!");
+        return;
+    }
+    geometry_msgs::msg::Point target_pos = maybe_target.value();
+    double target_height = this->getActualTargetHeight();
+
+    this->sendLogDebug("Checking if target position has been reached");
+    geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
+    this->sendLogDebug("Target: {}, last recorded: {}", target_pos, pos);
+
+    if ((abs(target_pos.x - pos.x) <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (abs(target_pos.y - pos.y) <= constants::SETPOINT_REACHED_DISTANCE) &&
+        (abs(target_height - pos.z) <= constants::SETPOINT_REACHED_DISTANCE)) {
+        this->sendLogDebug("Target reached!");
+        cancelTimer(this->target_check_timer_);
+        this->fa_promise_.set_value();
+    } else {
+        geometry_msgs::msg::Point vel =
+            geometry_msgs::msg::Point()
+                .set__x(
+                    (target_pos.x - pos.x) /
+                    (constants::DELAY_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
+                )
+                .set__y(
+                    (target_pos.y - pos.y) /
+                    (constants::DELAY_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
+                )
+                .set__z(std::nanf("")); // Do not handle the z axis (height)
+        this->sendLogDebug("Computed next velocity setpoint for pre-formation operations: {}", vel);
+    }
+}
+
 /**************************** Formation ****************************/
-void UNSCModule::preFormationActions() {
+void UNSCModule::formationActions() {
     // Non-leader agents simply start the formation control
     // The leader agent has some more instructions to follow, before starting the formation control
 
@@ -92,54 +150,39 @@ void UNSCModule::preFormationActions() {
         geometry_msgs::msg::Point target_pos = maybe_target.value();
         this->sendLogDebug("Positioning to the target position: {}", target_pos);
         this->setPositionSetpoint(target_pos);
-        double target_height = this->getActualTargetHeight();
 
-        while (true) {
-            this->sendLogDebug("Checking if target position has been reached");
-            geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
-            this->sendLogDebug("Target: {}, last recorded: {}", target_pos, pos);
-            if ((abs(target_pos.x - pos.x) <= constants::SETPOINT_REACHED_DISTANCE) &&
-                (abs(target_pos.y - pos.y) <= constants::SETPOINT_REACHED_DISTANCE) &&
-                (abs(target_height - pos.z) <= constants::SETPOINT_REACHED_DISTANCE)) {
-                this->sendLogDebug("Reached");
-                this->signalSyncTrigger();
-                break;
-            } else {
-                geometry_msgs::msg::Point vel =
-                    geometry_msgs::msg::Point()
-                        .set__x(
-                            (target_pos.x - pos.x) /
-                            (constants::DELAY_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
-                        )
-                        .set__y(
-                            (target_pos.y - pos.y) /
-                            (constants::DELAY_MILLIS / constants::MILLIS_TO_SECS_CONVERSION)
-                        )
-                        .set__z(std::nanf("")); // Do not handle the z axis (height)
-                this->sendLogDebug(
-                    "Computed next velocity setpoint for pre-formation operations: {}", vel
-                );
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-        }
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->target_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_, std::bind(&UNSCModule::checkTargetReached, this),
+            this->gatherTargetExclusiveGroup()
+        );
+        this->fa_future_.get();
+        this->signalSyncCompletedOp(comms::msg::FleetSync::LEADER_TO_CENTER);
     } else {
-        this->waitForSyncCount();
-        this->decreaseSyncCount();
+        this->sendLogDebug("Waiting for the leader to move to target");
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->sync_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_,
+            [this]() {
+                this->waitForOperationCompleted(comms::msg::FleetSync::LEADER_TO_CENTER);
+            },
+            this->gatherOpCompletedExclusiveGroup()
+        );
+        this->fa_future_.get();
     }
 
     // Descend
     this->sendLogDebug("Getting lower");
-    this->signalSetReferenceHeight(constants::EXTRACTION_HEIGHT);
-    while (true) {
-        this->sendLogDebug("Checking if new target height has been reached");
-        geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
-        this->sendLogDebug("Last height recorded: {}", pos.z);
-        if (abs(pos.z - 2.0) < 0.1) {
-            this->sendLogDebug("Reached");
-            break;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-    }
+    this->signalSetActualTargetHeight(constants::EXTRACTION_HEIGHT);
+    this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+    this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+    this->height_check_timer_ = this->node_->create_wall_timer(
+        this->check_period_, std::bind(&UNSCModule::checkHeightReached, this),
+        this->gatherHeightExclusiveGroup()
+    );
+    this->fa_future_.get();
 
     // Establish formation positions while static
     if (this->confirmAgentIsLeader()) {
@@ -161,51 +204,121 @@ void UNSCModule::preFormationActions() {
     // Wait for static formation to be achieved
     this->sendLogDebug("Ready for formation control!");
     if (this->confirmAgentIsLeader()) {
-        while (!this->confirmFormationAchieved()) {
-            this->sendLogDebug("Formation not yet achieved");
-            std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-        }
+        // Set up the timer to periodically check the formation status
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->formation_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_, std::bind(&UNSCModule::checkFormationAchieved, this),
+            this->gatherCheckExclusiveGroup()
+        );
+        // Block and wait for the formation to be achieved
+        this->fa_future_.get();
+        this->signalSyncCompletedOp(comms::msg::FleetSync::FORMATION_ACHIEVED);
+    } else {
+        this->sendLogDebug("Waiting for the leader to greenlight the fleet");
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->sync_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_,
+            [this]() {
+                this->waitForOperationCompleted(comms::msg::FleetSync::FORMATION_ACHIEVED);
+            },
+            this->gatherOpCompletedExclusiveGroup()
+        );
+        this->fa_future_.get();
     }
 
     // Attach cargo to leader
     if (this->confirmAgentIsLeader()) {
         this->sendLogDebug("Attaching cargo to leader");
         this->signalCargoAttachment();
+        this->signalSyncCompletedOp(comms::msg::FleetSync::CARGO_ATTACHED);
     } else {
-        this->waitForSyncCount();
-        this->decreaseSyncCount();
+        this->sendLogDebug("Waiting for the leader to attach cargo");
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->sync_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_,
+            [this]() {
+                this->waitForOperationCompleted(comms::msg::FleetSync::CARGO_ATTACHED);
+            },
+            this->gatherOpCompletedExclusiveGroup()
+        );
+        this->fa_future_.get();
     }
 
     // Make the agents fly higher
     this->sendLogDebug("Getting higher");
-    this->signalSetReferenceHeight(constants::EXTRACTION_HEIGHT + 1);
-    while (true) {
-        this->sendLogDebug("Checking if new target height has been reached");
-        geometry_msgs::msg::Point pos = this->gatherCopterPosition(this->gatherAgentID());
-        this->sendLogDebug("Last height recorded: {}", pos.z);
-        if (abs(pos.z - (constants::EXTRACTION_HEIGHT + 1)) < 0.1) {
-            this->sendLogDebug("Reached");
-            break;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
-    }
+    this->signalSetActualTargetHeight(constants::EXTRACTION_HEIGHT + 1);
+    this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+    this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+    this->height_check_timer_ = this->node_->create_wall_timer(
+        this->check_period_, std::bind(&UNSCModule::checkHeightReached, this),
+        this->gatherHeightExclusiveGroup()
+    );
+    this->fa_future_.get();
 
-    // Start actual formation control
-    // Move the leader to the dropoff position
+    // Start actual formation control: move the leader to the dropoff position
     if (this->confirmAgentIsLeader()) {
+        this->sendLogDebug("Starting to move to the dropoff position");
+        // Set up the timer to periodically check the formation status
+        this->fa_promise_ = std::promise<void>(); // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future();
+        this->signalEmptyFormationResults();
+        this->signalUnsetFormationAchieved();
         this->linear_timer_ = this->node_->create_wall_timer(
             this->linear_period_, std::bind(&UNSCModule::linearP2P, this),
-            this->gatherFormationExclusiveGroup()
+            this->gatherP2PExclusiveGroup()
         );
+        // Block and wait for the formation to be achieved
+        this->fa_future_.get();
+        this->signalSyncCompletedOp(comms::msg::FleetSync::P2P_ACHIEVED);
     } else {
-        this->collision_timer_ = this->node_->create_wall_timer(
-            this->tight_coll_period_, std::bind(&UNSCModule::tightSpaceCollisionAvoidance, this),
-            this->gatherReentrantGroup()
-        );
+        this->sendLogDebug("Waiting for the leader to start p2p");
         this->formation_timer_ = this->node_->create_wall_timer(
             this->formation_period_, std::bind(&UNSCModule::formationControl, this),
             this->gatherFormationExclusiveGroup()
         );
+        this->fa_promise_ = std::promise<void>(); // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future();
+        this->sync_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_,
+            [this]() {
+                this->waitForOperationCompleted(comms::msg::FleetSync::P2P_ACHIEVED);
+            },
+            this->gatherOpCompletedExclusiveGroup()
+        );
+        this->fa_future_.get();
+    }
+
+    // Descend
+    this->sendLogDebug("Getting lower");
+    this->signalSetActualTargetHeight(constants::EXTRACTION_HEIGHT);
+    this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+    this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+    this->height_check_timer_ = this->node_->create_wall_timer(
+        this->check_period_, std::bind(&UNSCModule::checkHeightReached, this),
+        this->gatherHeightExclusiveGroup()
+    );
+    this->fa_future_.get();
+
+    // Detach cargo from leader
+    if (this->confirmAgentIsLeader()) {
+        this->sendLogDebug("Detaching cargo from leader");
+        this->signalCargoAttachment(false);
+        this->signalSyncCompletedOp(comms::msg::FleetSync::CARGO_DETACHED);
+    } else {
+        this->sendLogDebug("Waiting for the leader to detach cargo");
+        this->fa_promise_ = std::promise<void>();          // Initialize a new promise
+        this->fa_future_ = this->fa_promise_.get_future(); // Get the future related to the promise
+        this->sync_check_timer_ = this->node_->create_wall_timer(
+            this->check_period_,
+            [this]() {
+                this->waitForOperationCompleted(comms::msg::FleetSync::CARGO_DETACHED);
+            },
+            this->gatherOpCompletedExclusiveGroup()
+        );
+        this->fa_future_.get();
     }
 }
 
@@ -265,9 +378,10 @@ void UNSCModule::linearP2P() {
         this->setVelocitySetpoint(vel, constants::FORM_CLOSING_VEL);
     }
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
-        this->sendLogDebug("Static formation achieved successfully");
+        this->sendLogInfo("Formation moved to desired position");
         cancelTimer(this->linear_timer_); // Do not call this function again
         this->signalUnsetCarryingStatus();
+        this->fa_promise_.set_value();
     }
 }
 
@@ -410,9 +524,10 @@ void UNSCModule::formationControl() {
     }
 
     if (this->getTargetCount() >= constants::FORM_TARGET_COUNT) {
-        this->sendLogDebug("Formation achieved successfully");
+        this->sendLogInfo("Reached formation position successfully");
         resetTimer(this->collision_timer_);
-        resetTimer(this->formation_timer_);
+        resetTimer(this->formation_timer_); // Stop algorithm
+        this->resetTargetCount();
         this->signalNotifyAgentInFormation();
     }
 

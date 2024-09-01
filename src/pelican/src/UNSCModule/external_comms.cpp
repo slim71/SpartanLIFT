@@ -42,6 +42,46 @@ rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherFormationExclusiveGroup() con
     return this->node_->getFormationExclusiveGroup();
 }
 
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherOpCompletedExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getOpCompletedExclusiveGroup();
+}
+
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherTargetExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getTargetExclusiveGroup();
+}
+
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherHeightExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getHeightExclusiveGroup();
+}
+
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherCheckExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getCheckExclusiveGroup();
+}
+
+rclcpp::CallbackGroup::SharedPtr UNSCModule::gatherP2PExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getP2PExclusiveGroup();
+}
+
 std::optional<nav_msgs::msg::Odometry> UNSCModule::gatherENUOdometry() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -178,7 +218,7 @@ bool UNSCModule::signalCheckOffboardEngagement() const {
     return this->node_->commenceCheckOffboardEngagement();
 }
 
-void UNSCModule::signalSetReferenceHeight(double height) {
+void UNSCModule::signalSetActualTargetHeight(double height) {
     if (!this->node_) {
         throw MissingExternModule();
     }
@@ -186,12 +226,12 @@ void UNSCModule::signalSetReferenceHeight(double height) {
     this->node_->commenceSetActualTargetHeight(height);
 }
 
-void UNSCModule::signalCargoAttachment() {
+void UNSCModule::signalCargoAttachment(bool attach) {
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commenceCargoAttachment();
+    this->node_->commenceCargoAttachment(attach);
 }
 
 // Map with pairs: agent ID - agent's position
@@ -221,12 +261,13 @@ void UNSCModule::signalNotifyAgentInFormation() {
     this->node_->commenceNotifyAgentInFormation();
 }
 
-void UNSCModule::signalSyncTrigger() {
+void UNSCModule::signalSyncCompletedOp(uint32_t cmd) {
+    this->sendLogDebug("signaling trigger {}", cmd);
     if (!this->node_) {
         throw MissingExternModule();
     }
 
-    this->node_->commenceSyncTrigger();
+    this->node_->commenceSyncCompletedOp(cmd);
 }
 
 void UNSCModule::signalUnsetCarryingStatus() {
@@ -235,6 +276,22 @@ void UNSCModule::signalUnsetCarryingStatus() {
     }
 
     this->node_->commenceUnsetCarryingStatus();
+}
+
+void UNSCModule::signalUnsetFormationAchieved() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceUnsetFormationAchieved();
+}
+
+void UNSCModule::signalEmptyFormationResults() {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceEmptyFormationResults();
 }
 
 /*************************** Flag checks ***************************/

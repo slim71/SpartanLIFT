@@ -32,11 +32,8 @@ class UNSCModule {
         void heightCompensation(double);
 
         // Utilities
-        void preFormationActions();
+        void formationActions();
         void unblockFormation();
-        void increaseSyncCount();
-        void decreaseSyncCount();
-        void waitForSyncCount();
 
         // Getters
         bool getRunningStatus() const;
@@ -52,11 +49,13 @@ class UNSCModule {
         unsigned int getFleetOrder(unsigned int) const;
         uint64_t getTargetCount() const;
         uint64_t getStuckCount() const;
+        uint32_t getLastCompletedOperation() const;
 
         // Setters
         void setPositionSetpoint(geometry_msgs::msg::Point);
         void setActualTargetHeight(double);
         void setTargetPosition(geometry_msgs::msg::Point);
+        void setLastCompletedOperation(uint32_t);
 
     private:
         template<typename... Args> void sendLogInfo(std::string, Args...) const;
@@ -82,6 +81,10 @@ class UNSCModule {
         // Utilities
         bool safeOrderFind(unsigned int);
         void tightSpaceCollisionAvoidance();
+        void waitForOperationCompleted(uint32_t);
+        void checkFormationAchieved();
+        void checkHeightReached();
+        void checkTargetReached();
 
         // External communications - getters
         rclcpp::Time gatherTime() const;
@@ -101,6 +104,11 @@ class UNSCModule {
         rclcpp::CallbackGroup::SharedPtr gatherOffboardExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherRendezvousExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr gatherFormationExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherOpCompletedExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherTargetExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherHeightExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherCheckExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherP2PExclusiveGroup() const;
 
         // External communications - starting functionalities
         // command| param1| param2| param3| param4| param5| param6| param7|
@@ -113,14 +121,16 @@ class UNSCModule {
         void signalPublishOffboardControlMode() const;
         bool signalWaitForCommanderAck(uint16_t) const;
         bool signalCheckOffboardEngagement() const;
-        void signalSetReferenceHeight(double);
-        void signalCargoAttachment();
+        void signalSetActualTargetHeight(double);
+        void signalCargoAttachment(bool = true);
         void signalSendDesiredFormationPositions(std::unordered_map<
                                                  unsigned int, geometry_msgs::msg::Point>);
         void signalAskDesPosToNeighbor(unsigned int);
         void signalNotifyAgentInFormation();
-        void signalSyncTrigger();
+        void signalSyncCompletedOp(uint32_t);
         void signalUnsetCarryingStatus();
+        void signalUnsetFormationAchieved();
+        void signalEmptyFormationResults();
 
         // External communications - flag checks
         bool confirmAgentIsLeader() const;
@@ -152,7 +162,7 @@ class UNSCModule {
         uint64_t near_target_counter_ {0};       // counter for subsequent setpoints near target
         uint64_t stuck_counter_ {0};             // Counter for detecting being stuck
         unsigned int closest_agent_ {0};
-        unsigned int sync_count_ {0};
+        uint32_t last_op_completed_ {0};
         double actual_target_height_ {0}; // needed in order to stabilize height tracking
         double closest_angle_ {0};
         double prev_ux = 0, prev_uy = 0;
@@ -167,6 +177,8 @@ class UNSCModule {
         std::unordered_map<unsigned int, geometry_msgs::msg::Point> neigh_des_positions_;
         // Map with pair: agent ID - order in the fleet position assignment
         std::unordered_map<unsigned int, unsigned int> fleet_order_;
+        std::promise<void> fa_promise_;
+        std::future<void> fa_future_;
 
         mutable std::mutex offset_mutex_;            // to be used with offset_ and yaw_
         mutable std::mutex running_mutex_;           // to be used with running_
@@ -179,7 +191,7 @@ class UNSCModule {
         mutable std::mutex neighbors_despos_mutex_;  // Used to access neigh_des_positions_
         mutable std::mutex closest_agent_mutex_;     // Used to access closest_agent_
         mutable std::mutex closest_angle_mutex_;     // Used to access closest_angle_
-        mutable std::mutex sync_mutex_;              // Used to access sync_count_
+        mutable std::mutex last_op_mutex_;           // Used to access last_op_completed_
         mutable std::mutex order_mutex_;             // Used to access fleet_order_
         mutable std::mutex target_count_mutex_;      // Used to access near_target_counter_
         mutable std::mutex stuck_count_mutex_;       // Used to access stuck_counter_
@@ -207,6 +219,13 @@ class UNSCModule {
             std::chrono::milliseconds(constants::TIGHT_COLL_PERIOD_MILLIS)};
         std::chrono::milliseconds loose_coll_period_ {
             std::chrono::milliseconds(constants::LOOSE_COLL_PERIOD_MILLIS)};
+
+        rclcpp::TimerBase::SharedPtr formation_check_timer_;
+        rclcpp::TimerBase::SharedPtr height_check_timer_;
+        rclcpp::TimerBase::SharedPtr sync_check_timer_;
+        rclcpp::TimerBase::SharedPtr target_check_timer_;
+        std::chrono::milliseconds check_period_ {
+            std::chrono::milliseconds(constants::CHECK_PERIOD_MILLIS)};
 };
 
 #include "unsc_template.tpp"

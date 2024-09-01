@@ -55,6 +55,26 @@ rclcpp::CallbackGroup::SharedPtr Pelican::getFormationTimerGroup() const {
     return this->formation_timer_group_;
 }
 
+rclcpp::CallbackGroup::SharedPtr Pelican::getOpCompletedExclusiveGroup() const {
+    return this->trigger_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getTargetExclusiveGroup() const {
+    return this->target_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getHeightExclusiveGroup() const {
+    return this->height_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getCheckExclusiveGroup() const {
+    return this->check_exclusive_group_;
+}
+
+rclcpp::CallbackGroup::SharedPtr Pelican::getP2PExclusiveGroup() const {
+    return this->p2p_exclusive_group_;
+}
+
 rclcpp::Time Pelican::getTime() const {
     return this->now();
 }

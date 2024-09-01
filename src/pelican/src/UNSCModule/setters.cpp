@@ -26,8 +26,7 @@ void UNSCModule::setVelocitySetpoint(geometry_msgs::msg::Point v, double max_vel
         v_capped.set__x(signum(v.x) * max_vel);
     if (abs(v.y) > max_vel)
         v_capped.set__y(signum(v.y) * max_vel);
-    if (abs(v.z) > max_vel)
-        v_capped.set__z(signum(v.z) * max_vel);
+    v_capped.set__z(std::nanf(""));
 
     std::lock_guard lock(this->setpoint_velocity_mutex_);
     this->sendLogDebug("Setting velocity setpoint to {}", v_capped);

@@ -17,7 +17,7 @@ void Pelican::becomeLeader() {
     this->el_core_.resetSubscriptions();
     this->hb_core_.setupPublisher();
     this->pub_to_sync_ =
-        this->create_publisher<std_msgs::msg::Empty>(this->sync_topic_, this->qos_);
+        this->create_publisher<comms::msg::FleetSync>(this->sync_topic_, this->qos_);
 
     // Service preparation
     resetSharedPointer(this->fleetinfo_client_);
@@ -58,9 +58,9 @@ void Pelican::becomeFollower() {
     this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();
     resetSharedPointer(this->pub_to_sync_);
-    this->sub_to_sync_ = this->create_subscription<std_msgs::msg::Empty>(
+    this->sub_to_sync_ = this->create_subscription<comms::msg::FleetSync>(
         this->sync_topic_, this->qos_,
-        std::bind(&Pelican::handleSyncSignal, this, std::placeholders::_1)
+        std::bind(&Pelican::handleSyncCompletedOp, this, std::placeholders::_1)
     );
 
     // Service preparation

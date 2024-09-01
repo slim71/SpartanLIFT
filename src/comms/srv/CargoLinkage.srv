@@ -1,6 +1,7 @@
-# Request is a blank line
+# Request
 uint64 leader_id
 string model
+bool attach  # true: attach, false: detach
 ---
 # Response
 bool done

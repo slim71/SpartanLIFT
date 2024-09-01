@@ -55,8 +55,8 @@ void Pelican::initiateConsensus() {
     this->unsc_core_.activateConsensus();
 }
 
-void Pelican::initiatePreFormationActions() {
-    this->unsc_core_.preFormationActions();
+void Pelican::initiateFormationActions() {
+    this->unsc_core_.formationActions();
 }
 
 std::optional<geometry_msgs::msg::Point> Pelican::initiateGetPositionSetpoint() const {
@@ -167,8 +167,8 @@ void Pelican::commenceNotifyAgentInFormation() {
     this->notifyAgentInFormation();
 }
 
-void Pelican::commenceSyncTrigger() {
-    this->syncTrigger();
+void Pelican::commenceSyncCompletedOp(uint32_t cmd) {
+    this->syncCompletedOp(cmd);
 }
 
 // Map with pairs: agent ID - agent desired position
@@ -182,10 +182,18 @@ void Pelican::commenceAskDesPosToNeighbor(unsigned int id) {
     this->askDesPosToNeighbor(id);
 }
 
-void Pelican::commenceCargoAttachment() {
-    this->cargoAttachment();
+void Pelican::commenceCargoAttachment(bool attach) {
+    this->cargoAttachment(attach);
 }
 
 void Pelican::commenceUnsetCarryingStatus() {
     this->unsetCarryingStatus();
+}
+
+void Pelican::commenceUnsetFormationAchieved() {
+    this->unsetFormationAchieved();
+}
+
+void Pelican::commenceEmptyFormationResults() {
+    this->emptyFormationResults();
 }

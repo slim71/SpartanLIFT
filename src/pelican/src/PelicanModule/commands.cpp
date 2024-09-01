@@ -73,6 +73,7 @@ void Pelican::rogerWillCo(
                 this->sendLogInfo("Fleet has landed!");
                 goal_handle->succeed(response);
             } else {
+                this->sendLogDebug("Execution og landing operations failed!");
                 goal_handle->abort(response);
             }
         } else {
@@ -268,27 +269,14 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     // Index in AppendEntryRPC vector
     this->rpcs_mutex_.lock();
     unsigned int last_rpc_store = 0;
-    unsigned int sec2last = 0;
     auto rpc_size = this->rpcs_vector_.size();
     unsigned int expected_index = rpc_size;
     if (rpc_size > 0)
         last_rpc_store = std::get<0>(this->rpcs_vector_.back());
-    if (rpc_size > 2)
-        sec2last = std::get<0>(this->rpcs_vector_.rbegin()[1]);
     this->rpcs_mutex_.unlock();
 
     // Valid previous command
-    if (msg.apply) {
-        if ((sec2last != 0) && (msg.prev_command != sec2last)) {
-            this->sendLogWarning(
-                "The last command is not coherent-> msg:{} expected(sec2last):{}", msg.prev_command,
-                sec2last
-            );
-            return false;
-        }
-        // If only one RPC is in the vector, it'll be the one in scope
-
-    } else {
+    if (!msg.apply) {
         if ((last_rpc_store != 0) && (msg.prev_command != last_rpc_store)) {
             this->sendLogWarning(
                 "The last command is not coherent-> msg:{} expected(last):{}", msg.prev_command,
@@ -430,12 +418,13 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
 
         // The leader should only consider ack messages
         if (msg.ack) {
-            // Send feedback to Action client
-            auto feedback = std::make_shared<comms::action::TeleopData::Feedback>();
             this->dispatch_mutex_.lock();
             this->dispatch_vector_.push_back(msg);
             auto s = this->dispatch_vector_.size();
             this->dispatch_mutex_.unlock();
+
+            // Send feedback to Action client
+            auto feedback = std::make_shared<comms::action::TeleopData::Feedback>();
             feedback->agents_involved = msg.ack ? s : s + 1;
             feedback->last_joined = msg.agent;
             feedback->command = msg.command;
@@ -567,7 +556,7 @@ bool Pelican::executeRPCCommand(uint16_t command) {
             break;
         }
         case FORMATION: {
-            std::thread form_thread(&Pelican::initiatePreFormationActions, this);
+            std::thread form_thread(&Pelican::initiateFormationActions, this);
             form_thread.detach();
 
             this->sendLogDebug("Waiting for the formation control to start...");

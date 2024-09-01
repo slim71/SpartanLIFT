@@ -3,6 +3,7 @@
 
 #include "comms/action/teleop_data.hpp"
 #include "comms/msg/command.hpp"
+#include "comms/msg/fleet_sync.hpp"
 #include "comms/msg/formation_desired.hpp"
 #include "comms/msg/heartbeat.hpp"
 #include "comms/msg/network_vertex.hpp"

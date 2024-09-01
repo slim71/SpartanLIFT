@@ -68,24 +68,13 @@ void UNSCModule::unblockFormation() {
     this->formation_cv_.notify_all();
 }
 
-void UNSCModule::increaseSyncCount() {
-    std::lock_guard lock(this->sync_mutex_);
-    this->sync_count_++;
-}
-
-void UNSCModule::decreaseSyncCount() {
-    std::lock_guard lock(this->sync_mutex_);
-    if (this->sync_count_ > 0)
-        this->sync_count_--;
-}
-
-void UNSCModule::waitForSyncCount() {
-    bool go_ahead = false;
-    while (!go_ahead) {
-        this->sync_mutex_.lock();
-        go_ahead = (this->sync_count_ > 0);
-        this->sync_mutex_.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(constants::DELAY_MILLIS));
+void UNSCModule::waitForOperationCompleted(uint32_t op) {
+    if (this->getLastCompletedOperation() >= op) {
+        this->sendLogDebug("Operation {} completed!", op);
+        cancelTimer(this->sync_check_timer_);
+        this->fa_promise_.set_value();
+    } else {
+        this->sendLogDebug("Operation {} not yet completed", op);
     }
 }
 
@@ -95,4 +84,9 @@ bool UNSCModule::safeOrderFind(unsigned int id) {
         return true;
     else
         return false;
+}
+
+void UNSCModule::setLastCompletedOperation(uint32_t op) {
+    std::lock_guard lock(this->last_op_mutex_);
+    this->last_op_completed_ = op;
 }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(comms
-        VERSION 0.3.5
+        VERSION 0.3.7
         DESCRIPTION "Package for custom ROS2 messages and services")
 
 #To generate compile_commands.json
@@ -35,6 +35,7 @@ set(MESSAGE_FILES
     msg/RequestVoteRPC.msg
     msg/NetworkVertex.msg
     msg/FormationDesired.msg
+    msg/FleetSync.msg
 )
 
 set(SERVICE_FILES

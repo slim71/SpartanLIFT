@@ -36,6 +36,24 @@ Pelican::Pelican()
     this->formation_exclusive_group_ =
         this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->formation_exclusive_opt_.callback_group = this->formation_exclusive_group_;
+    this->trigger_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->trigger_opt_.callback_group = this->trigger_exclusive_group_;
+    this->trigger_handle_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->trigger_handle_opt_.callback_group = this->trigger_handle_exclusive_group_;
+    this->target_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->target_opt_.callback_group = this->target_exclusive_group_;
+    this->height_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->height_opt_.callback_group = this->height_exclusive_group_;
+    this->check_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->check_opt_.callback_group = this->check_exclusive_group_;
+    this->p2p_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->p2p_opt_.callback_group = this->p2p_exclusive_group_;
 
     // Subscribers
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
@@ -224,7 +242,7 @@ void Pelican::handleAcceptedTeleopData(
 }
 
 // CargoLinkage request generator
-void Pelican::cargoAttachment() {
+void Pelican::cargoAttachment(bool attach) {
     // Create request
     auto request = std::make_shared<comms::srv::CargoLinkage::Request>();
     std::string model_path = this->getModel();
@@ -239,6 +257,7 @@ void Pelican::cargoAttachment() {
         return;
     }
     request->set__leader_id(this->getID()).set__model(model_name);
+    request->set__attach(attach);
 
     // Search for a second, then log and search again if needed
     unsigned int total_search_time = 0;
@@ -292,7 +311,7 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
     auto response = future.get();
     if (response->done) {
         this->sendLogDebug("Cargo attachment completed");
-        this->syncTrigger();
+        // this->syncCompletedOp();
     } else
         this->sendLogWarning("Issues with cargo attachment!");
 }
@@ -387,6 +406,7 @@ void Pelican::storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedF
 // FormationReached request handler - executed only by the leader
 void Pelican::
     recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request> request, std::shared_ptr<comms::srv::FormationReached::Response>) {
+    this->sendLogDebug("Checking if agent has to be recorded");
     std::lock_guard lock(this->form_reached_mutex_);
     if (std::find(
             this->agents_in_formation_.begin(), this->agents_in_formation_.end(), request->agent_id
@@ -395,8 +415,13 @@ void Pelican::
         this->agents_in_formation_.push_back(request->agent_id);
     }
 
-    if (this->agents_in_formation_.size() == this->getNetworkSize() - 1)
+    if (this->agents_in_formation_.size() == this->getNetworkSize() - 1) {
+        this->sendLogDebug(
+            "Confirming formation is achieved (size: {}, network: {})",
+            this->agents_in_formation_.size(), this->getNetworkSize()
+        );
         this->setFormationAchieved();
+    }
 }
 
 // FormationReached request generator - executed by the followers
@@ -442,11 +467,22 @@ void Pelican::notifyAgentInFormation() {
     }
 }
 
-void Pelican::syncTrigger() {
-    auto msg = std_msgs::msg::Empty();
+void Pelican::syncCompletedOp(uint32_t cmd) {
+    if (cmd > comms::msg::FleetSync::CARGO_DETACHED) {
+        this->sendLogWarning("Operation {} not recognized!", cmd);
+        return;
+    }
+    auto msg = comms::msg::FleetSync();
+    msg.completed_op = cmd;
     this->pub_to_sync_->publish(msg);
 }
 
-void Pelican::handleSyncSignal(std_msgs::msg::Empty) {
-    this->unsc_core_.increaseSyncCount();
+void Pelican::handleSyncCompletedOp(comms::msg::FleetSync msg) {
+    this->sendLogDebug("Received sync signal for operation {}", msg.completed_op);
+    this->unsc_core_.setLastCompletedOperation(msg.completed_op);
+}
+
+void Pelican::emptyFormationResults() {
+    std::lock_guard lock(this->form_reached_mutex_);
+    this->agents_in_formation_.clear();
 }

@@ -85,3 +85,8 @@ uint64_t UNSCModule::getStuckCount() const {
     std::lock_guard lock(this->stuck_count_mutex_);
     return this->stuck_counter_;
 }
+
+uint32_t UNSCModule::getLastCompletedOperation() const {
+    std::lock_guard lock(this->last_op_mutex_);
+    return this->last_op_completed_;
+}

@@ -44,6 +44,11 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getRendezvousExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr getFormationExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr getFormationTimerGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getOpCompletedExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getTargetExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getHeightExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getCheckExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getP2PExclusiveGroup() const;
 
         // Flags checks
         bool isLeader() const;
@@ -75,7 +80,7 @@ class Pelican : public rclcpp::Node {
         std::optional<geometry_msgs::msg::Point> initiateGetPositionSetpoint() const; // UNSC module
         void initiateSetTargetPosition(geometry_msgs::msg::Point);                    // UNSC module
         void initiateUnblockFormation();                                              // UNSC module
-        void initiatePreFormationActions();                                           // UNSC module
+        void initiateFormationActions();                                              // UNSC module
 
         // Actions initiated from outside the module
         void commenceSetElectionStatus(int); // Heartbeat module
@@ -95,13 +100,15 @@ class Pelican : public rclcpp::Node {
         );                                          // UNSC module
         void commenceSetActualTargetHeight(double); // UNSC module
         void commenceNotifyAgentInFormation();      // UNSC module
-        void commenceSyncTrigger();                 // UNSC module
+        void commenceSyncCompletedOp(uint32_t);     // UNSC module
         void commenceSendDesiredFormationPositions(std::unordered_map<
                                                    unsigned int,
                                                    geometry_msgs::msg::Point>); // UNSC module
         void commenceAskDesPosToNeighbor(unsigned int);                         // UNSC module
-        void commenceCargoAttachment();                                         // UNSC module
-        void commenceUnsetCarryingStatus();
+        void commenceCargoAttachment(bool = true);                              // UNSC module
+        void commenceUnsetCarryingStatus();                                     // UNSC module
+        void commenceUnsetFormationAchieved();                                  // UNSC module
+        void commenceEmptyFormationResults();                                   // UNSC module
         bool commenceCheckOffboardEngagement();                // TacMap and UNSC modules
         bool commenceWaitForCommanderAck(uint16_t);            // TacMap module
         void commenceHeightCompensation(double);               // TacMap module
@@ -126,6 +133,7 @@ class Pelican : public rclcpp::Node {
         void becomeLeader();
         void becomeFollower();
         void becomeCandidate();
+        void emptyFormationResults();
 
         // Command-related
         bool checkCommandMsgValidity(const comms::msg::Command);
@@ -148,8 +156,8 @@ class Pelican : public rclcpp::Node {
         void sendDesiredFormationPositions(std::unordered_map<
                                            unsigned int, geometry_msgs::msg::Point>); // publisher
         // "/fleet/synchronization"
-        void handleSyncSignal(std_msgs::msg::Empty); // subscriber
-        void syncTrigger();                          // publisher
+        void handleSyncCompletedOp(comms::msg::FleetSync); // subscriber
+        void syncCompletedOp(uint32_t);                    // publisher
 
         // Action server-related
         // TeleopData action
@@ -175,7 +183,7 @@ class Pelican : public rclcpp::Node {
         void storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture);
         // CargoLinkage
         void checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture);
-        void cargoAttachment();
+        void cargoAttachment(bool = true);
         // FormationReached
         void
         recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request>, std::shared_ptr<comms::srv::FormationReached::Response>);
@@ -270,6 +278,18 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr formation_exclusive_group_;
         rclcpp::SubscriptionOptions formation_timer_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr formation_timer_group_;
+        rclcpp::CallbackGroup::SharedPtr trigger_exclusive_group_;
+        rclcpp::SubscriptionOptions trigger_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr trigger_handle_exclusive_group_;
+        rclcpp::SubscriptionOptions trigger_handle_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr target_exclusive_group_;
+        rclcpp::SubscriptionOptions target_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr height_exclusive_group_;
+        rclcpp::SubscriptionOptions height_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr check_exclusive_group_;
+        rclcpp::SubscriptionOptions check_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr p2p_exclusive_group_;
+        rclcpp::SubscriptionOptions p2p_opt_ {rclcpp::SubscriptionOptions()};
 
         rclcpp::QoS qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
@@ -307,8 +327,8 @@ class Pelican : public rclcpp::Node {
         rclcpp::Publisher<comms::msg::FormationDesired>::SharedPtr pub_to_formation_;
 
         std::string sync_topic_ {"/fleet/synchronization"};
-        rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr sub_to_sync_;
-        rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr pub_to_sync_;
+        rclcpp::Subscription<comms::msg::FleetSync>::SharedPtr sub_to_sync_;
+        rclcpp::Publisher<comms::msg::FleetSync>::SharedPtr pub_to_sync_;
 
         rclcpp::TimerBase::SharedPtr netsize_timer_;
         std::chrono::seconds netsize_timeout_ {constants::ROLLCALL_TIME_SECS};
