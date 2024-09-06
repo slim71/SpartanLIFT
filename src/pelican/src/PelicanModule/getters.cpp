@@ -75,6 +75,10 @@ rclcpp::CallbackGroup::SharedPtr Pelican::getP2PExclusiveGroup() const {
     return this->p2p_exclusive_group_;
 }
 
+rclcpp::CallbackGroup::SharedPtr Pelican::getBallotExclusiveGroup() const {
+    return this->ballot_exclusive_group_;
+}
+
 rclcpp::Time Pelican::getTime() const {
     return this->now();
 }
@@ -85,8 +89,12 @@ double Pelican::getROI() const {
 
 unsigned int Pelican::getNetworkSize() const {
     std::lock_guard lock(this->discovery_mutex_);
-    int s = this->discovery_vector_.size() + 1;
-    return s;
+    if (this->discovery_vector_.empty()) {
+        return 1000; // Simply return a "big" enough number
+    } else {
+        int s = this->discovery_vector_.size() + 1;
+        return s;
+    }
 }
 
 geometry_msgs::msg::Point Pelican::getCopterPosition(unsigned int id) const {
@@ -102,8 +110,8 @@ std::vector<unsigned int> Pelican::getCoptersIDs() const {
     std::vector<unsigned int> ids;
     std::lock_guard lock(this->discovery_mutex_);
     for (auto& elem : this->discovery_vector_) {
-        this->sendLogDebug("Accruing ID {}", elem.agent_id);
-        ids.push_back(elem.agent_id);
+        this->sendLogDebug("Accruing ID {}", elem);
+        ids.push_back(elem);
     }
     ids.push_back(this->getID()); // Ensure my ID is considered
 

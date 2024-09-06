@@ -54,6 +54,9 @@ Pelican::Pelican()
     this->p2p_exclusive_group_ =
         this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->p2p_opt_.callback_group = this->p2p_exclusive_group_;
+    this->ballot_exclusive_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    this->ballot_opt_.callback_group = this->ballot_exclusive_group_;
 
     // Subscribers
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
@@ -158,35 +161,35 @@ void Pelican::signalHandler(int signum) {
     }
 }
 
-void Pelican::storeAttendance(comms::msg::NetworkVertex::SharedPtr msg) {
+void Pelican::storeAttendance(unsigned int agent_id) {
     std::lock_guard lock(this->discovery_mutex_);
 
     // Exclude this node's own ID, since it doesn't make sense
-    if (msg->agent_id == this->getID()) {
+    if (agent_id == this->getID()) {
         this->sendLogDebug("Excluding own agent_id from the discovery");
         return;
     }
 
     if (std::find_if_not(
             this->discovery_vector_.begin(), this->discovery_vector_.end(),
-            [msg, this](const comms::msg::NetworkVertex& obj) {
-                return (msg->agent_id != obj.agent_id);
+            [agent_id](unsigned int discovered) {
+                return (agent_id != discovered);
             }
         ) == this->discovery_vector_.end()) {
-        this->sendLogDebug("Storing discovery msg with id {}", msg->agent_id);
-        this->discovery_vector_.push_back(*msg);
+        this->sendLogDebug("Storing discovery msg with id {}", agent_id);
+        this->discovery_vector_.push_back(agent_id);
 
     } else {
-        this->sendLogDebug("Agent {} already discovered", msg->agent_id);
+        this->sendLogDebug("Agent {} already discovered", agent_id);
         return;
     }
 
-    this->sendLogDebug("Setting discovery timer");
+    this->sendLogDebug("Network size for now: {}", this->discovery_vector_.size() + 1);
 }
 
 void Pelican::storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr msg) {
     this->recordCopterPosition(msg);
-    this->storeAttendance(msg);
+    this->storeAttendance(msg->agent_id);
 }
 
 // Publisher to "/fleet/network"

@@ -66,6 +66,14 @@ rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherReentrantGroup() const {
     return this->node_->getReentrantGroup();
 }
 
+rclcpp::CallbackGroup::SharedPtr ElectionModule::gatherBallotExclusiveGroup() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    return this->node_->getBallotExclusiveGroup();
+}
+
 rclcpp::SubscriptionOptions ElectionModule::gatherReentrantOptions() const {
     if (!this->node_) {
         throw MissingExternModule();
@@ -122,4 +130,12 @@ void ElectionModule::signalTransitionToFollower() {
     }
 
     this->node_->commenceFollowerOperations();
+}
+
+void ElectionModule::signalStoreAttendance(unsigned int id) {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->commenceStoreAttendance(id);
 }

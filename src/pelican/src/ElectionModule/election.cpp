@@ -71,78 +71,50 @@ void ElectionModule::leaderElection() {
     auto app_votes = this->received_votes_;
     this->votes_mutex_.unlock();
 
-    if (!this->isVotingCompleted() && !app_votes.empty()) {
-        // Sort votes based on the proposed leader
-        std::sort(
-            app_votes.begin(), app_votes.end(),
-            [](const comms::msg::Proposal::SharedPtr& a, const comms::msg::Proposal::SharedPtr& b) {
-                return a->proposed_leader < b->proposed_leader;
-            }
-        );
-
-        std::vector<vote_count> ballot;
-
-        // Create clusters with accumulated votes for each proposed leader
-        for (auto it = std::cbegin(app_votes); it != std::cend(app_votes);
-             /*iterator incremented inside the loop*/) {
-            vote_count candidate_support;
-            candidate_support.candidate_id = (*it)->proposed_leader;
-            candidate_support.total = std::count_if(
-                it, std::cend(app_votes),
-                [&](const comms::msg::Proposal::SharedPtr& v) {
-                    return v->proposed_leader == (*it)->proposed_leader;
-                }
-            );
-            ballot.push_back(candidate_support);
-
-            auto last_it = it;
-            ++last_it; // Move right away to the next element
-            // Increment last_it until the last value of the cluster is found
-            // (since votes are in order of proposed leader, this actually goes to the next one)
-            while (last_it != std::cend(app_votes) &&
-                   (*last_it)->proposed_leader == (*it)->proposed_leader) {
-                ++last_it;
-            }
-            // Set the main iterator to the position after the last element of the cluster
-            it = last_it;
-        }
-
-        this->sendLogDebug("Logging clusters..");
-        for (const vote_count& canvote : ballot) {
-            this->sendLogDebug(
-                "Accumulated votes for candidate {}: {}", canvote.candidate_id, canvote.total
-            );
-        };
-        auto cluster_for_this_node =
-            std::find_if(ballot.begin(), ballot.end(), [this](const vote_count& v) {
-                return v.candidate_id == this->gatherAgentID();
-            });
-
-        if (cluster_for_this_node == ballot.end()) {
-            this->sendLogWarning("No votes accumulated!");
-            return;
-        }
-
+    if (this->isVotingCompleted() || app_votes.empty()) {
         this->sendLogDebug(
-            "Cluster for this node: candidate_id={} total={}",
-            (*cluster_for_this_node).candidate_id, (*cluster_for_this_node).total
+            "No votes yet ({}) or voting terminated ({}): stopping leader election",
+            app_votes.empty(), this->isVotingCompleted()
         );
+        return;
+    }
 
-        // If favorable votes >= network size/2, I'm the new leader
-        if (!this->isLeaderElected() && !this->isExternalLeaderElected()) {
-            if (cluster_for_this_node->total >= (this->gatherNetworkSize() / 2 + 1)) {
-                cancelTimer(this->election_timer_);
-                this->sendLogInfo("Majority acquired!");
-                this->setLeader(this->gatherAgentID());
-                this->setLeaderElected();
-                this->setVotingCompleted();
-            } else {
-                this->sendLogInfo("No majority yet");
-            }
+    // Sort votes based on the proposed leader
+    std::unordered_map<int, int> vote_counts; // Map with pairs: proposed leader - vote count
+
+    // Count votes
+    for (const auto& vote : app_votes) {
+        vote_counts[vote->proposed_leader]++;
+    }
+    this->sendLogDebug("Logging accumulated votes...");
+    for (const auto& [candidate_id, total] : vote_counts) {
+        this->sendLogDebug("Accumulated votes for candidate {}: {}", candidate_id, total);
+    }
+
+    // Find the cluster (votes) for this node
+    unsigned int my_id = this->gatherAgentID();
+    auto cluster_for_this_node = vote_counts.find(my_id);
+    if (cluster_for_this_node == vote_counts.end()) {
+        this->sendLogWarning("No votes accumulated for me!");
+        return;
+    }
+
+    this->sendLogDebug(
+        "Cluster for this node: candidate_id={} total={}", cluster_for_this_node->first,
+        cluster_for_this_node->second
+    );
+    // If favorable votes >= network size/2, I'm the new leader
+    if (!this->isLeaderElected() && !this->isExternalLeaderElected()) {
+        if (cluster_for_this_node->second >= (this->gatherNetworkSize() / 2 + 1)) {
+            cancelTimer(this->election_timer_);
+            this->sendLogInfo("Majority acquired!");
+            this->setVotingCompleted();
+            this->setElectionCompleted();
+            this->setLeader(this->gatherAgentID());
+            this->setLeaderElected();
+        } else {
+            this->sendLogInfo("No majority yet");
         }
-
-    } else {
-        this->sendLogDebug("No votes yet or voting terminated");
     }
 }
 
@@ -154,8 +126,11 @@ void ElectionModule::triggerVotes() {
     // Do not send request in case another leader has been already chosen
     if (!this->confirmAgentIsCandidate() || this->isExternalLeaderElected()) {
         this->sendLogWarning(
-            "It appears another leader has been already chosen, so I won't trigger the vote request"
+            "It appears another leader has been already chosen (agent {}), so I won't trigger the "
+            "vote request",
+            this->getLeaderID()
         );
+        this->setElectionCompleted(); // Stop retrying
         return;
     }
 
@@ -179,13 +154,15 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
         this->sendLogDebug("Not serving my own vote request");
         return;
     }
+    // Ensure the requesting agent is already been discovered
+    this->signalStoreAttendance(msg.solicitant_id);
 
     if (msg.term_id > this->gatherCurrentTerm()) {
         this->sendLogDebug("Aligning my term to the vote request");
         this->signalSetTerm(msg.term_id);
     }
 
-    if (this->gatherAgentRole() == leader) {
+    if ((this->gatherAgentRole() != follower) && (msg.term_id > this->gatherCurrentTerm())) {
         this->sendLogInfo("External vote request arrived; transitioning to follower...");
         this->signalSetTerm(msg.term_id);
         this->signalTransitionToFollower();
@@ -207,6 +184,7 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
         return;
     }
     this->sendLogDebug("Decided to vote for {}", (*heavier)->proposed_leader);
+    this->setRandomElectionTimeout();
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
 }
 
@@ -234,6 +212,8 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
         "Received vote| agent {} voted for agent {} (mass {:.4f})", msg->voter_id,
         msg->proposed_leader, msg->candidate_mass
     );
+    // Ensure the requesting agent is already been discovered
+    this->signalStoreAttendance(msg->voter_id);
 
     auto term = this->gatherCurrentTerm();
 
@@ -251,15 +231,19 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
     auto role = this->gatherAgentRole();
     switch (role) {
         case follower:
-            if (msg->term_id > term)
-                this->signalSetTerm(msg->term_id);
+            this->sendLogDebug("Setting term from the received vote: {}", msg->term_id);
+            this->signalSetTerm(msg->term_id);
             break;
         case candidate:
             // Another leader is elected, or new candidacy in progress
             if (msg->term_id > term) {
                 this->sendLogWarning(
-                    "Received vote with higher term (as candidate). Switching to follower"
+                    "Received vote from agent {} for agent {} with higher term. Switching to "
+                    "follower",
+                    msg->voter_id, msg->proposed_leader
                 );
+                this->setVotingCompleted();
+                this->setElectionCompleted();
                 this->signalSetTerm(msg->term_id);
                 this->signalTransitionToFollower();
             } else {
@@ -268,13 +252,9 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
             break;
         case leader:
             // Another leader is elected, or new candidacy in progress
-            if (msg->term_id >= term) {
-                this->sendLogWarning(
-                    "Received vote with equal or higher term (as leader). Switching to follower"
-                );
-                this->signalSetTerm(msg->term_id);
-                this->signalTransitionToFollower();
-            }
+            this->sendLogWarning("Received vote with equal or higher term. Switching to follower");
+            this->signalSetTerm(msg->term_id);
+            this->signalTransitionToFollower();
             break;
         default:
             this->sendLogWarning(
@@ -334,6 +314,9 @@ void ElectionModule::candidateActions() {
     while (!this->isElectionCompleted()) {
         this->flushVotes(); // Clear received votes
 
+        this->signalIncreaseTerm();
+        this->sendLogInfo("Starting new voting round during term {}", this->gatherCurrentTerm());
+
         this->sendLogInfo("Setting a new election timeout");
         this->setRandomElectionTimeout();
         this->election_timer_ = this->node_->create_wall_timer(
@@ -350,6 +333,7 @@ void ElectionModule::candidateActions() {
         this->sendLogInfo("New voting round");
 
         // Self-vote and trigger votes from other agents
+        this->unsetVotingCompleted();
         this->vote(this->gatherAgentID(), this->gatherAgentMass());
         this->triggerVotes();
 
@@ -364,6 +348,7 @@ void ElectionModule::candidateActions() {
         // Stop if a leader is elected
         if (this->isLeaderElected() || this->isExternalLeaderElected()) {
             this->setElectionCompleted();
+            break;
         }
     }
 

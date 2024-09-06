@@ -48,6 +48,7 @@ class ElectionModule {
         // Other functionalities
         void setRandomElectionTimeout();
         void clearElectionStatus();
+        void checkVotingCompletion();
 
         // Flag handling
         bool isElectionCompleted() const;
@@ -77,6 +78,7 @@ class ElectionModule {
         heartbeat gatherLastHb() const;
         unsigned int gatherNetworkSize() const;
         rclcpp::CallbackGroup::SharedPtr gatherReentrantGroup() const;
+        rclcpp::CallbackGroup::SharedPtr gatherBallotExclusiveGroup() const;
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
 
         // Check flags owned by other modules
@@ -88,6 +90,7 @@ class ElectionModule {
         void signalTransitionToLeader();
         void signalTransitionToCandidate();
         void signalTransitionToFollower();
+        void signalStoreAttendance(unsigned int);
 
     private: // Attributes
         Pelican* node_;

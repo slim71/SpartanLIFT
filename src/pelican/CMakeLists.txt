@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(pelican
-        VERSION 0.10.2
+        VERSION 0.10.3
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 
@@ -92,6 +92,7 @@ set(UNSC_SOURCES
     src/UNSCModule/unsc.cpp
     src/UNSCModule/getters.cpp
     src/UNSCModule/setters.cpp
+    src/UNSCModule/checkers.cpp
     src/UNSCModule/external_comms.cpp
     src/UNSCModule/control.cpp
     src/UNSCModule/algorithms.cpp

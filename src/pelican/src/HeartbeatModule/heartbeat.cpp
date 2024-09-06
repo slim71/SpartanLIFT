@@ -82,7 +82,7 @@ void HeartbeatModule::sendNow() {
 }
 
 /******************** Private member functions *********************/
-void HeartbeatModule::sendHeartbeat() const {
+void HeartbeatModule::sendHeartbeat() {
     comms::msg::Heartbeat hb;
     hb.term_id = this->gatherCurrentTerm();
     hb.leader_id = this->gatherAgentID();
@@ -93,7 +93,10 @@ void HeartbeatModule::sendHeartbeat() const {
     if (this->pub_to_heartbeat_topic_) {
         this->pub_to_heartbeat_topic_->publish(hb);
     } else {
-        this->sendLogError("Publisher to heartbeat topic is not defined!");
+        this->sendLogError(
+            "Publisher to heartbeat topic is not defined! I'm probably not the leader then..."
+        );
+        cancelTimer(this->hb_transmission_timer_);
     }
 }
 
@@ -110,15 +113,10 @@ bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {
     if (msg.term_id < this->gatherCurrentTerm()) {
         // Ignore heartbeat; do not reset election timer
         this->sendLogWarning(
-            "Ignoring heartbeat from agent received with previous term ID ({})", msg.leader_id,
+            "Ignoring heartbeat from agent {} received with previous term ID ({})", msg.leader_id,
             msg.term_id
         );
         return false;
-    }
-
-    // Keep heartbeat vector limited
-    if (this->getNumberOfHbs() >= this->getMaxHbs()) {
-        this->flushHeartbeats();
     }
 
     return true;
@@ -129,6 +127,11 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
         return;
 
     auto term = this->gatherCurrentTerm();
+
+    // Keep heartbeat vector limited
+    if (this->getNumberOfHbs() >= this->getMaxHbs()) {
+        this->flushHeartbeats();
+    }
 
     // Store heartbeat
     heartbeat hb;
@@ -149,8 +152,10 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
 
     this->sendLogDebug("Received heartbeat from agent {}", msg.leader_id);
 
-    if (msg.term_id > term)
+    if (msg.term_id > term) {
+        this->sendLogDebug("Aligning term with hearbeat received: {}", msg.term_id);
         this->signalSetTerm(msg.term_id);
+    }
 
     switch (this->gatherAgentRole()) {
         case follower:
@@ -159,16 +164,15 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
             this->signalResetElectionTimer();
             break;
         case candidate:
-            this->sendLogWarning("As a candidate, I've received a heartbeat from an external leader"
-            );
+            this->sendLogWarning("I've received a heartbeat from an external leader");
             this->signalSetElectionStatus(msg.leader_id);
             this->signalTransitionToFollower();
+            this->signalResetElectionTimer();
             break;
         case leader:
             if (msg.leader_id != this->gatherAgentID()) {
                 this->sendLogWarning(
-                    "As a leader, I've received a heartbeat from some other leader agent ({})",
-                    msg.leader_id
+                    "I've received a heartbeat from some other leader agent ({})", msg.leader_id
                 );
                 this->signalSetElectionStatus(msg.leader_id);
                 this->signalTransitionToFollower();

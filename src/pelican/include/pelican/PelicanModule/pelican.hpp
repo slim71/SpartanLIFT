@@ -49,6 +49,7 @@ class Pelican : public rclcpp::Node {
         rclcpp::CallbackGroup::SharedPtr getHeightExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr getCheckExclusiveGroup() const;
         rclcpp::CallbackGroup::SharedPtr getP2PExclusiveGroup() const;
+        rclcpp::CallbackGroup::SharedPtr getBallotExclusiveGroup() const;
 
         // Flags checks
         bool isLeader() const;
@@ -83,13 +84,14 @@ class Pelican : public rclcpp::Node {
         void initiateFormationActions();                                              // UNSC module
 
         // Actions initiated from outside the module
-        void commenceSetElectionStatus(int); // Heartbeat module
-        void commenceResetElectionTimer();   // Heartbeat module
-        void commenceSetTerm(uint64_t);      // Election and Heartbeat modules
-        void commenceFollowerOperations();   // Election and Heartbeat modules
-        void commenceIncreaseCurrentTerm();  // Election module
-        void commenceLeaderOperations();     // Election module
-        void commenceCandidateOperations();  // Election module
+        void commenceSetElectionStatus(int);        // Heartbeat module
+        void commenceResetElectionTimer();          // Heartbeat module
+        void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
+        void commenceFollowerOperations();          // Election and Heartbeat modules
+        void commenceIncreaseCurrentTerm();         // Election module
+        void commenceLeaderOperations();            // Election module
+        void commenceCandidateOperations();         // Election module
+        void commenceStoreAttendance(unsigned int); // Election module
         void commencePublishVehicleCommand(
             uint16_t, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN, float = NAN,
             float = NAN
@@ -128,7 +130,7 @@ class Pelican : public rclcpp::Node {
 
         // Other functionalities
         void parseModel();
-        void storeAttendance(comms::msg::NetworkVertex::SharedPtr);
+        void storeAttendance(unsigned int);
         void recordCopterPosition(comms::msg::NetworkVertex::SharedPtr);
         void becomeLeader();
         void becomeFollower();
@@ -234,7 +236,7 @@ class Pelican : public rclcpp::Node {
         // Map with pairs: agent ID - agent position
         std::unordered_map<unsigned int, geometry_msgs::msg::Point> copters_positions_;
         std::vector<std::tuple<unsigned int, unsigned int>> rpcs_vector_;
-        std::vector<comms::msg::NetworkVertex> discovery_vector_;
+        std::vector<unsigned int> discovery_vector_;
         std::vector<comms::msg::Command> dispatch_vector_;
         std::vector<unsigned int> agents_in_formation_;
         geometry_msgs::msg::Point des_formation_pos_ = NAN_point;
@@ -290,6 +292,8 @@ class Pelican : public rclcpp::Node {
         rclcpp::SubscriptionOptions check_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr p2p_exclusive_group_;
         rclcpp::SubscriptionOptions p2p_opt_ {rclcpp::SubscriptionOptions()};
+        rclcpp::CallbackGroup::SharedPtr ballot_exclusive_group_;
+        rclcpp::SubscriptionOptions ballot_opt_ {rclcpp::SubscriptionOptions()};
 
         rclcpp::QoS qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default

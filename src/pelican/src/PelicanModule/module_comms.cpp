@@ -137,17 +137,14 @@ std::optional<px4_msgs::msg::VehicleStatus> Pelican::requestStatus() const {
 
 /************** From external modules, concluding here *************/
 void Pelican::commenceFollowerOperations() {
-    this->sendLogDebug("Received signal for transitioning to Follower");
     this->becomeFollower();
 }
 
 void Pelican::commenceLeaderOperations() {
-    this->sendLogDebug("Received signal for transitioning to Leader");
     this->becomeLeader();
 }
 
 void Pelican::commenceCandidateOperations() {
-    this->sendLogDebug("Received signal for transitioning to Candidate");
     this->becomeCandidate();
 }
 
@@ -196,4 +193,8 @@ void Pelican::commenceUnsetFormationAchieved() {
 
 void Pelican::commenceEmptyFormationResults() {
     this->emptyFormationResults();
+}
+
+void Pelican::commenceStoreAttendance(unsigned int id) {
+    this->storeAttendance(id);
 }

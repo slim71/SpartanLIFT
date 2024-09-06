@@ -41,7 +41,7 @@ class HeartbeatModule {
         template<typename... Args> void sendLogError(std::string, Args...) const;
 
         // Core functionalities
-        void sendHeartbeat() const;
+        void sendHeartbeat();
         void storeHeartbeat(const comms::msg::Heartbeat);
         bool checkHeartbeatValidity(const comms::msg::Heartbeat);
 
