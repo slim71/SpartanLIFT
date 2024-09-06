@@ -84,3 +84,8 @@ void UNSCModule::resetStuckCount() {
     std::lock_guard lock(this->stuck_count_mutex_);
     this->stuck_counter_ = 0;
 }
+
+void UNSCModule::setLastDistanceFromTarget(geometry_msgs::msg::Point d) {
+    std::lock_guard lock(this->last_dist_mutex_);
+    this->last_dist_ = d;
+}

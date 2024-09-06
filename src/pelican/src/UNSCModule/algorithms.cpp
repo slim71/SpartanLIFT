@@ -677,10 +677,13 @@ void UNSCModule::tightSpaceCollisionAvoidance() {
     // Detect if agent is stuck by checking if it's making progress
     if (this->getStuckCount() > constants::STUCK_AGENT_NUM) {
         // Add a small random perturbation to escape local minima
-        this->sendLogDebug("I got stuck while moving to my position!");
+        this->sendLogWarning("I got stuck while moving to my position!");
         angle += random_perturbation();
         this->resetStuckCount();
-    } else if (speed < constants::STUCK_AGENT_SPEED) {
+    } else if ((abs(des_pos.x - my_curr_pos.x - this->getLastDistanceFromTarget().x) < 0.4)
+            && (abs(des_pos.y - my_curr_pos.y - this->getLastDistanceFromTarget().y) < 0.4) ){
+        this->sendLogDebug("The agent might be stuck...");
+        this->setLastDistanceFromTarget(des_pos - my_curr_pos);
         this->increaseStuckCount();
     } else {
         this->resetStuckCount();

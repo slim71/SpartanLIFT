@@ -90,3 +90,8 @@ uint32_t UNSCModule::getLastCompletedOperation() const {
     std::lock_guard lock(this->last_op_mutex_);
     return this->last_op_completed_;
 }
+
+geometry_msgs::msg::Point UNSCModule::getLastDistanceFromTarget() const {
+    std::lock_guard lock(this->last_dist_mutex_);
+    return this->last_dist_;
+}

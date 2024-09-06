@@ -50,6 +50,7 @@ class UNSCModule {
         uint64_t getTargetCount() const;
         uint64_t getStuckCount() const;
         uint32_t getLastCompletedOperation() const;
+        geometry_msgs::msg::Point getLastDistanceFromTarget() const;
 
         // Setters
         void setPositionSetpoint(geometry_msgs::msg::Point);
@@ -146,6 +147,7 @@ class UNSCModule {
         void resetTargetCount();
         void increaseStuckCount();
         void resetStuckCount();
+        void setLastDistanceFromTarget(geometry_msgs::msg::Point);
         // Setters - flags
         void unsetNeighborGathered();
 
@@ -171,6 +173,8 @@ class UNSCModule {
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
         geometry_msgs::msg::Point setpoint_position_ = NAN_point;
         geometry_msgs::msg::Point setpoint_velocity_;
+        geometry_msgs::msg::Point last_dist_ =
+            geometry_msgs::msg::Point().set__x(1000).set__y(1000);
         std::vector<unsigned int> neighbors_;
         std::condition_variable formation_cv_;
         // Map with pair: agent ID - desired position
@@ -195,6 +199,7 @@ class UNSCModule {
         mutable std::mutex order_mutex_;             // Used to access fleet_order_
         mutable std::mutex target_count_mutex_;      // Used to access near_target_counter_
         mutable std::mutex stuck_count_mutex_;       // Used to access stuck_counter_
+        mutable std::mutex last_dist_mutex_;         // Used to access last_dist_
 
         rclcpp::TimerBase::SharedPtr prechecks_timer_;
         std::chrono::seconds prechecks_period_ {constants::PRECHECKS_TIME_SECS};
