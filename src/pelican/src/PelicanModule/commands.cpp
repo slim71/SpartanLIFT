@@ -174,6 +174,7 @@ void Pelican::rendezvousFleet() {
                     "Client interrupted while waiting for the {} service. Terminating...",
                     service_name
                 );
+                rcutils_reset_error(); // Reset the error after handling
                 return;
             }
 

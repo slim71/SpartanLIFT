@@ -10,11 +10,26 @@ TacMapModule::TacMapModule() {
 TacMapModule::TacMapModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 TacMapModule::~TacMapModule() {
-    // Unsubscribe from topics
+    // Cancel active timers
+    cancelTimer(position_timer_);
+    resetSharedPointer(position_timer_);
+    cancelTimer(compensation_timer_);
+    resetSharedPointer(compensation_timer_);
+
+    // Cancel and reset all subscriptions and publishers
     resetSharedPointer(this->sub_to_flags_topic_);
     resetSharedPointer(this->sub_to_attitude_topic_);
     resetSharedPointer(this->sub_to_control_mode_topic_);
     resetSharedPointer(this->sub_to_status_topic_);
+    resetSharedPointer(this->sub_to_command_ack_topic_);
+    resetSharedPointer(this->sub_to_enu_odometry_topic_);
+    resetSharedPointer(this->pub_to_command_topic_);
+    resetSharedPointer(this->pub_to_trajectory_setpoint_topic_);
+    resetSharedPointer(this->pub_to_offboard_control_topic_);
+
+    last_commander_ack_.reset();
+    enu_odometry_buffer_.clear();
+    status_buffer_.clear();
 
     this->node_ = nullptr;
     this->logger_ = nullptr;
@@ -90,7 +105,7 @@ void TacMapModule::initPublishers() {
             this->offboard_control_topic_, this->standard_qos_
         );
 
-    this->pub_to_trajectory_setpoint_topic =
+    this->pub_to_trajectory_setpoint_topic_ =
         this->node_->create_publisher<px4_msgs::msg::TrajectorySetpoint>(
             this->trajectory_setpoint_topic_, this->standard_qos_
         );

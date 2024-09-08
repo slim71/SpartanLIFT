@@ -48,7 +48,6 @@ class ElectionModule {
         // Other functionalities
         void setRandomElectionTimeout();
         void clearElectionStatus();
-        void checkVotingCompletion();
 
         // Flag handling
         bool isElectionCompleted() const;

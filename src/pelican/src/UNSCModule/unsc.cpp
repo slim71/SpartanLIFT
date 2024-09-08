@@ -10,6 +10,32 @@ UNSCModule::UNSCModule() {
 UNSCModule::UNSCModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 UNSCModule::~UNSCModule() {
+    // Cancel active timers
+    cancelTimer(this->prechecks_timer_);
+    resetSharedPointer(this->prechecks_timer_);
+    cancelTimer(this->offboard_timer_);
+    resetSharedPointer(this->offboard_timer_);
+    cancelTimer(this->rendezvous_timer_);
+    resetSharedPointer(this->rendezvous_timer_);
+    cancelTimer(this->formation_timer_);
+    resetSharedPointer(this->formation_timer_);
+    cancelTimer(this->linear_timer_);
+    resetSharedPointer(this->linear_timer_);
+    cancelTimer(this->collision_timer_);
+    resetSharedPointer(this->collision_timer_);
+    cancelTimer(this->formation_check_timer_);
+    resetSharedPointer(this->formation_check_timer_);
+    cancelTimer(this->height_check_timer_);
+    resetSharedPointer(this->height_check_timer_);
+    cancelTimer(this->sync_check_timer_);
+    resetSharedPointer(this->sync_check_timer_);
+    cancelTimer(this->target_check_timer_);
+    resetSharedPointer(this->target_check_timer_);
+
+    neighbors_.clear();
+    neigh_des_positions_.clear();
+    fleet_order_.clear();
+
     this->node_ = nullptr;
     this->logger_ = nullptr;
 }

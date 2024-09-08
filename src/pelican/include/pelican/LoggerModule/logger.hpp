@@ -9,6 +9,7 @@ class LoggerModule {
     public:
         explicit LoggerModule();
         explicit LoggerModule(std::shared_ptr<rclcpp::Logger>);
+        ~LoggerModule();
 
         template<typename... Args> void logInfo(possible_modules, std::string, Args...) const;
         template<typename... Args> void logError(possible_modules, std::string, Args...) const;

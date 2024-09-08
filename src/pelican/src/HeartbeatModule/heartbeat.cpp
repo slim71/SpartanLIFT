@@ -11,7 +11,13 @@ HeartbeatModule::HeartbeatModule(Pelican* node) : node_(node), logger_ {nullptr}
 
 HeartbeatModule::~HeartbeatModule() {
     // Cancel periodic transmission (no problem arises if they're not initialized)
+    // Cancel active timers
     cancelTimer(this->hb_transmission_timer_);
+    resetSharedPointer(this->hb_transmission_timer_);
+
+    // Clear shared pointers for subscriptions and publishers
+    resetSharedPointer(this->sub_to_heartbeat_topic_);
+    resetSharedPointer(this->pub_to_heartbeat_topic_);
 
     // Clear out all heartbeats received and stored
     this->flushHeartbeats();

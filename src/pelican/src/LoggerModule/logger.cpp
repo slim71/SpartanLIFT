@@ -13,6 +13,11 @@ LoggerModule::LoggerModule(std::shared_ptr<rclcpp::Logger> logger) {
         this->logger_ = nullptr;
 }
 
+LoggerModule::~LoggerModule() {
+    // Ensures the logger shared pointer is properly released.
+    logger_.reset();
+}
+
 void LoggerModule::setID(int i) {
     this->id_ = i;
 }

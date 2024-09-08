@@ -115,6 +115,59 @@ Pelican::Pelican()
 Pelican::~Pelican() {
     this->sendLogDebug("Destructor for agent {}", this->getID());
 
+    // Notify condition variables to avoid deadlocks
+    rendezvous_handled_cv_.notify_all();
+    formation_handled_cv_.notify_all();
+
+    // Stop and reset all ROS2-related services, subscriptions, and timers
+    // Cancel active timers
+    cancelTimer(netsize_timer_);
+    resetSharedPointer(netsize_timer_);
+
+    // Clean up action servers
+    resetSharedPointer(teleopdata_server_);
+
+    // Stop all service clients
+    resetSharedPointer(fleetinfo_client_);
+    resetSharedPointer(cargo_attachment_client_);
+    resetSharedPointer(des_pos_client_);
+    resetSharedPointer(form_reached_client_);
+
+    // Stop all services
+    resetSharedPointer(fleetinfo_server_);
+    resetSharedPointer(des_pos_server_);
+    resetSharedPointer(form_reached_server_);
+
+    // Cancel and reset all subscriptions and publishers
+    resetSharedPointer(sub_to_dispatch_);
+    resetSharedPointer(pub_to_dispatch_);
+    resetSharedPointer(sub_to_locator_);
+    resetSharedPointer(pub_to_locator_);
+    resetSharedPointer(sub_to_formation_);
+    resetSharedPointer(pub_to_formation_);
+    resetSharedPointer(sub_to_sync_);
+    resetSharedPointer(pub_to_sync_);
+
+    // Clear the callback groups
+    resetSharedPointer(reentrant_group_);
+    resetSharedPointer(timer_exclusive_group_);
+    resetSharedPointer(offboard_exclusive_group_);
+    resetSharedPointer(rendezvous_exclusive_group_);
+    resetSharedPointer(formation_exclusive_group_);
+    resetSharedPointer(formation_timer_group_);
+    resetSharedPointer(target_exclusive_group_);
+    resetSharedPointer(height_exclusive_group_);
+    resetSharedPointer(check_exclusive_group_);
+    resetSharedPointer(p2p_exclusive_group_);
+    resetSharedPointer(ballot_exclusive_group_);
+
+    // Clear internal data structures
+    copters_positions_.clear();
+    rpcs_vector_.clear();
+    discovery_vector_.clear();
+    dispatch_vector_.clear();
+    agents_in_formation_.clear();
+
     // Reset shared pointers
     this->instance_.reset();
 }
@@ -273,6 +326,7 @@ void Pelican::cargoAttachment(bool attach) {
             this->sendLogError(
                 "Client interrupted while waiting for the {} service. Terminating...", service_name
             );
+            rcutils_reset_error(); // Reset the error after handling
             return;
         }
 
@@ -351,6 +405,7 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
             this->sendLogError(
                 "Client interrupted while waiting for {} server. Terminating...", service_name
             );
+            rcutils_reset_error(); // Reset the error after handling
             return;
         }
 
@@ -446,6 +501,7 @@ void Pelican::notifyAgentInFormation() {
             this->sendLogError(
                 "Client interrupted while waiting for the {} server. Terminating...", service_name
             );
+            rcutils_reset_error(); // Reset the error after handling
             return;
         }
         this->sendLogDebug("Service {} not available; waiting some more...", service_name);

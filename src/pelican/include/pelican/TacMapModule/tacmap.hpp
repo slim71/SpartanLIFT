@@ -123,7 +123,7 @@ class TacMapModule {
 
         std::string trajectory_setpoint_topic_; // i.e. "/px4_{id}/fmu/in/trajectory_setpoint";
         rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr
-            pub_to_trajectory_setpoint_topic;
+            pub_to_trajectory_setpoint_topic_;
 
         std::string offboard_control_topic_; // i.e. "/px4_{id}/fmu/in/offboard_control_mode";
         rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr

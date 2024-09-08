@@ -310,6 +310,7 @@ void Datapad::teleopTaskClient(Flags flags) {
             this->sendLogError(
                 "Client interrupted while waiting for TeleopData action service. Terminating..."
             );
+            rcutils_reset_error(); // Reset the error after handling
             return;
         }
 
@@ -339,6 +340,7 @@ void Datapad::askForCargoPoint() {
             this->sendLogError(
                 "Client interrupted while waiting for {} service. Terminating...", service_name
             );
+            rcutils_reset_error(); // Reset the error after handling
             this->unsetAndNotifyCargoHandled();
             return;
         }

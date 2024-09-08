@@ -11,19 +11,19 @@ ElectionModule::ElectionModule() {
 ElectionModule::ElectionModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
 ElectionModule::~ElectionModule() {
-    this->stopService();
-
-    // Cancel active timers
-    cancelTimer(this->election_timer_);
+    // Reset statuses, to achieve end of operations
     this->setElectionCompleted();
     this->setVotingCompleted();
 
-    // Release mutexes
-    std::lock_guard lock_votes(this->votes_mutex_);
-    std::lock_guard lock_election_completed(this->election_completed_mutex_);
-    std::lock_guard lock_voting_completed(this->voting_completed_mutex_);
-    std::lock_guard lock_external_leader(this->external_leader_mutex_);
-    std::lock_guard lock_leader(this->leader_mutex_);
+    // Cancel active timers
+    cancelTimer(this->election_timer_);
+    resetSharedPointer(this->election_timer_);
+
+    // Clear shared pointers for subscriptions and publishers
+    resetSharedPointer(sub_to_leader_election_topic_);
+    resetSharedPointer(pub_to_leader_election_topic_);
+    resetSharedPointer(sub_to_request_vote_rpc_topic_);
+    resetSharedPointer(pub_to_request_vote_rpc_topic_);
 
     // Clear shared resources
     this->received_votes_.clear();
@@ -165,6 +165,7 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
     if ((this->gatherAgentRole() != follower) && (msg.term_id > this->gatherCurrentTerm())) {
         this->sendLogInfo("External vote request arrived; transitioning to follower...");
         this->signalSetTerm(msg.term_id);
+        this->setElectionStatus(0);
         this->signalTransitionToFollower();
     }
 
@@ -183,6 +184,7 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
         this->sendLogWarning("No valid ID to vote!");
         return;
     }
+
     this->sendLogDebug("Decided to vote for {}", (*heavier)->proposed_leader);
     this->setRandomElectionTimeout();
     this->vote((*heavier)->proposed_leader, (*heavier)->candidate_mass);
@@ -242,8 +244,7 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
                     "follower",
                     msg->voter_id, msg->proposed_leader
                 );
-                this->setVotingCompleted();
-                this->setElectionCompleted();
+                this->setElectionStatus(0);
                 this->signalSetTerm(msg->term_id);
                 this->signalTransitionToFollower();
             } else {
@@ -254,12 +255,14 @@ void ElectionModule::storeVotes(const comms::msg::Proposal::SharedPtr msg) {
             // Another leader is elected, or new candidacy in progress
             this->sendLogWarning("Received vote with equal or higher term. Switching to follower");
             this->signalSetTerm(msg->term_id);
+            this->setElectionStatus(0);
             this->signalTransitionToFollower();
             break;
         default:
             this->sendLogWarning(
-                "Incorrect role (tbd) found when receiving a vote. Transitioning to follower"
+                "Undefined role found when receiving a vote. Transitioning to follower"
             );
+            this->setElectionStatus(0);
             this->signalTransitionToFollower();
     }
 }
@@ -308,7 +311,6 @@ void ElectionModule::candidateActions() {
     }
 
     cancelTimer(this->election_timer_);
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_); // Unsubscribe from topic
     this->clearElectionStatus();
 
     while (!this->isElectionCompleted()) {
@@ -326,14 +328,12 @@ void ElectionModule::candidateActions() {
                 this->sendLogDebug("Election timeout elapsed for candidate agent");
                 this->setVotingCompleted();
             },
+            // No need for an exclusive group, since it cancels itself
             this->gatherReentrantGroup()
         );
 
-        this->signalIncreaseTerm();
-        this->sendLogInfo("New voting round");
-
         // Self-vote and trigger votes from other agents
-        this->unsetVotingCompleted();
+        this->clearElectionStatus();
         this->vote(this->gatherAgentID(), this->gatherAgentMass());
         this->triggerVotes();
 

@@ -11,7 +11,7 @@ void TacMapModule::publishTrajectorySetpoint(
 
     msg.timestamp = this->gatherTime().nanoseconds() / 1000;
 
-    this->pub_to_trajectory_setpoint_topic->publish(msg);
+    this->pub_to_trajectory_setpoint_topic_->publish(msg);
 }
 
 void TacMapModule::publishVehicleCommand(
