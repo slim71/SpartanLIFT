@@ -69,6 +69,7 @@ class Pelican : public rclcpp::Node {
         std::optional<px4_msgs::msg::VehicleStatus> requestStatus() const;      // TacMap module
         double requestActualTargetHeight() const;                               // UNSC module
         std::optional<geometry_msgs::msg::Point> requestTargetPosition() const; // UNSC module
+        bool requestSimulationReady();                                          // UNSC module
 
         // Actions initiated by the module
         bool initiateSetHome();                                                       // UNSC module
@@ -222,10 +223,9 @@ class Pelican : public rclcpp::Node {
         // Weak pointer to the instance of the node
         static std::weak_ptr<Pelican> instance_;
 
-        bool ready_ {false};
+        std::atomic<bool> ready_ {false};
         bool flying_ {false};
         bool carrying_ {false};
-        bool mission_in_progress_ {false};
         bool last_cmd_result_ {false};
         bool formation_achieved_ {false};
         unsigned int id_;

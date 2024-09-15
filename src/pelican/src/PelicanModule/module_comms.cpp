@@ -87,6 +87,10 @@ std::optional<geometry_msgs::msg::Point> Pelican::requestTargetPosition() const 
     return this->unsc_core_.getTargetPosition();
 }
 
+bool Pelican::requestSimulationReady() {
+    return this->unsc_core_.getSimulationReady();
+}
+
 void Pelican::commenceStopUNSCService() {
     this->unsc_core_.stopService();
 }

@@ -56,8 +56,7 @@ void UNSCModule::runPreChecks() {
     this->sendLogDebug("Status data wait started at timestamp {}", start_time);
 
     // Check for a bit, in case the ACK has not been received yet
-    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_CONVERSION - start_time <
-           constants::ACK_WAIT_MILLIS) {
+    while (true) {
         std::optional<px4_msgs::msg::VehicleStatus> status = this->gatherStatus();
 
         if (status) { // At least one status received
@@ -68,20 +67,24 @@ void UNSCModule::runPreChecks() {
                 status->pre_flight_checks_pass, status->failsafe
             );
 
-            // Check whether the agent in the simulation is good to go
-            this->sitl_ready_ =
-                status->pre_flight_checks_pass && !status->failsafe &&
-                ((1u << status->nav_state) != 0) && // Taken from the PX4 commander
-                status->arming_state < px4_msgs::msg::VehicleStatus::ARMING_STATE_STANDBY_ERROR;
+            if (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_CONVERSION >=
+                start_time + constants::ACK_WAIT_MILLIS) {
+                // Check whether the agent in the simulation is good to go
+                std::lock_guard lock(this->sitl_ready_mutex_);
+                this->sitl_ready_ =
+                    status->pre_flight_checks_pass && !status->failsafe &&
+                    ((1u << status->nav_state) != 0) && // Taken from the PX4 commander
+                    status->arming_state < px4_msgs::msg::VehicleStatus::ARMING_STATE_STANDBY_ERROR;
 
-            if (this->sitl_ready_)
-                this->sendLogInfo("Simulation ready!");
-            else
-                this->sendLogError("Errors in the simulation detected!");
+                if (this->sitl_ready_)
+                    this->sendLogInfo("Simulation ready!");
+                else
+                    this->sendLogError("Errors in the simulation detected!");
 
-            this->setHome();
-
-            return;
+                return;
+            } else {
+                this->sendLogDebug("Status is too old (referring to {})", status->timestamp);
+            }
         }
 
         // Wait for a bit before retrying
@@ -91,6 +94,7 @@ void UNSCModule::runPreChecks() {
     this->sendLogDebug("Status data wait finished");
 
     // Default to the hypothesis that the simulation has some problem
+    std::lock_guard lock(this->sitl_ready_mutex_);
     this->sitl_ready_ = false;
     this->sendLogError("Errors in the simulation detected!");
 }
@@ -142,8 +146,6 @@ void UNSCModule::setAndMaintainOffboardMode() {
             px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
             constants::MAVLINK_ENABLE_CUSTOM_MODE, constants::PX4_OFFBOARD_MODE
         );
-
-        this->arm();
     }
 
     // offboard_control_mode needs to be paired with trajectory_setpoint
@@ -169,7 +171,7 @@ bool UNSCModule::sendToCommanderUnit(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
     float param6, float param7
 ) {
-    // Send command to PX4 commander and wait for it to acknoledge it
+    // Send command to PX4 commander and wait for it to acknowledge it
     unsigned int attempt = 1;
     do {
         this->sendLogDebug("Trying to send command {} and to get an ack", command);

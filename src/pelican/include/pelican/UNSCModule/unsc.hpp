@@ -51,6 +51,7 @@ class UNSCModule {
         uint64_t getStuckCount() const;
         uint32_t getLastCompletedOperation() const;
         geometry_msgs::msg::Point getLastDistanceFromTarget() const;
+        bool getSimulationReady();
 
         // Setters
         void setPositionSetpoint(geometry_msgs::msg::Point);
@@ -158,7 +159,6 @@ class UNSCModule {
         // For possible future use
         bool running_ {true};
         bool sitl_ready_ {false};
-        bool move_to_center_ {false};
         bool neighbor_gathered_ {false};
         uint64_t offboard_setpoint_counter_ {0}; // counter for the number of setpoints sent
         uint64_t near_target_counter_ {0};       // counter for subsequent setpoints near target
@@ -184,6 +184,7 @@ class UNSCModule {
         std::promise<void> fa_promise_;
         std::future<void> fa_future_;
 
+        mutable std::mutex sitl_ready_mutex_;        // to be used with sitl_ready_
         mutable std::mutex offset_mutex_;            // to be used with offset_ and yaw_
         mutable std::mutex running_mutex_;           // to be used with running_
         mutable std::mutex setpoint_position_mutex_; // Used to access setpoint_position_

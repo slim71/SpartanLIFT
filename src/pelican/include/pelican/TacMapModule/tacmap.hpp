@@ -33,9 +33,6 @@ class TacMapModule {
         std::optional<px4_msgs::msg::VehicleCommandAck> getCommanderAck() const;
         std::optional<px4_msgs::msg::VehicleStatus> getStatus() const;
         bool getRunningStatus() const;
-        bool getInitiatedStatus() const;
-
-        void setInitiatedStatus(bool);
 
         bool checkOffboardEngagement();
 

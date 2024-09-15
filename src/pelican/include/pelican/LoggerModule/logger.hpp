@@ -29,7 +29,7 @@ class LoggerModule {
     private:
         std::shared_ptr<rclcpp::Logger> logger_;
         int id_ {0};
-        bool ready_to_log_ {false};
+        std::atomic<bool> ready_to_log_ {false};
         possible_roles cached_role_ {tbd};
         unsigned int cached_term_ {0};
 };

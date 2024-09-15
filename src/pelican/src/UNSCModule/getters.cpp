@@ -95,3 +95,8 @@ geometry_msgs::msg::Point UNSCModule::getLastDistanceFromTarget() const {
     std::lock_guard lock(this->last_dist_mutex_);
     return this->last_dist_;
 }
+
+bool UNSCModule::getSimulationReady() {
+    std::lock_guard lock(this->sitl_ready_mutex_);
+    return this->sitl_ready_;
+}

@@ -71,8 +71,7 @@ bool TacMapModule::waitForCommanderAck(uint16_t cmd) {
     this->sendLogDebug("ACK wait started at timestamp {}", start_time);
 
     // Check for a bit, in case the ACK has not been received yet
-    while (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_CONVERSION - start_time <
-           constants::ACK_WAIT_MILLIS) {
+    while (true) {
         std::optional<px4_msgs::msg::VehicleCommandAck> ack = this->getCommanderAck();
 
         if (ack) { // at least one ACK received
@@ -80,10 +79,14 @@ bool TacMapModule::waitForCommanderAck(uint16_t cmd) {
                 "Stored ACK found! cmd:{} timestamp:{} result: {}", ack->command, ack->timestamp,
                 ack->result
             );
-            if ((ack->command == cmd)) {
+            if ((ack->command == cmd) &&
+                (this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_CONVERSION >=
+                 start_time + constants::ACK_WAIT_MILLIS)) {
                 auto result =
                     ack->result == px4_msgs::msg::VehicleCommandAck::VEHICLE_CMD_RESULT_ACCEPTED;
                 return result;
+            } else {
+                this->sendLogDebug("Unrelated/old ack found for cmd {}!", cmd);
             }
         }
 

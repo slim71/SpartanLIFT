@@ -513,6 +513,10 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
 }
 
 bool Pelican::executeRPCCommand(uint16_t command) {
+    if (!this->requestSimulationReady()) {
+        this->sendLogError("Cannot execute command because of errors in the simulation!");
+        return false;
+    }
     switch (command) {
         case TAKEOFF_COMMAND:
             if (this->initiateSetHome() && this->initiateArm() && this->initiateTakeoff()) {
