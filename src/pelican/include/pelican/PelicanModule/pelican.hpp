@@ -19,6 +19,12 @@ class Pelican : public rclcpp::Node {
         static void setInstance(rclcpp::Node::SharedPtr instance);
         static std::shared_ptr<Pelican> getInstance();
 
+        // System setup and teardown
+        void transitionToFailureMode();
+        void failureMode();
+        void enableSystem();
+        void recoverFromFailure();
+
         // Getters
         unsigned int getID() const;
         std::string getModel() const;
@@ -87,6 +93,7 @@ class Pelican : public rclcpp::Node {
         // Actions initiated from outside the module
         void commenceSetElectionStatus(int);        // Heartbeat module
         void commenceResetElectionTimer();          // Heartbeat module
+        void commenceStopHeartbeatTransmission();   // Heartbeat module
         void commenceSetTerm(uint64_t);             // Election and Heartbeat modules
         void commenceFollowerOperations();          // Election and Heartbeat modules
         void commenceIncreaseCurrentTerm();         // Election module
@@ -149,8 +156,8 @@ class Pelican : public rclcpp::Node {
 
         // Topic-related
         // "/fleet/network"
-        void sharePosition(geometry_msgs::msg::Point);                    // publisher
-        void storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr); // subscriber
+        void sharePosition(geometry_msgs::msg::Point);                     // publisher
+        void handleCopterInfo(const comms::msg::NetworkVertex::SharedPtr); // subscriber
         // "/fleet/dispatch"
         void handleCommandReception(const comms::msg::Command);                      // subscriber
         void sendAppendEntryRPC(unsigned int, uint16_t, bool = false, bool = false); // publisher

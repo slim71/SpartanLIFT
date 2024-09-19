@@ -106,9 +106,16 @@ void HeartbeatModule::sendHeartbeat() {
     }
 }
 
-void HeartbeatModule::stopService() {
-    this->sendLogDebug("Stopping heartbeat module");
+void HeartbeatModule::stopHeartbeatTransmission() {
+    this->sendLogDebug("Stopping heartbeat transmission");
     cancelTimer(this->hb_transmission_timer_);
+}
+
+void HeartbeatModule::stopService() {
+    this->sendLogWarning("Stopping heartbeat module!");
+    cancelTimer(this->hb_transmission_timer_);
+    resetSharedPointer(this->pub_to_heartbeat_topic_);
+    resetSharedPointer(this->sub_to_heartbeat_topic_);
 }
 
 bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {

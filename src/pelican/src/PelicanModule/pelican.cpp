@@ -58,46 +58,8 @@ Pelican::Pelican()
         this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     this->ballot_opt_.callback_group = this->ballot_exclusive_group_;
 
-    // Subscribers
-    this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
-        this->locator_topic_, this->data_qos_,
-        std::bind(&Pelican::storeCopterInfo, this, std::placeholders::_1), this->reentrant_opt_
-    );
-    this->sub_to_dispatch_ = this->create_subscription<comms::msg::Command>(
-        this->dispatch_topic_, this->qos_,
-        std::bind(&Pelican::handleCommandReception, this, std::placeholders::_1),
-        this->reentrant_opt_
-    );
-    this->sub_to_formation_ = this->create_subscription<comms::msg::FormationDesired>(
-        this->formation_topic_, this->qos_,
-        std::bind(&Pelican::storeDesiredPosition, this, std::placeholders::_1),
-        this->formation_exclusive_opt_
-    );
-    // Publishers
-    this->pub_to_dispatch_ =
-        this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
-    this->pub_to_locator_ =
-        this->create_publisher<comms::msg::NetworkVertex>(this->locator_topic_, this->qos_);
-    this->pub_to_formation_ =
-        this->create_publisher<comms::msg::FormationDesired>(this->formation_topic_, this->qos_);
-    // Service clients
-    this->cargo_attachment_client_ =
-        this->create_client<comms::srv::CargoLinkage>("attachment_service");
-    // Service servers
-    this->des_pos_server_ = this->create_service<comms::srv::FleetInfo>(
-        "des_pos_service_" + std::to_string(this->getID()),
-        std::bind(
-            &Pelican::shareDesiredPosition, this, std::placeholders::_1, std::placeholders::_2
-        ),
-        rmw_qos_profile_services_default, this->getReentrantGroup()
-    );
-
-    // Other modules' setup
-    this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
-    this->hb_core_.initSetup(&(this->logger_));
-    this->el_core_.initSetup(&(this->logger_));
-    this->tac_core_.initSetup(&(this->logger_));
-    this->unsc_core_.initSetup(&(this->logger_));
+    // Set everything up
+    this->enableSystem();
 
     // Parse SDF model
     this->parseModel();
@@ -214,6 +176,127 @@ void Pelican::signalHandler(int signum) {
     }
 }
 
+void Pelican::enableSystem() {
+    // Subscribers
+    this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
+        this->locator_topic_, this->data_qos_,
+        std::bind(&Pelican::handleCopterInfo, this, std::placeholders::_1), this->reentrant_opt_
+    );
+    this->sub_to_dispatch_ = this->create_subscription<comms::msg::Command>(
+        this->dispatch_topic_, this->qos_,
+        std::bind(&Pelican::handleCommandReception, this, std::placeholders::_1),
+        this->reentrant_opt_
+    );
+    this->sub_to_formation_ = this->create_subscription<comms::msg::FormationDesired>(
+        this->formation_topic_, this->qos_,
+        std::bind(&Pelican::storeDesiredPosition, this, std::placeholders::_1),
+        this->formation_exclusive_opt_
+    );
+
+    // Publishers
+    this->pub_to_dispatch_ =
+        this->create_publisher<comms::msg::Command>(this->dispatch_topic_, this->qos_);
+    this->pub_to_locator_ =
+        this->create_publisher<comms::msg::NetworkVertex>(this->locator_topic_, this->qos_);
+    this->pub_to_formation_ =
+        this->create_publisher<comms::msg::FormationDesired>(this->formation_topic_, this->qos_);
+
+    // Service clients
+    this->cargo_attachment_client_ =
+        this->create_client<comms::srv::CargoLinkage>("attachment_service");
+
+    // Service servers
+    this->des_pos_server_ = this->create_service<comms::srv::FleetInfo>(
+        "des_pos_service_" + std::to_string(this->getID()),
+        std::bind(
+            &Pelican::shareDesiredPosition, this, std::placeholders::_1, std::placeholders::_2
+        ),
+        rmw_qos_profile_services_default, this->getReentrantGroup()
+    );
+
+    // Other modules' setup
+    this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()), this->getID());
+    this->hb_core_.initSetup(&(this->logger_));
+    this->el_core_.initSetup(&(this->logger_));
+    this->tac_core_.initSetup(&(this->logger_));
+    this->unsc_core_.initSetup(&(this->logger_));
+}
+
+void Pelican::transitionToFailureMode() {
+    this->setRole(tbd);
+    this->sendLogWarning("Failsafe detected! Transitioning to dormient mode...");
+    this->hb_core_.stopService();
+    this->tac_core_.stopService();
+    this->unsc_core_.stopService();
+    this->el_core_.stopService();
+    this->failureMode();
+}
+
+void Pelican::failureMode() {
+    resetSharedPointer(this->sub_to_dispatch_);
+    resetSharedPointer(this->sub_to_formation_);
+    resetSharedPointer(this->sub_to_locator_);
+    resetSharedPointer(this->sub_to_sync_);
+    resetSharedPointer(this->pub_to_dispatch_);
+    resetSharedPointer(this->pub_to_formation_);
+    resetSharedPointer(this->pub_to_sync_);
+    resetSharedPointer(this->teleopdata_server_);
+    resetSharedPointer(this->fleetinfo_server_);
+    resetSharedPointer(this->fleetinfo_client_);
+    resetSharedPointer(this->cargo_attachment_client_);
+    resetSharedPointer(this->des_pos_server_);
+    resetSharedPointer(this->des_pos_client_);
+    resetSharedPointer(this->form_reached_server_);
+    resetSharedPointer(this->form_reached_client_);
+
+    this->sendLogWarning("Notifying deactivation due to failure");
+    comms::msg::NetworkVertex msg;
+    msg.agent_id = this->getID();
+    msg.status = false;
+    this->pub_to_locator_->publish(msg);
+
+    resetSharedPointer(this->pub_to_locator_);
+}
+
+void Pelican::recoverFromFailure() {
+    this->sendLogInfo("Rebooting system since failure mode has ended");
+    this->enableSystem();
+    this->ready_ = true;
+
+    this->sendLogInfo("Node ready again!");
+    this->becomeFollower();
+}
+
+/************************** Data exchange **************************/
+void Pelican::handleCopterInfo(const comms::msg::NetworkVertex::SharedPtr msg) {
+    if (msg->status) {
+        this->recordCopterPosition(msg);
+        this->storeAttendance(msg->agent_id);
+    } else {
+        this->unsc_core_.reactToFailureNotification(msg->agent_id);
+        this->sendLogWarning(
+            "Agent {} notified a malfunction: excluding it from future tasks...", msg->agent_id
+        );
+
+        std::lock_guard lock_pos(this->positions_mutex_);
+        this->copters_positions_.erase(msg->agent_id);
+
+        std::lock_guard lock_discovery(this->discovery_mutex_);
+        auto position = std::find(
+            this->discovery_vector_.begin(), this->discovery_vector_.end(), msg->agent_id
+        );
+        if (position != this->discovery_vector_.end())
+            this->discovery_vector_.erase(position);
+
+        std::lock_guard lock_form(this->form_reached_mutex_);
+        position = std::find(
+            this->agents_in_formation_.begin(), this->agents_in_formation_.end(), msg->agent_id
+        );
+        if (position != this->agents_in_formation_.end())
+            this->agents_in_formation_.erase(position);
+    }
+}
+
 void Pelican::storeAttendance(unsigned int agent_id) {
     std::lock_guard lock(this->discovery_mutex_);
 
@@ -238,11 +321,6 @@ void Pelican::storeAttendance(unsigned int agent_id) {
     }
 
     this->sendLogDebug("Network size for now: {}", this->discovery_vector_.size() + 1);
-}
-
-void Pelican::storeCopterInfo(const comms::msg::NetworkVertex::SharedPtr msg) {
-    this->recordCopterPosition(msg);
-    this->storeAttendance(msg->agent_id);
 }
 
 // Publisher to "/fleet/network"
@@ -526,6 +604,17 @@ void Pelican::notifyAgentInFormation() {
     }
 }
 
+/****************************** Other ******************************/
+void Pelican::emptyFormationResults() {
+    std::lock_guard lock(this->form_reached_mutex_);
+    this->agents_in_formation_.clear();
+}
+
+void Pelican::handleSyncCompletedOp(comms::msg::FleetSync msg) {
+    this->sendLogDebug("Received sync signal for operation {}", msg.completed_op);
+    this->unsc_core_.setLastCompletedOperation(msg.completed_op);
+}
+
 void Pelican::syncCompletedOp(uint32_t cmd) {
     if (cmd > comms::msg::FleetSync::CARGO_DETACHED) {
         this->sendLogWarning("Operation {} not recognized!", cmd);
@@ -534,14 +623,4 @@ void Pelican::syncCompletedOp(uint32_t cmd) {
     auto msg = comms::msg::FleetSync();
     msg.completed_op = cmd;
     this->pub_to_sync_->publish(msg);
-}
-
-void Pelican::handleSyncCompletedOp(comms::msg::FleetSync msg) {
-    this->sendLogDebug("Received sync signal for operation {}", msg.completed_op);
-    this->unsc_core_.setLastCompletedOperation(msg.completed_op);
-}
-
-void Pelican::emptyFormationResults() {
-    std::lock_guard lock(this->form_reached_mutex_);
-    this->agents_in_formation_.clear();
 }

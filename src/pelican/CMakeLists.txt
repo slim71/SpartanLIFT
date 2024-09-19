@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(pelican
-        VERSION 0.10.3
+        VERSION 0.10.4
         DESCRIPTION "Package containing the node related to the flying agents"
         LANGUAGES CXX)
 

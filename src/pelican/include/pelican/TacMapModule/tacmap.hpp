@@ -64,6 +64,7 @@ class TacMapModule {
         rclcpp::SubscriptionOptions gatherReentrantOptions() const;
         void signalHeightCompensation(double) const;
         void signalSharePosition(geometry_msgs::msg::Point);
+        void signalTransitionToFailureMode() const;
 
     private: // Attributes
         Pelican* node_;
@@ -131,6 +132,7 @@ class TacMapModule {
 
         rclcpp::TimerBase::SharedPtr position_timer_;
         rclcpp::TimerBase::SharedPtr compensation_timer_;
+        rclcpp::TimerBase::SharedPtr utility_timer_;
 };
 
 #include "tacmap_template.tpp"

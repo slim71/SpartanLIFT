@@ -74,3 +74,11 @@ void TacMapModule::signalSharePosition(geometry_msgs::msg::Point pos) {
 
     this->node_->commenceSharePosition(pos);
 }
+
+void TacMapModule::signalTransitionToFailureMode() const {
+    if (!this->node_) {
+        throw MissingExternModule();
+    }
+
+    this->node_->transitionToFailureMode();
+}

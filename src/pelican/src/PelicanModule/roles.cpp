@@ -54,7 +54,7 @@ void Pelican::becomeFollower() {
     this->sendLogInfo("Becoming {}", roles_to_string(follower));
 
     // Topic preparations
-    this->commenceStopHeartbeatService();
+    this->commenceStopHeartbeatTransmission();
     this->hb_core_.resetPublisher();
     this->el_core_.prepareTopics();
     resetSharedPointer(this->pub_to_sync_);
@@ -83,7 +83,7 @@ void Pelican::becomeCandidate() {
 
     // Topic preparations
     this->el_core_.prepareTopics();
-    this->commenceStopHeartbeatService();
+    this->commenceStopHeartbeatTransmission();
     this->hb_core_.resetPublisher();
     this->hb_core_.setupSubscription();
 

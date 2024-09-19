@@ -139,7 +139,18 @@ void TacMapModule::initSetup(LoggerModule* logger) {
 }
 
 void TacMapModule::stopService() {
-    this->sendLogDebug("Stopping tacmap module");
+    this->sendLogWarning("Stopping TacMap module!");
+    cancelTimer(this->position_timer_);
+    cancelTimer(this->compensation_timer_);
+    resetSharedPointer(this->sub_to_flags_topic_);
+    resetSharedPointer(this->sub_to_attitude_topic_);
+    resetSharedPointer(this->sub_to_control_mode_topic_);
+    resetSharedPointer(this->sub_to_status_topic_);
+    resetSharedPointer(this->sub_to_command_ack_topic_);
+    resetSharedPointer(this->sub_to_enu_odometry_topic_);
+    resetSharedPointer(this->pub_to_command_topic_);
+    resetSharedPointer(this->pub_to_trajectory_setpoint_topic_);
+    resetSharedPointer(this->pub_to_offboard_control_topic_);
     std::lock_guard lock(this->running_mutex_);
     this->running_ = false;
 }

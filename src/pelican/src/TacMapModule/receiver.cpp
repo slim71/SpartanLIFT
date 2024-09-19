@@ -1,3 +1,4 @@
+#include "PelicanModule/pelican.hpp"
 #include "TacMapModule/tacmap.hpp"
 
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
@@ -46,6 +47,19 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
     // While we're at it, let's store the IDs identifying this agent
     this->system_id_ = msg->system_id;
     this->component_id_ = msg->component_id;
+
+    if (msg->failsafe) {
+        this->sendLogDebug("Failsafe activated!");
+        this->utility_timer_ = this->node_->create_wall_timer(
+            std::chrono::milliseconds(500),
+            [this]() {
+                cancelTimer(this->utility_timer_);
+                this->sendLogWarning("Failsafe notified by the commander!");
+                this->signalTransitionToFailureMode();
+            },
+            this->gatherReentrantGroup()
+        );
+    }
 }
 
 void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr msg) {

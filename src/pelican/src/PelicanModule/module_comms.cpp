@@ -13,6 +13,10 @@ void Pelican::commenceStopHeartbeatService() {
     this->hb_core_.stopService();
 }
 
+void Pelican::commenceStopHeartbeatTransmission() {
+    this->hb_core_.stopHeartbeatTransmission();
+}
+
 /************************* Election Module *************************/
 void Pelican::commenceSetElectionStatus(int i) {
     this->el_core_.setElectionStatus(i);

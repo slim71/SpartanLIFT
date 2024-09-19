@@ -353,7 +353,7 @@ void ElectionModule::candidateActions() {
     }
 
     // Do nothing, it's an action started before
-    if (this->gatherAgentRole() == follower)
+    if (this->gatherAgentRole() != candidate)
         return;
 
     // Handle external leader
@@ -369,6 +369,18 @@ void ElectionModule::candidateActions() {
 
 /************* Both from outside and inside the module *************/
 void ElectionModule::stopService() {
-    this->sendLogDebug("Stopping election module");
-    this->setVotingCompleted();
+    this->sendLogWarning("Stopping Election module!");
+
+    // Reset statuses, to achieve end of operations
+    this->setElectionStatus(0);
+
+    // Cancel active timers
+    cancelTimer(this->election_timer_);
+    resetSharedPointer(this->election_timer_);
+
+    // Clear shared pointers for subscriptions and publishers
+    resetSharedPointer(this->sub_to_leader_election_topic_);
+    resetSharedPointer(this->pub_to_leader_election_topic_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
+    resetSharedPointer(this->pub_to_request_vote_rpc_topic_);
 }

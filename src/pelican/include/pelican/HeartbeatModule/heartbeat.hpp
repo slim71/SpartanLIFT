@@ -28,6 +28,7 @@ class HeartbeatModule {
 
         // Special functionalities
         void sendNow();
+        void stopHeartbeatTransmission();
         void stopService();
 
         int getNumberOfHbs() const;

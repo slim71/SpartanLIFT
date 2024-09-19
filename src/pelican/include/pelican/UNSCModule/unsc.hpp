@@ -34,6 +34,7 @@ class UNSCModule {
         // Utilities
         void formationActions();
         void unblockFormation();
+        void reactToFailureNotification(unsigned int);
 
         // Getters
         bool getRunningStatus() const;
