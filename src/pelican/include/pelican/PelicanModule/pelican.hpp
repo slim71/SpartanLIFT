@@ -273,7 +273,7 @@ class Pelican : public rclcpp::Node {
         mutable std::mutex neigh_mutex_;           // to be used with neigh_des_pos_
         mutable std::mutex dropoff_mutex_;         // to be used with neigh_des_pos_
         mutable std::mutex form_reached_mutex_;    // to be used with agents_in_formation_
-        mutable std::mutex form_achieved_mutex_;   // to be used with agents_in_formation_
+        mutable std::mutex form_achieved_mutex_;   // to be used with formation_achieved_
 
         rclcpp::SubscriptionOptions reentrant_opt_ {rclcpp::SubscriptionOptions()};
         rclcpp::CallbackGroup::SharedPtr reentrant_group_;
@@ -340,9 +340,6 @@ class Pelican : public rclcpp::Node {
         std::string sync_topic_ {"/fleet/synchronization"};
         rclcpp::Subscription<comms::msg::FleetSync>::SharedPtr sub_to_sync_;
         rclcpp::Publisher<comms::msg::FleetSync>::SharedPtr pub_to_sync_;
-
-        rclcpp::TimerBase::SharedPtr netsize_timer_;
-        std::chrono::seconds netsize_timeout_ {constants::ROLLCALL_TIME_SECS};
 
         std::chrono::seconds rpcs_ack_timeout_ {constants::ACK_TIME_SECS};
 };

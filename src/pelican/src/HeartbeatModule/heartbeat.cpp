@@ -32,7 +32,8 @@ void HeartbeatModule::initSetup(LoggerModule* logger) {
     resetSharedPointer(this->pub_to_heartbeat_topic_);
     cancelTimer(this->hb_transmission_timer_);
 
-    this->logger_ = logger;
+    if (!this->logger_)
+        this->logger_ = logger;
 }
 
 void HeartbeatModule::setupPublisher() {
@@ -173,7 +174,7 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     switch (this->gatherAgentRole()) {
         case follower:
             this->signalSetElectionStatus(msg.leader_id);
-            this->sendLogInfo("Heartbeat received! Resetting election timer");
+            this->sendLogInfo("Heartbeat received from agent {}!", msg.leader_id);
             this->signalResetElectionTimer();
             break;
         case candidate:

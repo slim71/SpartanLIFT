@@ -173,7 +173,7 @@ class UNSCModule {
         Eigen::Vector3d offset_ {0, 0, 0};                      // [m, m, m]
         geometry_msgs::msg::Point target_position_ = NAN_point; // Actual desired target
         geometry_msgs::msg::Point setpoint_position_ = NAN_point;
-        geometry_msgs::msg::Point setpoint_velocity_;
+        geometry_msgs::msg::Point setpoint_velocity_ = NAN_point;
         geometry_msgs::msg::Point last_dist_ =
             geometry_msgs::msg::Point().set__x(1000).set__y(1000);
         std::vector<unsigned int> neighbors_;

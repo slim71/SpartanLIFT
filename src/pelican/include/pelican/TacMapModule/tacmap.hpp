@@ -69,6 +69,7 @@ class TacMapModule {
     private: // Attributes
         Pelican* node_;
         LoggerModule* logger_;
+
         bool running_ {true};
         int system_id_ {0};
         int component_id_ {0};

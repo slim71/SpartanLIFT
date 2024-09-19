@@ -20,10 +20,10 @@ ElectionModule::~ElectionModule() {
     resetSharedPointer(this->election_timer_);
 
     // Clear shared pointers for subscriptions and publishers
-    resetSharedPointer(sub_to_leader_election_topic_);
-    resetSharedPointer(pub_to_leader_election_topic_);
-    resetSharedPointer(sub_to_request_vote_rpc_topic_);
-    resetSharedPointer(pub_to_request_vote_rpc_topic_);
+    resetSharedPointer(this->sub_to_leader_election_topic_);
+    resetSharedPointer(this->pub_to_leader_election_topic_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
+    resetSharedPointer(this->pub_to_request_vote_rpc_topic_);
 
     // Clear shared resources
     this->received_votes_.clear();
@@ -34,7 +34,8 @@ ElectionModule::~ElectionModule() {
 
 /************************** Setup methods **************************/
 void ElectionModule::initSetup(LoggerModule* l) {
-    this->logger_ = l;
+    if (!this->logger_)
+        this->logger_ = l;
 
     this->prepareTopics();
 }
@@ -62,6 +63,23 @@ void ElectionModule::prepareTopics() {
             this->leader_election_topic_, this->standard_qos_
         );
     }
+}
+
+void ElectionModule::stopService() {
+    this->sendLogWarning("Stopping Election module!");
+
+    // Reset statuses, to achieve end of operations
+    this->setElectionStatus(0);
+
+    // Cancel active timers
+    cancelTimer(this->election_timer_);
+    resetSharedPointer(this->election_timer_);
+
+    // Clear shared pointers for subscriptions and publishers
+    resetSharedPointer(this->sub_to_leader_election_topic_);
+    resetSharedPointer(this->pub_to_leader_election_topic_);
+    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
+    resetSharedPointer(this->pub_to_request_vote_rpc_topic_);
 }
 
 /********************** Core functionalities ***********************/
@@ -104,7 +122,7 @@ void ElectionModule::leaderElection() {
         cluster_for_this_node->second
     );
     // If favorable votes >= network size/2, I'm the new leader
-    if (!this->isLeaderElected() && !this->isExternalLeaderElected()) {
+    if (!this->isLeaderElected()) {
         if (cluster_for_this_node->second >= (this->gatherNetworkSize() / 2 + 1)) {
             cancelTimer(this->election_timer_);
             this->sendLogInfo("Majority acquired!");
@@ -124,7 +142,8 @@ void ElectionModule::triggerVotes() {
     }
 
     // Do not send request in case another leader has been already chosen
-    if (!this->confirmAgentIsCandidate() || this->isExternalLeaderElected()) {
+    if (!this->confirmAgentIsCandidate() ||
+        (this->isLeaderElected() && (this->getLeaderID() != this->gatherAgentID()))) {
         this->sendLogWarning(
             "It appears another leader has been already chosen (agent {}), so I won't trigger the "
             "vote request",
@@ -162,7 +181,7 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
         this->signalSetTerm(msg.term_id);
     }
 
-    if ((this->gatherAgentRole() != follower) && (msg.term_id > this->gatherCurrentTerm())) {
+    if ((this->gatherAgentRole() != follower) && (msg.term_id >= this->gatherCurrentTerm())) {
         this->sendLogInfo("External vote request arrived; transitioning to follower...");
         this->signalSetTerm(msg.term_id);
         this->setElectionStatus(0);
@@ -192,7 +211,8 @@ void ElectionModule::serveVoteRequest(const comms::msg::RequestVoteRPC msg) {
 
 void ElectionModule::vote(int id_to_vote, double candidate_mass) const {
     // Do not even vote in case another leader has been already chosen
-    if (this->confirmAgentIsCandidate() && this->isExternalLeaderElected()) {
+    if (this->confirmAgentIsCandidate() &&
+        (this->isLeaderElected() && (this->getLeaderID() != this->gatherAgentID()))) {
         this->sendLogWarning(
             "Not going to vote, because I'm a candidate but there's an external leader"
         );
@@ -346,7 +366,7 @@ void ElectionModule::candidateActions() {
         this->sendLogDebug("Ballot finished");
 
         // Stop if a leader is elected
-        if (this->isLeaderElected() || this->isExternalLeaderElected()) {
+        if (this->isLeaderElected()) {
             this->setElectionCompleted();
             break;
         }
@@ -357,7 +377,7 @@ void ElectionModule::candidateActions() {
         return;
 
     // Handle external leader
-    if (this->isExternalLeaderElected()) {
+    if (this->isLeaderElected() && (this->getLeaderID() != this->gatherAgentID())) {
         this->signalTransitionToFollower();
     }
 
@@ -365,22 +385,4 @@ void ElectionModule::candidateActions() {
     if (this->isLeaderElected()) {
         this->signalTransitionToLeader();
     }
-}
-
-/************* Both from outside and inside the module *************/
-void ElectionModule::stopService() {
-    this->sendLogWarning("Stopping Election module!");
-
-    // Reset statuses, to achieve end of operations
-    this->setElectionStatus(0);
-
-    // Cancel active timers
-    cancelTimer(this->election_timer_);
-    resetSharedPointer(this->election_timer_);
-
-    // Clear shared pointers for subscriptions and publishers
-    resetSharedPointer(this->sub_to_leader_election_topic_);
-    resetSharedPointer(this->pub_to_leader_election_topic_);
-    resetSharedPointer(this->sub_to_request_vote_rpc_topic_);
-    resetSharedPointer(this->pub_to_request_vote_rpc_topic_);
 }

@@ -10,7 +10,6 @@ void ElectionModule::resetSubscriptions() {
 }
 
 void ElectionModule::setElectionStatus(int id) {
-    this->setExternalLeaderElected();
     this->setLeaderElected();
     this->setVotingCompleted();
     this->setElectionCompleted();
@@ -45,24 +44,14 @@ void ElectionModule::setRandomElectionTimeout() {
 }
 
 void ElectionModule::clearElectionStatus() {
-    this->unsetExternalLeaderElected();
     this->unsetLeaderElected();
     this->unsetVotingCompleted();
     this->unsetElectionCompleted();
     this->setLeader();
 }
 
-void ElectionModule::setExternalLeaderElected() {
-    std::lock_guard lock(this->external_leader_mutex_);
-    this->external_leader_elected_ = true;
-}
-
-void ElectionModule::unsetExternalLeaderElected() {
-    std::lock_guard lock(this->external_leader_mutex_);
-    this->external_leader_elected_ = false;
-}
-
 void ElectionModule::setLeader(int id) {
+    std::lock_guard lock(this->leader_id_mutex_);
     // id=0 means election is not finished or has been reset
     if (id >= 0) {
         this->leader_id_ = id;
@@ -73,11 +62,11 @@ void ElectionModule::setLeader(int id) {
 }
 
 void ElectionModule::setLeaderElected() {
-    std::lock_guard lock(this->leader_mutex_);
+    std::lock_guard lock(this->leader_elected_mutex_);
     this->leader_elected_ = true;
 }
 
 void ElectionModule::unsetLeaderElected() {
-    std::lock_guard lock(this->leader_mutex_);
+    std::lock_guard lock(this->leader_elected_mutex_);
     this->leader_elected_ = false;
 }

@@ -82,10 +82,6 @@ Pelican::~Pelican() {
     formation_handled_cv_.notify_all();
 
     // Stop and reset all ROS2-related services, subscriptions, and timers
-    // Cancel active timers
-    cancelTimer(netsize_timer_);
-    resetSharedPointer(netsize_timer_);
-
     // Clean up action servers
     resetSharedPointer(teleopdata_server_);
 

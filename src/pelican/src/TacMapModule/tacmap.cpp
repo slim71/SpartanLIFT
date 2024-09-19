@@ -112,7 +112,8 @@ void TacMapModule::initPublishers() {
 }
 
 void TacMapModule::initSetup(LoggerModule* logger) {
-    this->logger_ = logger;
+    if (!this->logger_)
+        this->logger_ = logger;
 
     this->initTopics();
     this->initSubscribers();

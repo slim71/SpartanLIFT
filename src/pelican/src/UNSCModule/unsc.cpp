@@ -47,7 +47,8 @@ void UNSCModule::initSetup(LoggerModule* logger) {
         throw MissingExternModule();
     }
 
-    this->logger_ = logger;
+    if (!this->logger_)
+        this->logger_ = logger;
 
     // Allow for some loading time before starting all operations...
     this->prechecks_timer_ = this->node_->create_wall_timer(

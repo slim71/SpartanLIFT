@@ -58,11 +58,6 @@ class ElectionModule {
         void setVotingCompleted();
         void unsetVotingCompleted();
 
-        bool checkForExternalLeader();
-        bool isExternalLeaderElected() const;
-        void setExternalLeaderElected();
-        void unsetExternalLeaderElected();
-
         bool isLeaderElected() const;
         void setLeaderElected();
         void unsetLeaderElected();
@@ -105,8 +100,8 @@ class ElectionModule {
         mutable std::mutex votes_mutex_;              // to use with received_votes_
         mutable std::mutex election_completed_mutex_; // to use with election_completed_
         mutable std::mutex voting_completed_mutex_;   // to use with voting_completed_
-        mutable std::mutex external_leader_mutex_;    // to use with external_leader_elected_
-        mutable std::mutex leader_mutex_;             // to use with leader_elected_
+        mutable std::mutex leader_elected_mutex_;     // to use with leader_elected_
+        mutable std::mutex leader_id_mutex_;          // to use with leader_id_
 
         rclcpp::QoS standard_qos_ {rclcpp::QoS(
             rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default), rmw_qos_profile_default
