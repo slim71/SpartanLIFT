@@ -684,9 +684,9 @@ void UNSCModule::findNeighbors() {
     std::multimap<double, unsigned int>::iterator itr = distances.begin();
 
     this->neighbors_mutex_.lock();
-    this->neighbors_.push_back(itr->second); // First neighbor
+    this->neighbors_.push_back(itr->second);     // First neighbor
 
-    if (this->gatherNetworkSize() > 3) {
+    if (this->gatherNetworkSize() > 3) {         // CHECK: constant?
         std::advance(itr, 1);
         this->neighbors_.push_back(itr->second); // Second neighbor
     }

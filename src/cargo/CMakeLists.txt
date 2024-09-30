@@ -96,7 +96,7 @@ install(
 )
 
 install(
-  DIRECTORY config models
+  DIRECTORY models
   DESTINATION share/${PROJECT_NAME}
 )
 

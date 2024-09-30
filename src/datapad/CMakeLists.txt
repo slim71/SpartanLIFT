@@ -104,9 +104,5 @@ install(
   TARGETS datapad
   DESTINATION lib/${PROJECT_NAME} # lib folder inside ROS2 workspace
 )
-install(
-  DIRECTORY config
-  DESTINATION share/${PROJECT_NAME}
-)
 
 ament_package()

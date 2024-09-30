@@ -173,6 +173,13 @@ Best result for multi-vehicle: only simulated barometer.
 
 ---
 ## Commands
+px4 numbers from
+  /home/slim71/Documents/git/SpartanLIFT/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/airframes/
+name from the model in
+  /home/slim71/Documents/git/SpartanLIFT/PX4-Autopilot/Tools/simulation/gz/models/
+
+before compiling everything, needed by ros_gz_sim: export GZ_VERSION=garden
+
 colcon build --packages-select pelican --cmake-args -DDEBUG_MODE=1
 colcon build --packages-select pelican --cmake-args -DBUILD_TESTING=1
 colcon build --packages-select pelican --cmake-args -DPEDANTIC_MODE=1
@@ -275,3 +282,9 @@ More info [here](https://github.com/gazebosim/gz-rendering/issues/587).
 ## TODOs
 
 TODO: fork of px4_msgs for the queue change
+TODO: script to gather Gazebo "create" service's response?
+TODO: different threads for role handling and actions?
+TODO: change datapad checks if agents relaunched? crash should not happen in theory
+TODO: check log levels for each message
+TODO: a single agent on its own remains a follower right now
+CHECK: do not accept formation task if rendezvous not finished
