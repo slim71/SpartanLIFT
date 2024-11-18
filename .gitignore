@@ -368,3 +368,7 @@ temp
 
 # Folder used to store core dumps or debugging logs
 dumps
+
+# Ignore doxygen output folders
+doc/html
+doc/latex
