@@ -32,7 +32,12 @@ ElectionModule::~ElectionModule() {
     this->logger_ = nullptr;
 }
 
-/************************** Setup methods **************************/
+/************************** Setup methods **************************
+//**
+ * @brief Initialize the ElectionModule object.
+ *
+ * @param logger RCLCPP logger to link.
+ */
 void ElectionModule::initSetup(LoggerModule* l) {
     if (!this->logger_)
         this->logger_ = l;
@@ -65,6 +70,10 @@ void ElectionModule::prepareTopics() {
     }
 }
 
+/**
+ * @brief Stop the module's service.
+ *
+ */
 void ElectionModule::stopService() {
     this->sendLogWarning("Stopping Election module!");
 

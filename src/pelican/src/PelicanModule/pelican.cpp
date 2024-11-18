@@ -1,9 +1,23 @@
+/**
+ * @file pelican.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Main methods of the PelicanModule object.
+ * @version 1.0.0
+ * @date 2024-11-17
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 
 // Initialize the static instance pointer to a weak pointer
 std::weak_ptr<Pelican> Pelican::instance_;
 
 /************************** Ctors/Dctors ***************************/
+/**
+ * @brief Construct a new Pelican object.
+ *
+ */
 Pelican::Pelican()
     : Node("Pelican"),
       logger_(),
@@ -74,6 +88,10 @@ Pelican::Pelican()
     this->becomeFollower();
 }
 
+/**
+ * @brief Destroy the Pelican object.
+ *
+ */
 Pelican::~Pelican() {
     this->sendLogDebug("Destructor for agent {}", this->getID());
 
@@ -131,6 +149,15 @@ Pelican::~Pelican() {
 }
 
 /********************** Core functionalities ***********************/
+/**
+ * @brief Parses the agent's model file to extract relevant parameters such as mass.
+ *
+ * The method uses an XML parser to load and parse the specified model file. If the model file
+ * is successfully parsed, the agent's mass is extracted from the `<inertial>` tag under the
+ * `base_link` node. If parsing fails, an error is logged, and an exception is thrown.
+ *
+ * @throws std::runtime_error if the model file cannot be parsed.
+ */
 void Pelican::parseModel() {
     this->sendLogDebug("Trying to load model {}", this->getModel());
     // Thanks to this package's hook, the list of paths this searches into
@@ -156,6 +183,14 @@ void Pelican::parseModel() {
     }
 }
 
+/**
+ * @brief Handles the termination signal (SIGINT) to gracefully stop the node's services.
+ *
+ * Stops core services associated with the Pelican node and shuts down the ROS 2 framework.
+ * Only handles SIGINT signals.
+ *
+ * @param signum The signal number, expected to be SIGINT.
+ */
 void Pelican::signalHandler(int signum) {
     // Only handle SIGINT
     if (signum == SIGINT) {
@@ -172,6 +207,13 @@ void Pelican::signalHandler(int signum) {
     }
 }
 
+/**
+ * @brief Initializes the system by setting up ROS 2 publishers, subscribers, service servers,
+ *        and clients, as well as other core modules.
+ *
+ * The method subscribes to topics for locator, dispatch, and formation data, and publishes
+ * corresponding topics. It also sets up service servers and clients for inter-agent communication.
+ */
 void Pelican::enableSystem() {
     // Subscribers
     this->sub_to_locator_ = this->create_subscription<comms::msg::NetworkVertex>(
@@ -218,6 +260,12 @@ void Pelican::enableSystem() {
     this->unsc_core_.initSetup(&(this->logger_));
 }
 
+/**
+ * @brief Transitions the node to a failure mode when a critical failure is detected.
+ *
+ * The method stops all core services, resets pointers to ROS 2 communication entities, logs
+ * the failure, and notifies other agents of the node's inactive status.
+ */
 void Pelican::transitionToFailureMode() {
     this->setRole(tbd);
     this->sendLogWarning("Failsafe detected! Transitioning to dormient mode...");
@@ -228,6 +276,12 @@ void Pelican::transitionToFailureMode() {
     this->failureMode();
 }
 
+/**
+ * @brief Cleans up resources and notifies the system of the node's failure state.
+ *
+ * Resets all shared pointers for subscriptions, publications, and services. Broadcasts an
+ * inactive status message to the locator topic and logs the failure.
+ */
 void Pelican::failureMode() {
     resetSharedPointer(this->sub_to_dispatch_);
     resetSharedPointer(this->sub_to_formation_);
@@ -254,6 +308,13 @@ void Pelican::failureMode() {
     resetSharedPointer(this->pub_to_locator_);
 }
 
+/**
+ * @brief Recovers the node from failure mode, reinitializing the system and transitioning
+ *        the node to the follower role.
+ *
+ * The method re-enables system components, sets the node's readiness status to `true`, and
+ * assigns it a follower role.
+ */
 void Pelican::recoverFromFailure() {
     this->sendLogInfo("Rebooting system since failure mode has ended");
     this->enableSystem();
@@ -361,6 +422,14 @@ Pelican::handleTeleopDataCancellation(const std::shared_ptr<
     return rclcpp_action::CancelResponse::ACCEPT;
 }
 
+/**
+ * @brief Handles the accepted teleoperation data and spins up a new thread for processing.
+ *
+ * When a goal to handle teleoperation data is accepted, the method immediately
+ * dispatches the handling to a separate thread to avoid blocking the main execution flow.
+ *
+ * @param goal_handle The handle for the goal that was accepted.
+ */
 void Pelican::handleAcceptedTeleopData(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>> goal_handle
 ) {
@@ -371,7 +440,14 @@ void Pelican::handleAcceptedTeleopData(
     );
 }
 
-// CargoLinkage request generator
+/**
+ * @brief Generates a CargoLinkage request to attach or detach cargo.
+ *
+ * The method builds a request to the `CargoLinkage` service based on the provided
+ * `attach` flag. It checks the service availability and sends the request asynchronously.
+ *
+ * @param attach Boolean flag indicating whether to attach or detach the cargo.
+ */
 void Pelican::cargoAttachment(bool attach) {
     // Create request
     auto request = std::make_shared<comms::srv::CargoLinkage::Request>();
@@ -428,7 +504,14 @@ void Pelican::cargoAttachment(bool attach) {
     }
 }
 
-// CargoLinkage response handler
+/**
+ * @brief Handles the response from the CargoLinkage service.
+ *
+ * This method checks the response from the cargo attachment service and logs the result.
+ * It determines whether the cargo attachment operation succeeded or failed.
+ *
+ * @param future The future representing the response from the CargoLinkage service.
+ */
 void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
@@ -447,7 +530,14 @@ void Pelican::checkCargoAttachment(rclcpp::Client<comms::srv::CargoLinkage>::Sha
         this->sendLogWarning("Issues with cargo attachment!");
 }
 
-// Receiver of FormationDesired messages
+/**
+ * @brief Stores the desired position for the current agent based on the FormationDesired message.
+ *
+ * This method extracts the desired position for the agent from the incoming message
+ * and stores it in the agent's internal state.
+ *
+ * @param msg The FormationDesired message containing the desired positions for all agents.
+ */
 void Pelican::storeDesiredPosition(const comms::msg::FormationDesired msg) {
     for (auto&& pos : msg.des_positions) {
         if (pos.agent_id == this->getID()) {
@@ -460,7 +550,15 @@ void Pelican::storeDesiredPosition(const comms::msg::FormationDesired msg) {
     this->sendLogDebug("Could not find my desired formation position in the received message");
 }
 
-// FleetInfo request generator - Neighbor desired position request
+/**
+ * @brief Requests the desired position of a neighboring agent.
+ *
+ * The method creates a client to request the desired position of a neighboring agent
+ * and waits for a response. It retries the request if the service is unavailable within
+ * a certain timeout period.
+ *
+ * @param id The ID of the neighboring agent whose desired position is being requested.
+ */
 void Pelican::askDesPosToNeighbor(unsigned int id) {
     this->sendLogDebug("Asking neighbor {} its desired position...", id);
     this->des_pos_client_ = this->create_client<comms::srv::FleetInfo>(
@@ -510,7 +608,15 @@ void Pelican::askDesPosToNeighbor(unsigned int id) {
     }
 }
 
-// Result handler of FleetInfo data - Neighbor desired position
+/**
+ * @brief Handles the result of a FleetInfo request, specifically the desired position of a
+ * neighbor.
+ *
+ * This method processes the response from a neighbor's service containing their desired
+ * position and updates the agent's internal knowledge of the neighbor's position.
+ *
+ * @param future The future representing the response from the FleetInfo service.
+ */
 void Pelican::storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting neighbor position...");
@@ -535,7 +641,16 @@ void Pelican::storeNeighborDesPos(rclcpp::Client<comms::srv::FleetInfo>::SharedF
     this->initiateUnblockFormation();
 }
 
-// FormationReached request handler - executed only by the leader
+/**
+ * @brief Records an agent as part of the formation when the FormationReached request is received.
+ *
+ * This method is executed by the leader and registers an agent in the formation if it is
+ * not already recorded. Once all agents are recorded, it confirms that the formation is
+ * achieved.
+ *
+ * @param request The FormationReached request containing the agent ID.
+ * @param response The response to the request (unused in this method).
+ */
 void Pelican::
     recordAgentInFormation(const std::shared_ptr<comms::srv::FormationReached::Request> request, std::shared_ptr<comms::srv::FormationReached::Response>) {
     this->sendLogDebug("Checking if agent has to be recorded");
@@ -556,7 +671,12 @@ void Pelican::
     }
 }
 
-// FormationReached request generator - executed by the followers
+/**
+ * @brief Notifies that the agent is in formation by sending a FormationReached request.
+ *
+ * This method is executed by the followers to notify the leader that they have reached
+ * their desired formation position.
+ */
 void Pelican::notifyAgentInFormation() {
     std::string service_name = this->form_reached_client_->get_service_name();
     this->sendLogDebug("Notifying I'm in formation...");
@@ -601,16 +721,40 @@ void Pelican::notifyAgentInFormation() {
 }
 
 /****************************** Other ******************************/
+/**
+ * @brief Clears the list of agents currently in formation.
+ *
+ * The method acquires a lock to ensure thread safety and empties the
+ * `agents_in_formation_` container.
+ */
 void Pelican::emptyFormationResults() {
     std::lock_guard lock(this->form_reached_mutex_);
     this->agents_in_formation_.clear();
 }
 
+/**
+ * @brief Handles the completion signal for a fleet operation.
+ *
+ * When a synchronization message is received, it updates the internal state to
+ * store the last completed operation, based on the provided `completed_op` field
+ * in the message.
+ *
+ * @param msg The FleetSync message containing the completed operation ID.
+ */
 void Pelican::handleSyncCompletedOp(comms::msg::FleetSync msg) {
     this->sendLogDebug("Received sync signal for operation {}", msg.completed_op);
     this->unsc_core_.setLastCompletedOperation(msg.completed_op);
 }
 
+/**
+ * @brief Publishes a message indicating that a fleet operation has been completed.
+ *
+ * Verifies the validity of the operation ID before publishing a `FleetSync` message
+ * to notify other nodes of the completed operation. Logs a warning if the operation
+ * ID is unrecognized.
+ *
+ * @param cmd The operation ID to mark as completed.
+ */
 void Pelican::syncCompletedOp(uint32_t cmd) {
     if (cmd > comms::msg::FleetSync::CARGO_DETACHED) {
         this->sendLogWarning("Operation {} not recognized!", cmd);

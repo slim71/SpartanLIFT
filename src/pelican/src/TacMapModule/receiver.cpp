@@ -1,6 +1,21 @@
+/**
+ * @file receiver.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods related to the receiving functionalities.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 #include "TacMapModule/tacmap.hpp"
 
+/**
+ * @brief Store the vehicle status received through the "/fmu/out/vehicle_status" topic.
+ *
+ * @param msg Vehicle status message received.
+ */
 void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
     px4_msgs::msg::VehicleStatus status_data;
     status_data.timestamp = msg->timestamp;       // [us]
@@ -62,6 +77,11 @@ void TacMapModule::storeStatus(const px4_msgs::msg::VehicleStatus::SharedPtr msg
     }
 }
 
+/**
+ * @brief Store the ack message received through the "/fmu/out/vehicle_command_ack" topic.
+ *
+ * @param msg Ack message received.
+ */
 void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr msg) {
     std::lock_guard lock(this->commander_ack_mutex_);
 
@@ -79,6 +99,12 @@ void TacMapModule::storeAck(const px4_msgs::msg::VehicleCommandAck::SharedPtr ms
                                     .set__from_external(msg->from_external);
 }
 
+/**
+ * @brief Store the ENU odometry data received through the "/model/<model_name>_<agent_ID>/odometry"
+ * topic.
+ *
+ * @param msg ENU odometry message received.
+ */
 void TacMapModule::storeENUOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
     std::lock_guard lock(this->enu_odometry_mutex_);
     this->enu_odometry_buffer_.push_back(nav_msgs::msg::Odometry()

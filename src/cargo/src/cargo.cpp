@@ -1,9 +1,26 @@
+/**
+ * @file cargo.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods of the Cargo class.
+ * @version 1.0.0
+ * @date 2024-11-13
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "cargo.hpp"
 
-// Initialize the static instance pointer to a weak pointer
+/**
+ * @brief Initialize the static instance pointer to a weak pointer
+ *
+ */
 std::weak_ptr<Cargo> Cargo::instance_;
 
 /************************** Ctors/Dctors ***************************/
+/**
+ * @brief Construct a new Cargo object.
+ *
+ */
 Cargo::Cargo() : Node("Cargo"), logger_() {
     // Declare parameters
     declare_parameter("model", "cargo"); // default to "cargo"
@@ -52,10 +69,19 @@ Cargo::Cargo() : Node("Cargo"), logger_() {
         this->create_client<ros_gz_interfaces::srv::SetEntityPose>(this->set_pose_service_);
 }
 
+/**
+ * @brief Destroy the Cargo object.
+ *
+ */
 Cargo::~Cargo() {
     this->sendLogDebug("Destructor for Cargo node");
 }
 
+/**
+ * @brief Install a SIGINT handler for a clean interruption of the node.
+ *
+ * @param signum Signal code to link to the handler.
+ */
 void Cargo::signalHandler(int signum) {
     // Only handle SIGINT
     std::cout << "Some signal received..." << std::endl;
@@ -73,19 +99,40 @@ void Cargo::signalHandler(int signum) {
     }
 }
 
+/**
+ * @brief Retrieve the instance linked to the Cargo object.
+ *
+ * @return std::shared_ptr<Cargo> The instance itself.
+ */
 std::shared_ptr<Cargo> Cargo::getInstance() {
     return instance_.lock();
 }
 
+/**
+ * @brief Set the instance linked to the Cargo object.
+ *
+ * @param instance Cargo instance to link.
+ */
 void Cargo::setInstance(rclcpp::Node::SharedPtr instance) {
     instance_ = std::static_pointer_cast<Cargo>(instance);
 }
 
+/**
+ * @brief Return the status of the running_ flag.
+ *
+ * @return true
+ * @return false
+ */
 bool Cargo::isRunning() const {
     std::lock_guard lock(this->running_mutex_);
     return this->running_;
 }
 
+/**
+ * @brief Callback to store odometry data received through the "/model/<node_name>/odometry" topic.
+ *
+ * @param msg Message received through the topic.
+ */
 void Cargo::storeCargoOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
     this->sendLogDebug("Storing {}", msg->pose.pose.position);
     this->odom_mutex_.lock();
@@ -93,6 +140,11 @@ void Cargo::storeCargoOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
     this->odom_mutex_.unlock();
 }
 
+/**
+ * @brief Callback to respond to the "cargopoint_service" service, sharing the latest odometry data.
+ *
+ * @param response Service response to fill and send back to the server.
+ */
 void Cargo::shareCargoPosition(
     const std::shared_ptr<comms::srv::CargoPoint::Request>,
     const std::shared_ptr<comms::srv::CargoPoint::Response> response
@@ -101,7 +153,12 @@ void Cargo::shareCargoPosition(
     response->position = this->own_odom_;
 }
 
-// CargoLinkage request handler
+/**
+ * @brief Request handler for the "attachment_service" service.
+ *
+ * @param req Service request to handle.
+ * @param response Response to fill and send back to the server.
+ */
 void Cargo::notifyAttachment(
     const std::shared_ptr<comms::srv::CargoLinkage::Request> req,
     std::shared_ptr<comms::srv::CargoLinkage::Response> response
@@ -137,12 +194,22 @@ void Cargo::notifyAttachment(
     response->done = true;
 }
 
+/**
+ * @brief Callback to store the leader's odometry data received through the
+ * "/model/<leader_name>/odometry" topic.
+ *
+ * @param msg Message received through the topic.
+ */
 void Cargo::recordLeaderPosition(const nav_msgs::msg::Odometry::SharedPtr msg) {
     this->sendLogDebug("Leader is at {}", msg->pose.pose.position);
     std::lock_guard lock(this->reference_mutex_);
     this->reference_buffer_.push_back(*msg);
 }
 
+/**
+ * @brief Starts following the leader position.
+ *
+ */
 void Cargo::startFollowing() {
     this->sendLogDebug("Starting to follow the leader position...");
     this->following_timer_ = this->create_wall_timer(
@@ -150,16 +217,31 @@ void Cargo::startFollowing() {
     );
 }
 
+/**
+ * @brief Stops following the leader position.
+ *
+ */
 void Cargo::stopFollowing() {
     this->sendLogDebug("Stopping leader following...");
     if (this->following_timer_)
         this->following_timer_->cancel();
 }
 
+/**
+ * @brief Follows the latest reference position provided by the leader.
+ *
+ * This method retrieves the latest position data from related buffer and
+ * sends a request to update the cargo's pose, if available.
+ *
+ * @note The cargo's altitude is adjusted based on the reference altitude, keeping a
+ * minimum distance of 2 meters from the UAV carrying the payload.
+ *
+ * @warning If the service is unavailable, the function will retry within specified
+ * limits, after which it logs a warning.
+ */
 void Cargo::followReference() {
     // Get reference data
     nav_msgs::msg::Odometry to_follow;
-    this->sendLogDebug("getting first element");
     this->reference_mutex_.lock();
     if (!this->reference_buffer_.empty()) {
         to_follow = this->reference_buffer_[0];
@@ -226,6 +308,13 @@ void Cargo::followReference() {
     }
 }
 
+/**
+ * @brief Parses the response received after requesting a pose update for the cargo
+ *        through the "/world/<node_name>/set_pose" service.
+ *
+ * @param future A future object containing the response to the pose update request.
+ *
+ */
 void Cargo::parseSetEntityPoseResponse(
     rclcpp::Client<ros_gz_interfaces::srv::SetEntityPose>::SharedFuture future
 ) {

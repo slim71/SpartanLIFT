@@ -1,5 +1,21 @@
+/**
+ * @file functionalities.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief File containing methods of the Datapad class related to its core functionalities.
+ * @version 1.0.0
+ * @date 2024-11-13
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "datapad.hpp"
 
+/**
+ * @brief Displays the main menu and handles user input for UAV fleet operations.
+ *
+ * This function continuously displays a menu, prompting the user to select an option
+ * to make the fleet perform various operations.
+ */
 void Datapad::landingPage() {
     std::cout << std::endl << "Select functionality" << std::endl;
     this->sendLogDebug("Select functionality");
@@ -105,12 +121,23 @@ void Datapad::landingPage() {
     this->sendLogDebug("Ending main functionality...");
 }
 
+/**
+ * @brief Contacts the fleet leader to confirm presence and update status.
+ *
+ */
 void Datapad::contactLeader() {
     this->sendLogDebug("Contacting leader...");
     this->teleopTaskClient(Flags().SetPresence());
 }
 
 // Process the final result of the TeleopData goal
+
+/**
+ * @brief Processes the final result of a command sent to the fleet leader, analyzing the TeleopData
+ * goal.
+ *
+ * @param result The wrapped result from the "TeleopData" action client.
+ */
 void Datapad::processFleetLeaderCommandAck(
     const rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::WrappedResult& result
 ) {
@@ -194,6 +221,10 @@ void Datapad::processFleetLeaderCommandAck(
     std::cout << " >>> ";
 }
 
+/**
+ * @brief Initiates takeoff for the UAV fleet if not already airborne.
+ *
+ */
 void Datapad::unitSortie() {
     // Check that the fleet is indeed flying
     if (this->fleet_fying_) {
@@ -204,6 +235,10 @@ void Datapad::unitSortie() {
     this->teleopTaskClient(Flags().SetTakeoff());
 }
 
+/**
+ * @brief Commands the UAV fleet to return to the landing zone.
+ *
+ */
 void Datapad::backToLZ() {
     // Check that the fleet is indeed flying
     if (!this->fleet_fying_) {
@@ -214,6 +249,10 @@ void Datapad::backToLZ() {
     this->teleopTaskClient(Flags().SetLanding());
 }
 
+/**
+ * @brief Initiates the retrieval of the payload by the fleet.
+ *
+ */
 void Datapad::payloadExtraction() {
     // Check that the fleet is not already busy
     if (this->transport_wip_) {
@@ -224,6 +263,10 @@ void Datapad::payloadExtraction() {
     this->teleopTaskClient(Flags().SetRetrieval());
 }
 
+/**
+ * @brief Sends a command for the fleet to drop off the payload.
+ *
+ */
 void Datapad::payloadDropoff() {
     // Check that the payload is engaged
     if (!this->transport_wip_) {
@@ -234,7 +277,15 @@ void Datapad::payloadDropoff() {
     this->teleopTaskClient(Flags().SetDropoff());
 }
 
-// TeleopData - request generator
+/**
+ * @brief Sends a teleoperation command to the fleet based on specified flags.
+ *
+ * This function constructs a "TeleopData" request.
+ * It then waits for the action server to become available and handles feedback and
+ * result callbacks for the teleoperation task.
+ *
+ * @param flags A "Flags" object that specifies the type of teleoperation command.
+ */
 void Datapad::teleopTaskClient(Flags flags) {
     auto request = comms::action::TeleopData::Goal();
     request.presence = flags.GetPresence();
@@ -327,7 +378,12 @@ void Datapad::teleopTaskClient(Flags flags) {
     }
 }
 
-// CargoPoint - request generator
+/**
+ * @brief Requests the position of the payload from the CargoPoint service.
+ *
+ * Waits for the "CargoPoint" service to become available, then sends a request
+ * to obtain the payload's position.
+ */
 void Datapad::askForCargoPoint() {
     auto service_name = this->cargopoint_client_->get_service_name();
     // Search for a second, then log and search again if needed

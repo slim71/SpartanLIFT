@@ -1,5 +1,21 @@
+/**
+ * @file transmitter.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods related to data transmissions.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "TacMapModule/tacmap.hpp"
 
+/**
+ * @brief Publish a trajectory setpoint to the "/px4_{id}/fmu/in/trajectory_setpoint" topic.
+ *
+ * @param pos Position setpoint.
+ * @param vel Velocity setpoint.
+ */
 void TacMapModule::publishTrajectorySetpoint(
     geometry_msgs::msg::Point pos, geometry_msgs::msg::Point vel
 ) {
@@ -14,6 +30,18 @@ void TacMapModule::publishTrajectorySetpoint(
     this->pub_to_trajectory_setpoint_topic_->publish(msg);
 }
 
+/**
+ * @brief Publish a vehicle command to the "/px4_{id}/fmu/in/vehicle_command" topic.
+ *
+ * @param command
+ * @param param1
+ * @param param2
+ * @param param3
+ * @param param4
+ * @param param5
+ * @param param6
+ * @param param7
+ */
 void TacMapModule::publishVehicleCommand(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
     float param6, float param7
@@ -51,6 +79,10 @@ void TacMapModule::publishVehicleCommand(
     this->pub_to_command_topic_->publish(msg);
 }
 
+/**
+ * @brief Publish the message needed by PX4 to switch to offboard mode.
+ *
+ */
 void TacMapModule::publishOffboardControlMode() {
     px4_msgs::msg::OffboardControlMode msg {};
 
@@ -65,6 +97,14 @@ void TacMapModule::publishOffboardControlMode() {
     this->pub_to_offboard_control_topic_->publish(msg);
 }
 
+/**
+ * @brief Wait and report whether the ack for the last command has been received from the PX4
+ * commander.
+ *
+ * @param cmd
+ * @return true
+ * @return false
+ */
 bool TacMapModule::waitForCommanderAck(uint16_t cmd) {
     auto start_time =
         this->gatherTime().nanoseconds() / constants::NANO_TO_MILLI_CONVERSION; // [ms]

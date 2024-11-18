@@ -1,17 +1,44 @@
+/**
+ * @file utilities.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Utility functions used in different part of the package.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "utilities.hpp"
 
+/**
+ * @brief Reset a RCLCPP timer.
+ *
+ * @param timer RCLCPP timer to reset.
+ */
 void resetTimer(rclcpp::TimerBase::SharedPtr& timer) {
     if (timer) {
         timer->reset();
     }
 }
 
+/**
+ * @brief Cancel a RCLCPP timer.
+ *
+ * @param timer RCLCPP timer to cancel.
+ */
 void cancelTimer(rclcpp::TimerBase::SharedPtr& timer) {
     if (timer) {
         timer->cancel();
     }
 }
 
+/**
+ * @brief Build a rotation matrix expressing a rotation around the X-axis.
+ *
+ * @param angle Angle of rotation.
+ * @param is_degree Whether the first argument is expressed in degree or not.
+ * @return Eigen::Matrix3d
+ */
 Eigen::Matrix3d rotX(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
@@ -27,6 +54,13 @@ Eigen::Matrix3d rotX(const double angle, bool is_degree) {
     return mat;
 }
 
+/**
+ * @brief Build a rotation matrix expressing a rotation around the Y-axis.
+ *
+ * @param angle Angle of rotation.
+ * @param is_degree Whether the first argument is expressed in degree or not.
+ * @return Eigen::Matrix3d
+ */
 Eigen::Matrix3d rotY(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
@@ -42,6 +76,13 @@ Eigen::Matrix3d rotY(const double angle, bool is_degree) {
     return mat;
 }
 
+/**
+ * @brief Build a rotation matrix expressing a rotation around the Z-axis.
+ *
+ * @param angle Angle of rotation.
+ * @param is_degree Whether the first argument is expressed in degree or not.
+ * @return Eigen::Matrix3d
+ */
 Eigen::Matrix3d rotZ(const double angle, bool is_degree) {
     double angle_rad = angle;
     if (is_degree) {
@@ -57,6 +98,12 @@ Eigen::Matrix3d rotZ(const double angle, bool is_degree) {
     return mat;
 }
 
+/**
+ * @brief Convert a quaternion to a matrix expressing a rotation in the RPY configuration.
+ *
+ * @param quat Quaternion to convert.
+ * @return Eigen::Vector3d RPY rotation matrix.
+ */
 Eigen::Vector3d quat2RPY(geometry_msgs::msg::Quaternion quat) {
     double roll, pitch, yaw;
     double r11 = 1 - 2 * (quat.y * quat.y + quat.z * quat.z);
@@ -87,6 +134,13 @@ Eigen::Vector3d quat2RPY(geometry_msgs::msg::Quaternion quat) {
     return result;
 }
 
+/**
+ * @brief Convert a vector expressed in the ENU frame to the NED frame.
+ *
+ * @param enu_pos Vector in ENU frame.
+ * @param pos_offset_ENU Offset of the ENU frame.
+ * @return Eigen::Vector3d Vector in the NED frame.
+ */
 Eigen::Vector3d
 convertENUtoNED(const Eigen::Vector3d& enu_pos, const Eigen::Vector3d pos_offset_ENU) {
     // Current-axis composition: 1st_rotation * ... * nth_rotation
@@ -111,6 +165,13 @@ convertENUtoNED(const Eigen::Vector3d& enu_pos, const Eigen::Vector3d pos_offset
     return body_pos.head(3);
 }
 
+/**
+ * @brief Operator - redefinition for geometry_msgs::msg::Point objects.
+ *
+ * @param first
+ * @param second
+ * @return geometry_msgs::msg::Point Final difference.
+ */
 geometry_msgs::msg::Point
 operator-(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point second) {
     geometry_msgs::msg::Point diff;
@@ -121,6 +182,13 @@ operator-(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point
     return diff;
 }
 
+/**
+ * @brief Operator + redefinition for geometry_msgs::msg::Point objects.
+ *
+ * @param first
+ * @param second
+ * @return geometry_msgs::msg::Point Final sum.
+ */
 geometry_msgs::msg::Point
 operator+(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point second) {
     geometry_msgs::msg::Point sum;
@@ -131,6 +199,15 @@ operator+(const geometry_msgs::msg::Point first, const geometry_msgs::msg::Point
     return sum;
 }
 
+/**
+ * @brief Compute the position closest to p on the circle with radius circle_radius and centered in
+ * center.
+ *
+ * @param p Position to reference to.
+ * @param center Center of the circle.
+ * @param circle_radius Radius of the circle.
+ * @return geometry_msgs::msg::<Point
+ */
 geometry_msgs::msg::Point closestCirclePoint(
     geometry_msgs::msg::Point p, geometry_msgs::msg::Point center, double circle_radius
 ) {
@@ -143,6 +220,16 @@ geometry_msgs::msg::Point closestCirclePoint(
         .set__z(p.z);
 }
 
+/**
+ * @brief Create an array of number positions distributed onto a circle with radius radius and
+ * center center.
+ *
+ * @param start_angle Angle of the first position to generate.
+ * @param center Center of the circle.
+ * @param radius Radius of the circle.
+ * @param number Number of points to generate.
+ * @return std::vector<geometry_msgs::msg::Point> Positions generated on the circle.
+ */
 std::vector<geometry_msgs::msg::Point>
 homPointsOnCircle(double start_angle, geometry_msgs::msg::Point center, int radius, int number) {
     std::vector<geometry_msgs::msg::Point> v;
@@ -158,6 +245,15 @@ homPointsOnCircle(double start_angle, geometry_msgs::msg::Point center, int radi
     return v;
 }
 
+/**
+ * @brief Compute the distance of point p from the circle centered in center and with radius
+ * circle_radius.
+ *
+ * @param p Position of which to compute the distance.
+ * @param center Center of the circle.
+ * @param circle_radius Radius of the circle.
+ * @return double
+ */
 double circleDistance(
     geometry_msgs::msg::Point p, geometry_msgs::msg::Point center, double circle_radius
 ) {
@@ -167,14 +263,33 @@ double circleDistance(
     );
 }
 
+/**
+ * @brief Compute the 2D distance between two points.
+ *
+ * @param p
+ * @param q
+ * @return double Distance between p and q.
+ */
 double p2p2DDistance(geometry_msgs::msg::Point p, geometry_msgs::msg::Point q) {
     return std::sqrt((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y));
 }
 
+/**
+ * @brief Check if the provided point p has any NaN content.
+ *
+ * @param p
+ * @return true
+ * @return false
+ */
 bool geomPointHasNan(geometry_msgs::msg::Point& p) {
     return std::isnan(p.x) || std::isnan(p.y) || std::isnan(p.z);
 }
 
+/**
+ * @brief Create a random double used as direction perturbation.
+ *
+ * @return double Random number generated.
+ */
 double random_perturbation() {
     // Generate a random value between -1.0 and 1.0
     double random_value = static_cast<double>(std::rand()) / RAND_MAX * 2.0 - 1.0;
@@ -185,6 +300,12 @@ double random_perturbation() {
     return random_value * max_perturbation;
 }
 
+/**
+ * @brief Convert a nav_msgs::msg::Odometry object to a geometry_msgs::msg::Point object.
+ *
+ * @param nav Odometry data expressed in nav_msgs::msg::Odometry.
+ * @return geometry_msgs::msg::Point Converted odometry data.
+ */
 geometry_msgs::msg::Point nav2Geom(nav_msgs::msg::Odometry nav) {
     return geometry_msgs::msg::Point()
         .set__x(nav.pose.pose.position.x)

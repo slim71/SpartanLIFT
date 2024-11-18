@@ -1,9 +1,28 @@
+/**
+ * @file datapad.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief File containing the main methods of the Datapad class.
+ * @version 1.0.0
+ * @date 2024-11-13
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "datapad.hpp"
 
-// Initialize the static instance pointer to a weak pointer
+/**
+ * @brief Initialize the static instance pointer to a weak pointer
+ *
+ */
 std::weak_ptr<Datapad> Datapad::instance_;
 
 /************************** Ctors/Dctors ***************************/
+/**
+ * @brief Construct a new Datapad object.
+ *
+ * This constructor initializes the Datapad node with necessary callback groups,
+ * service clients, and sets up the initial timer to trigger the main functionality.
+ */
 Datapad::Datapad() : Node("Datapad"), logger_() {
     this->logger_.initSetup(std::make_shared<rclcpp::Logger>(this->get_logger()));
     this->running_mutex_.lock();
@@ -30,10 +49,19 @@ Datapad::Datapad() : Node("Datapad"), logger_() {
     );
 }
 
+/**
+ * @brief Destroy the Datapad object.
+ *
+ */
 Datapad::~Datapad() {
     this->sendLogDebug("Destructor for Datapad node");
 }
 
+/**
+ * @brief Install the SIGINT handler for clean interruption of the node.
+ *
+ * @param signum Signal code to link to the handler.
+ */
 void Datapad::signalHandler(int signum) {
     // Only handle SIGINT
     std::cout << "Some signal received..." << std::endl;
@@ -55,6 +83,13 @@ void Datapad::signalHandler(int signum) {
     }
 }
 
+/**
+ * @brief Callback to handle the response from a TeleopData action server.
+ *
+ * This method logs whether the goal was accepted or rejected by the server.
+ *
+ * @param goal_handle Shared pointer to the goal handle for the TeleopData action.
+ */
 void Datapad::analyzeTeleopDataResponse(
     const rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::SharedPtr& goal_handle
 ) {
@@ -65,6 +100,12 @@ void Datapad::analyzeTeleopDataResponse(
     }
 }
 
+/**
+ * @brief Callback to process feedback received from a TeleopData action server.
+ *
+ * @param goal_handle Shared pointer to the goal handle for the TeleopData action.
+ * @param feedback Shared pointer to the TeleopData feedback message.
+ */
 void Datapad::parseTeleopDataFeedback(
     rclcpp_action::ClientGoalHandle<comms::action::TeleopData>::SharedPtr,
     const std::shared_ptr<const comms::action::TeleopData::Feedback> feedback
@@ -75,6 +116,11 @@ void Datapad::parseTeleopDataFeedback(
     );
 }
 
+/**
+ * @brief Callback to handle the response from the CargoPoint service.
+ *
+ * @param future Future containing the service response for CargoPoint.
+ */
 void Datapad::storeCargoPoint(rclcpp::Client<comms::srv::CargoPoint>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");

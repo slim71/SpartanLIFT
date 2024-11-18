@@ -1,6 +1,23 @@
+/**
+ * @file main.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Main file related to the Cargo package.
+ * @version 1.0.0
+ * @date 2024-11-13
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "cargo.hpp"
 #include "types.hpp"
 
+/**
+ * @brief Entry point for the Cargo node.
+ *
+ * @param argc Argument number.
+ * @param argv Array containing all provided arguments.
+ * @return int Program return code.
+ */
 int main(int argc, char* argv[]) {
     std::cout << "Starting Cargo node..." << std::endl;
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);

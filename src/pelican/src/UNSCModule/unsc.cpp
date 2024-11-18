@@ -41,7 +41,11 @@ UNSCModule::~UNSCModule() {
 }
 
 /************************** Setup methods **************************/
-
+/**
+ * @brief Initialize the UNSCModule object.
+ *
+ * @param logger RCLCPP logger to link.
+ */
 void UNSCModule::initSetup(LoggerModule* logger) {
     if (!this->node_) {
         throw MissingExternModule();
@@ -57,6 +61,10 @@ void UNSCModule::initSetup(LoggerModule* logger) {
     );
 }
 
+/**
+ * @brief Stop the module's service.
+ *
+ */
 void UNSCModule::stopService() {
     this->sendLogWarning("Stopping UNSC module!");
     cancelTimer(this->prechecks_timer_);

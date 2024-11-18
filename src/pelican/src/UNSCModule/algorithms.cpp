@@ -1,7 +1,22 @@
+/**
+ * @file algorithms.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Everything related to the core mission.
+ * @version 1.0.0
+ * @date 2024-11-17
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
 /*************************** Rendezvous ****************************/
+/**
+ * @brief Performs a rendezvous operation for an agent to move towards a target position.
+ *        Updates position and velocity setpoints iteratively based on distance to target,
+ *        while accounting for collision avoidance with nearby agents.
+ */
 void UNSCModule::consensusToRendezvous() {
     // Be sure to have all needed data
     std::optional<geometry_msgs::msg::Point> maybe_target_pos = this->getTargetPosition();
@@ -78,6 +93,11 @@ void UNSCModule::consensusToRendezvous() {
 }
 
 /**************************** Formation ****************************/
+/**
+ * @brief Coordinates formation actions for agents in the fleet.
+ *        Includes moving the leader to a target position, establishing static formation,
+ *        attaching cargo, and preparing for formation-based payload transport.
+ */
 void UNSCModule::formationActions() {
     // Non-leader agents simply start the formation control
     // The leader agent has some more instructions to follow, before starting the formation control
@@ -264,6 +284,10 @@ void UNSCModule::formationActions() {
     }
 }
 
+/**
+ * @brief Moves the leader in a linear path towards the drop-off position,
+ *        while incorporating collision avoidance and gradual position updates.
+ */
 void UNSCModule::linearP2P() {
     // Gather dropoff position
     geometry_msgs::msg::Point dropoff_pos = this->gatherDropoffPosition();
@@ -327,7 +351,10 @@ void UNSCModule::linearP2P() {
     }
 }
 
-// Only executed by non-leaders
+/**
+ * @brief Executes formation control for non-leader agents by dynamically adjusting positions
+ *        based on neighbors' current and desired positions to maintain formation stability.
+ */
 void UNSCModule::formationControl() {
     /************** Preparations ***************/
     // Make sure neighbors are determined
@@ -477,6 +504,14 @@ void UNSCModule::formationControl() {
 }
 
 /*********************** Collision avoidance ***********************/
+/**
+ * @brief Computes a standard collision avoidance vector for the agent based on neighbors' positions
+ * and a given threshold.
+ *
+ * @param agentPosition Current position of the agent.
+ * @param threshold The distance threshold within which the agent should avoid neighbors.
+ * @return geometry_msgs::msg::Point A point representing the collision avoidance vector.
+ */
 geometry_msgs::msg::Point
 UNSCModule::standardCollisionAvoidance(geometry_msgs::msg::Point agentPosition, double threshold) {
     // Initialize the total adjustment vector to zero
@@ -535,6 +570,13 @@ UNSCModule::standardCollisionAvoidance(geometry_msgs::msg::Point agentPosition, 
     return geometry_msgs::msg::Point().set__x(totalAdjustmentX).set__y(totalAdjustmentY);
 }
 
+/**
+ * @brief Adjusts the agent's position and velocity in tight spaces using collision avoidance
+ * techniques.
+ *
+ * This method ensures agents maintain safe distances from neighbors while attempting to reach their
+ * desired position.
+ */
 void UNSCModule::tightSpaceCollisionAvoidance() {
     // Gather own current
     auto maybe_curr_pos = this->gatherENUOdometry();
@@ -651,6 +693,11 @@ void UNSCModule::tightSpaceCollisionAvoidance() {
 }
 
 /************************** Neighborhood ***************************/
+/**
+ * @brief Identifies neighboring agents and updates the list of neighbors based on their proximity.
+ *
+ * Neighbors are selected based on minimum distances, excluding the leader and the agent itself.
+ */
 void UNSCModule::findNeighbors() {
     std::vector<unsigned int> ids = this->gatherCoptersIDs();
     geometry_msgs::msg::Point own_pos = this->gatherCopterPosition(this->gatherAgentID());
@@ -698,6 +745,12 @@ void UNSCModule::findNeighbors() {
     this->neighbors_mutex_.unlock();
 }
 
+/**
+ * @brief Assigns positions to agents in a circular formation around a region of interest (ROI).
+ *
+ * Positions are determined such that agents maintain an evenly spaced formation, with the closest
+ * agent and leader's positions pre-assigned.
+ */
 void UNSCModule::assignFormationPositions() {
     // Pairs: agent ID - agent's position
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> positions;
@@ -805,6 +858,11 @@ void UNSCModule::assignFormationPositions() {
     this->signalSendDesiredFormationPositions(associated_pos);
 }
 
+/**
+ * @brief Collects the desired position of a specified neighbor using an inter-agent service.
+ *
+ * @param neighbor ID of the neighboring agent whose desired position is to be retrieved.
+ */
 void UNSCModule::collectNeighDesPositions(unsigned int neighbor) {
     // Gather neighbor's desired position
     this->unsetNeighborGathered();

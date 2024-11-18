@@ -1,6 +1,21 @@
+/**
+ * @file control.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods for communication with the PX4 commander.
+ * @version 1.0.0
+ * @date 2024-11-17
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
+/**
+ * @brief Arms the vehicle by sending an arm command to the PX4 commander.
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::arm() {
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
@@ -8,6 +23,11 @@ bool UNSCModule::arm() {
     );
 }
 
+/**
+ * @brief Disarms the vehicle by sending a disarm command to the PX4 commander.
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::disarm() {
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM,
@@ -15,7 +35,13 @@ bool UNSCModule::disarm() {
     );
 }
 
-// Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+/**
+ * @brief Initiates a takeoff to a specified altitude.
+ * Parameters for the general command: Pitch| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+ *
+ * @param height The target altitude for takeoff. If height is 0, the default behavior is applied.
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::takeoff(unsigned int height) {
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_TAKEOFF, NAN, NAN, NAN, NAN, NAN, NAN,
@@ -23,21 +49,37 @@ bool UNSCModule::takeoff(unsigned int height) {
     );
 }
 
-// Empty| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+/**
+ * @brief Initiates a landing at the current position.
+ * Parameters for the general command: Empty| Empty| Empty| Yaw| Latitude| Longitude| Altitude|
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::land() {
     // Needed here because it could be called while the Offboard mode is active
     cancelTimer(this->offboard_timer_);
     return this->sendToCommanderUnit(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_NAV_LAND);
 }
 
-// Use current?| Empty| Empty| Empty| Latitude| Longitude| Altitude|
+/**
+ * @brief Sets the current position as the home location for the vehicle.
+ * Parameters for the general command: Use current?| Empty| Empty| Empty| Latitude| Longitude|
+ * Altitude|
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::setHome() {
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_HOME, constants::CONFIRM_SET_HOME
     );
 }
 
-// Empty| Empty| Empty| Empty| Empty| Empty| Empty|
+/**
+ * @brief Commands the vehicle to return to its home (launch) position.
+ * Parameters for the general command: Empty| Empty| Empty| Empty| Empty| Empty| Empty|
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::returnToLaunchPosition() {
     // Needed here because it could be called while the Offboard mode is active
     cancelTimer(this->offboard_timer_);
@@ -45,6 +87,9 @@ bool UNSCModule::returnToLaunchPosition() {
     );
 }
 
+/**
+ * @brief Executes preflight checks to verify the simulation is ready for operation.
+ */
 void UNSCModule::runPreChecks() {
     // Delete wall timer to have it set off only once
     cancelTimer(this->prechecks_timer_);
@@ -99,6 +144,11 @@ void UNSCModule::runPreChecks() {
     this->sendLogError("Errors in the simulation detected!");
 }
 
+/**
+ * @brief Commands the vehicle to enter a loiter mode.
+ *
+ * @return true if the command is acknowledged; false otherwise.
+ */
 bool UNSCModule::loiter() {
     return this->sendToCommanderUnit(
         px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE,
@@ -107,6 +157,9 @@ bool UNSCModule::loiter() {
     );
 }
 
+/**
+ * @brief Activates the consensus logic by setting up timers for offboard mode and rendezvous tasks.
+ */
 void UNSCModule::activateConsensus() {
     this->offboard_timer_ = this->node_->create_wall_timer(
         this->offboard_period_, std::bind(&UNSCModule::setAndMaintainOffboardMode, this),
@@ -118,6 +171,9 @@ void UNSCModule::activateConsensus() {
     );
 }
 
+/**
+ * @brief Sets and maintains the offboard control mode, publishing position and velocity setpoints.
+ */
 void UNSCModule::setAndMaintainOffboardMode() {
     auto maybe_pos = this->getPositionSetpoint();
     if (!maybe_pos) {
@@ -167,6 +223,19 @@ void UNSCModule::setAndMaintainOffboardMode() {
     }
 }
 
+/**
+ * @brief Sends a command to the PX4 commander and waits for acknowledgment.
+ *
+ * @param command The PX4 command to send.
+ * @param param1 Parameter 1 of the command (default: NAN).
+ * @param param2 Parameter 2 of the command (default: NAN).
+ * @param param3 Parameter 3 of the command (default: NAN).
+ * @param param4 Parameter 4 of the command (default: NAN).
+ * @param param5 Parameter 5 of the command (default: NAN).
+ * @param param6 Parameter 6 of the command (default: NAN).
+ * @param param7 Parameter 7 of the command (default: NAN).
+ * @return true if the command is acknowledged within the retry limit; false otherwise.
+ */
 bool UNSCModule::sendToCommanderUnit(
     uint16_t command, float param1, float param2, float param3, float param4, float param5,
     float param6, float param7

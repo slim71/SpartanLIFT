@@ -1,7 +1,21 @@
+/**
+ * @file roles.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods related to role changing mechanism.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "LoggerModule/logger.hpp"
 #include "PelicanModule/pelican.hpp"
 
 /*************************** Role handling ****************************/
+/**
+ * @brief Execute all operations needed to switch to the Leader role.
+ *
+ */
 void Pelican::becomeLeader() {
     if (this->role_ == leader)
         return;
@@ -46,6 +60,10 @@ void Pelican::becomeLeader() {
     this->hb_core_.setupTransmissionTimer();
 }
 
+/**
+ * @brief Execute all operations needed to switch to the Follower role.
+ *
+ */
 void Pelican::becomeFollower() {
     if (this->role_ == follower)
         return;
@@ -74,6 +92,10 @@ void Pelican::becomeFollower() {
     this->el_core_.followerActions();
 }
 
+/**
+ * @brief Execute all operations needed to switch to the Candidate role.
+ *
+ */
 void Pelican::becomeCandidate() {
     if (this->role_ == candidate)
         return;

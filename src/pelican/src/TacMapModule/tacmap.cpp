@@ -111,6 +111,11 @@ void TacMapModule::initPublishers() {
         );
 }
 
+/**
+ * @brief Initialize the TacMapModule object.
+ *
+ * @param logger RCLCPP logger to link.
+ */
 void TacMapModule::initSetup(LoggerModule* logger) {
     if (!this->logger_)
         this->logger_ = logger;
@@ -139,6 +144,10 @@ void TacMapModule::initSetup(LoggerModule* logger) {
     );
 }
 
+/**
+ * @brief Stop the module's service.
+ *
+ */
 void TacMapModule::stopService() {
     this->sendLogWarning("Stopping TacMap module!");
     cancelTimer(this->position_timer_);

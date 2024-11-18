@@ -1,7 +1,22 @@
+/**
+ * @file commands.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods related to commands validation and execution.
+ * @version 1.0.0
+ * @date 2024-11-17
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 
 /*************** Service- and action server- related ***************/
-// This is only executed by the leader, receiver of TeleopData goals, to handle an accepted goal
+/**
+ * @brief Handles an accepted goal sent to the leader via the TeleopData action interface. Leader
+ * only.
+ *
+ * @param goal_handle A shared pointer to the goal handle containing the request details.
+ */
 void Pelican::rogerWillCo(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<comms::action::TeleopData>> goal_handle
 ) {
@@ -143,7 +158,12 @@ void Pelican::rogerWillCo(
     }
 }
 
-// Leader-side; Receiver of FleetInfo requests - Target position
+/**
+ * @brief Responds to a FleetInfo service request with the target position. Leader only.
+ *
+ * @param request Unused in the current implementation.
+ * @param response A shared pointer to the service response, which contains the target position.
+ */
 void Pelican::targetNotification(
     const std::shared_ptr<comms::srv::FleetInfo::Request>,
     const std::shared_ptr<comms::srv::FleetInfo::Response> response
@@ -158,7 +178,10 @@ void Pelican::targetNotification(
     }
 }
 
-// Non-leader side; FleetInfo request generator - Target position
+/**
+ * @brief Sends a FleetInfo service request to retrieve the target position from the leader.
+ * Non-leader agents use this function to synchronize the rendezvous position.
+ */
 void Pelican::rendezvousFleet() {
     // The leader has already set the target position before calling this
     if (!this->isLeader()) {
@@ -211,7 +234,12 @@ void Pelican::rendezvousFleet() {
     this->initiateConsensus();
 }
 
-// This is only executed by non-leaders; FleetInfo response handling - Target position
+/**
+ * @brief Processes the response to a FleetInfo service request sent to the leader. Non-leaders
+ * only.
+ *
+ * @param future A shared future containing the response with the target position.
+ */
 void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::SharedFuture future) {
     // Wait for the specified amount or until the result is available
     this->sendLogDebug("Getting response...");
@@ -230,6 +258,12 @@ void Pelican::processLeaderResponse(rclcpp::Client<comms::srv::FleetInfo>::Share
 }
 
 /************************* Command-related *************************/
+/**
+ * @brief Validates the received Command message for consistency and correctness.
+ *
+ * @param msg The Command message to validate.
+ * @return true if the message is valid; otherwise, false.
+ */
 bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     // Valid agent ID
     if (msg.agent <= 0) {
@@ -298,6 +332,12 @@ bool Pelican::checkCommandMsgValidity(const comms::msg::Command msg) {
     return true;
 }
 
+/**
+ * @brief Broadcasts a command to all agents in the fleet and waits for acknowledgments.
+ *
+ * @param command The command to be broadcasted.
+ * @return true if the command was successfully broadcasted and acknowledged; otherwise, false.
+ */
 bool Pelican::broadcastCommand(uint16_t command) {
     // Send command to other agents
     unsigned int attempt = 0;
@@ -349,6 +389,11 @@ bool Pelican::broadcastCommand(uint16_t command) {
     }
 }
 
+/**
+ * @brief Dispatches a command to the fleet and ensures its execution.
+ *
+ * @param command The command to be dispatched.
+ */
 void Pelican::handleCommandDispatch(uint16_t command) {
     if (this->broadcastCommand(command) && this->executeRPCCommand(command)) {
         this->sendLogInfo("Fleet is executing command {}", commands_to_string(command));
@@ -375,6 +420,12 @@ void Pelican::handleCommandDispatch(uint16_t command) {
     }
 }
 
+/**
+ * @brief Handles received Command messages and performs appropriate actions based on the agent's
+ * role.
+ *
+ * @param msg The Command message to handle.
+ */
 void Pelican::handleCommandReception(const comms::msg::Command msg) {
     // Do not even consider handling acks if I'm not the leader
     if (!this->isLeader() && msg.ack) {
@@ -438,6 +489,14 @@ void Pelican::handleCommandReception(const comms::msg::Command msg) {
     }
 }
 
+/**
+ * @brief Publishes an AppendEntryRPC message to dispatch a command to agents.
+ *
+ * @param leader The leader ID issuing the command.
+ * @param command The command to be dispatched.
+ * @param ack Indicates whether the message is an acknowledgment.
+ * @param apply Indicates whether the command should be executed.
+ */
 void Pelican::sendAppendEntryRPC(unsigned int leader, uint16_t command, bool ack, bool apply) {
     auto cmd_msg = comms::msg::Command();
     cmd_msg.agent = this->getID();
@@ -459,6 +518,13 @@ void Pelican::sendAppendEntryRPC(unsigned int leader, uint16_t command, bool ack
     this->pub_to_dispatch_->publish(cmd_msg);
 }
 
+/**
+ * @brief Sends an acknowledgment for a received command to the leader.
+ *
+ * @param leader The leader ID to acknowledge.
+ * @param command The command for which the acknowledgment is being sent.
+ * @param apply Indicates whether the acknowledgment is for command execution.
+ */
 void Pelican::sendRPCAck(unsigned int leader, uint16_t command, bool apply) {
     this->sendLogInfo(
         "Sending ack for command {}{} to the Leader", commands_to_string(command),
@@ -467,6 +533,14 @@ void Pelican::sendRPCAck(unsigned int leader, uint16_t command, bool apply) {
     this->sendAppendEntryRPC(leader, command, true, apply);
 }
 
+/**
+ * @brief Waits for RPC acknowledgments for a given command and checks if a majority of agents
+ * responded.
+ *
+ * @param command The command for which acknowledgments are awaited.
+ * @param apply Indicates if the acknowledgment is for execution of the command.
+ * @return true if a majority of acknowledgments were received; false otherwise.
+ */
 bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
     std::this_thread::sleep_for(this->rpcs_ack_timeout_);
 
@@ -504,6 +578,12 @@ bool Pelican::waitForRPCsAcks(uint16_t command, bool apply) {
     return false;
 }
 
+/**
+ * @brief Appends a new log entry with the specified command and term.
+ *
+ * @param command The command associated with the log entry.
+ * @param term The term ID associated with the command.
+ */
 void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->sendLogInfo(
         "Appending entry for command {} for term {}", commands_to_string(command), term
@@ -512,6 +592,12 @@ void Pelican::appendEntry(uint16_t command, unsigned int term) {
     this->rpcs_vector_.push_back(std::tie(command, term));
 }
 
+/**
+ * @brief Executes a specific command based on its ID.
+ *
+ * @param command The command to execute.
+ * @return true if the command was executed successfully; false otherwise.
+ */
 bool Pelican::executeRPCCommand(uint16_t command) {
     if (!this->requestSimulationReady()) {
         this->sendLogError("Cannot execute command because of errors in the simulation!");
@@ -576,6 +662,12 @@ bool Pelican::executeRPCCommand(uint16_t command) {
 
 // Function to publish FormationDesired messages
 // Map with pairs: agent ID - agent's desired position
+/**
+ * @brief Publishes desired positions for the agents to achieve a formation.
+ * Maps structure: agent ID - position
+ *
+ * @param desired_positions A map of agent IDs to their respective desired positions.
+ */
 void Pelican::sendDesiredFormationPositions(
     std::unordered_map<unsigned int, geometry_msgs::msg::Point> desired_positions
 ) {

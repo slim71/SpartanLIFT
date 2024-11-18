@@ -1,14 +1,37 @@
+/**
+ * @file heartbeat.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief File containing the main methods related to the heartbeat mechanism.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "HeartbeatModule/heartbeat.hpp"
 #include "PelicanModule/pelican.hpp"
 
 /************************** Ctors/Dctors ***************************/
+/**
+ * @brief Construct a new HeartbeatModule object.
+ *
+ */
 HeartbeatModule::HeartbeatModule() {
     this->node_ = nullptr;
     this->logger_ = nullptr;
 }
 
+/**
+ * @brief Construct a new HeartbeatModule object.
+ *
+ * @param node
+ */
 HeartbeatModule::HeartbeatModule(Pelican* node) : node_(node), logger_ {nullptr} {}
 
+/**
+ * @brief Destroy the HeartbeatModule object.
+ *
+ */
 HeartbeatModule::~HeartbeatModule() {
     // Cancel periodic transmission (no problem arises if they're not initialized)
     // Cancel active timers
@@ -27,6 +50,11 @@ HeartbeatModule::~HeartbeatModule() {
 }
 
 /************************** Setup methods **************************/
+/**
+ * @brief Initialize the HeartbeatModule object.
+ *
+ * @param logger RCLCPP logger to link.
+ */
 void HeartbeatModule::initSetup(LoggerModule* logger) {
     this->setupSubscription();
     resetSharedPointer(this->pub_to_heartbeat_topic_);
@@ -36,6 +64,10 @@ void HeartbeatModule::initSetup(LoggerModule* logger) {
         this->logger_ = logger;
 }
 
+/**
+ * @brief Setup the transmitting end of the heartbeat mechanism.
+ *
+ */
 void HeartbeatModule::setupPublisher() {
     if (!this->node_) {
         throw MissingExternModule();
@@ -48,6 +80,10 @@ void HeartbeatModule::setupPublisher() {
     }
 }
 
+/**
+ * @brief Setup the receiving end of the heartbeat mechanism.
+ *
+ */
 void HeartbeatModule::setupSubscription() {
     if (!this->node_) {
         throw MissingExternModule();
@@ -64,6 +100,10 @@ void HeartbeatModule::setupSubscription() {
     }
 }
 
+/**
+ * @brief Setup the timer for the heartbeat transmission.
+ *
+ */
 void HeartbeatModule::setupTransmissionTimer() {
     if (!this->node_) {
         throw MissingExternModule();
@@ -77,11 +117,18 @@ void HeartbeatModule::setupTransmissionTimer() {
 }
 
 /************ Actions initiated from outside the module ************/
+/**
+ * @brief Reset the heartbeat publisher.
+ */
 void HeartbeatModule::resetPublisher() {
     resetSharedPointer(this->pub_to_heartbeat_topic_);
 }
 
 /********************* Special functionalities *********************/
+/**
+ * @brief Send a heartbeat.
+ *
+ */
 void HeartbeatModule::sendNow() {
     // One-off transmission; allowed for special occasions
     this->sendLogInfo("One-off heartbeat transmission");
@@ -89,6 +136,10 @@ void HeartbeatModule::sendNow() {
 }
 
 /******************** Private member functions *********************/
+/**
+ * @brief Broadcast a heartbeat into the fleet.
+ *
+ */
 void HeartbeatModule::sendHeartbeat() {
     comms::msg::Heartbeat hb;
     hb.term_id = this->gatherCurrentTerm();
@@ -107,11 +158,19 @@ void HeartbeatModule::sendHeartbeat() {
     }
 }
 
+/**
+ * @brief Stop heartbeat transmission mechanism.
+ *
+ */
 void HeartbeatModule::stopHeartbeatTransmission() {
     this->sendLogDebug("Stopping heartbeat transmission");
     cancelTimer(this->hb_transmission_timer_);
 }
 
+/**
+ * @brief Stop the module's service.
+ *
+ */
 void HeartbeatModule::stopService() {
     this->sendLogWarning("Stopping heartbeat module!");
     cancelTimer(this->hb_transmission_timer_);
@@ -119,6 +178,13 @@ void HeartbeatModule::stopService() {
     resetSharedPointer(this->sub_to_heartbeat_topic_);
 }
 
+/**
+ * @brief Check whether a heartbeat is valid or not.
+ *
+ * @param msg Heartbeat to check.
+ * @return true
+ * @return false
+ */
 bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {
     if (msg.leader_id == this->gatherAgentID()) {
         return false;
@@ -136,6 +202,11 @@ bool HeartbeatModule::checkHeartbeatValidity(const comms::msg::Heartbeat msg) {
     return true;
 }
 
+/**
+ * @brief Parse and store a heartbeat message received.
+ *
+ * @param msg Heartbeat message received.
+ */
 void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     if (!this->checkHeartbeatValidity(msg))
         return;
@@ -201,6 +272,10 @@ void HeartbeatModule::storeHeartbeat(const comms::msg::Heartbeat msg) {
     }
 }
 
+/**
+ * @brief Clear the array containing received heartbeats.
+ *
+ */
 void HeartbeatModule::flushHeartbeats() {
     std::lock_guard lock(this->hbs_mutex_);
     this->received_hbs_.clear();

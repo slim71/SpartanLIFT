@@ -1,6 +1,20 @@
+/**
+ * @file checkers.cpp
+ * @author Simone Vollaro (slim71sv@gmail.com)
+ * @brief Methods checking core conditions and handling related promises.
+ * @version 1.0.0
+ * @date 2024-11-14
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
 #include "PelicanModule/pelican.hpp"
 #include "UNSCModule/unsc.hpp"
 
+/**
+ * @brief Check if the formation has been achieved and fulfill the related promise.
+ *
+ */
 void UNSCModule::checkFormationAchieved() {
     if (this->confirmFormationAchieved()) {
         this->sendLogDebug("Formation achieved!");
@@ -12,6 +26,10 @@ void UNSCModule::checkFormationAchieved() {
     }
 }
 
+/**
+ * @brief Check if the reference height has been achieved and fulfill the related promise.
+ *
+ */
 void UNSCModule::checkHeightReached() {
     if (abs(this->getActualTargetHeight() - this->gatherCopterPosition(this->gatherAgentID()).z) <
         0.1) {
@@ -24,6 +42,10 @@ void UNSCModule::checkHeightReached() {
     }
 }
 
+/**
+ * @brief Check if the desired target has been achieved and fulfill the related promise.
+ *
+ */
 void UNSCModule::checkTargetReached() {
     std::optional<geometry_msgs::msg::Point> maybe_target = this->getTargetPosition();
     if (!maybe_target) {
