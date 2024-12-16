@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from datetime import datetime, timezone
 from matplotlib.colors import Normalize
+from matplotlib.animation import FuncAnimation
+
 
 CMAP = mpl.colormaps["Set1"]
 COLORS = CMAP.colors[1:]
@@ -303,4 +305,56 @@ if __name__ == "__main__":
 
     plt.legend()
     plt.title("Inter-UAV Distances Over Time")
+    plt.show(block=False)
+
+    ######################### GIF ########################
+    # Prepare the figure
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.set_xlim(XMIN, XMAX)
+    ax.set_ylim(YMIN, YMAX)
+    ax.set_xlabel("$x$")
+    ax.set_ylabel("$y$")
+    ax.grid(which="both", linestyle="--", alpha=0.5)
+
+    # Initialize the agent and payload markers
+    agents_markers = []
+    for i in range(N_AGENTS):
+        (agent_marker,) = ax.plot([], [], "o", markersize=10, label=f"Agent {i+1}")
+        agents_markers.append(agent_marker)
+
+    (payload_marker,) = ax.plot(
+        [], [], "s", color="brown", markersize=15, label="Payload"
+    )
+
+    # Add legend
+    ax.legend(loc="upper left")
+
+    # Normalize time for color gradient
+    min_timestamp, max_timestamp = (
+        min(t[0] for t in timestamps_array if t.size),
+        max(t[-1] for t in timestamps_array if t.size),
+    )
+    norm = Normalize(vmin=min_timestamp, vmax=max_timestamp)
+    cmap = plt.cm.hsv
+
+    # Update function for animation
+    def update(frame):
+        for i, marker in enumerate(agents_markers):
+            if frame < len(x_pos[i]):
+                # Update agent positions and apply color based on time
+                marker.set_data(x_pos[i][frame], y_pos[i][frame])
+                marker.set_color(cmap(norm(timestamps_array[i][frame])))
+        if frame < len(payload_pos) // 2:
+            payload_marker.set_data(payload_pos[0], payload_pos[1])
+        return agents_markers + [payload_marker]
+
+    # Total frames equal the maximum data length among agents
+    total_frames = max(len(x) for x in x_pos)
+
+    # Create animation
+    ani = FuncAnimation(fig, update, frames=total_frames, interval=100, blit=True)
+
+    # Save the animation as a GIF
+    ani.save("fleet_animation.gif", writer="pillow", fps=10)
+
     plt.show()

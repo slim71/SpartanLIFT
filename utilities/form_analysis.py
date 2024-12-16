@@ -11,6 +11,7 @@ from matplotlib import gridspec
 from datetime import datetime, timezone
 from matplotlib.colors import Normalize
 import itertools
+from matplotlib.animation import FuncAnimation
 
 
 CMAP = mpl.colormaps["Set1"]
@@ -317,9 +318,88 @@ if __name__ == "__main__":
     )
     ax.set_title("Formation initialization positions (real)")
     plt.pause(0.1)
-    plt.show(block=False)
+    # plt.show()
 
-    ######################### Formation initialization distances ##########################
+    ######################## Formation initialization gif ##########################
+    # Create a new figure for the GIF animation
+    fig_anim, ax_anim = plt.subplots()
+    ax_anim.set_xlabel("$x$", size=14)
+    ax_anim.set_ylabel("$y$", size=14)
+    ax_anim.grid(which="both", color="grey", linewidth=1, linestyle="-", alpha=0.2)
+
+    # Set axis limits (optional, to match your existing plot)
+    x_min = -8.5
+    x_max = -3
+    y_min = -2.5
+    y_max = 3
+    ax_anim.set_xlim(x_min, x_max)
+    ax_anim.set_ylim(y_min, y_max)
+
+    # Initialize scatter plots for each agent with correct color range
+    scatter_anim = []
+    for id_minus_one in range(N_AGENTS):
+        try:
+            # Define the relevant range
+            start_idx = form_init_index[id_minus_one + 1] + 1
+            end_idx = form_ctrl_index[id_minus_one + 1]
+            agent_seconds = timestamps_array[id_minus_one][start_idx:end_idx]
+
+            # Initialize scatter with the correct color mapping
+            scatter = ax_anim.scatter([], [], c=[], cmap=mpl.cm.hsv, norm=norm, s=50)
+            scatter_anim.append(scatter)
+        except KeyError:
+            scatter_anim.append(None)  # If no data, append None for this agent
+
+    # Determine the maximum number of frames to animate based on [start_idx:end_idx]
+    relevant_lengths = [
+        form_ctrl_index[i + 1] - (form_init_index[i + 1] + 1) for i in range(N_AGENTS)
+    ]
+    max_frames = max(relevant_lengths)
+
+    text_labels = []
+    for id_minus_one in range(N_AGENTS):
+        text = ax_anim.text(
+            0,
+            0,
+            str(id_minus_one + 1),  # Agent ID as the text
+            color="black",
+            ha="center",
+            va="center",
+            fontsize=12,
+            fontweight="bold",
+        )
+        text_labels.append(text)
+
+    # Update function for animation: display a colored number instead of a point
+    def update(frame):
+        for id_minus_one, text in enumerate(text_labels):
+            try:
+                # Use the relevant data range [start_idx:end_idx]
+                start_idx = form_init_index[id_minus_one + 1] + 1
+                end_idx = form_ctrl_index[id_minus_one + 1]
+
+                if frame < end_idx - start_idx:
+                    # Get the current position and color for the agent
+                    x_data = x_pos[id_minus_one][start_idx + frame]
+                    y_data = y_pos[id_minus_one][start_idx + frame]
+                    c_data = timestamps_array[id_minus_one][start_idx + frame]
+
+                    # Update the text position and color
+                    text.set_position((x_data, y_data))
+                    text.set_color(mpl.cm.hsv(norm(c_data)))  # Use color map with norm
+            except IndexError:
+                continue
+        return text_labels
+
+    # Set up animation
+    ani = FuncAnimation(fig_anim, update, frames=max_frames, interval=100, blit=True)
+
+    # Save the animation as a GIF
+    ani.save("fleet_evolution.gif", writer="pillow", fps=10)
+
+    print("GIF saved as 'fleet_evolution.gif'")
+
+    ######################## Formation initialization distances ##########################
     min_timestamp = min(t[0] for t in init_dist_ts.values() if t)
     max_timestamp = max(t[-1] for t in init_dist_ts.values() if t)
 
@@ -454,6 +534,85 @@ if __name__ == "__main__":
     plt.pause(0.1)
     plt.show(block=False)
 
+    ######################### Formation control gif ##########################
+    # Create a new figure for the GIF animation
+    fig_anim, ax_anim = plt.subplots()
+    ax_anim.set_xlabel("$x$", size=14)
+    ax_anim.set_ylabel("$y$", size=14)
+    ax_anim.grid(which="both", color="grey", linewidth=1, linestyle="-", alpha=0.2)
+
+    # Set axis limits (optional, to match your existing plot)
+    x_min = -8.5
+    x_max = -1
+    y_min = -2.5
+    y_max = 6
+    ax_anim.set_xlim(x_min, x_max)
+    ax_anim.set_ylim(y_min, y_max)
+
+    # Initialize scatter plots for each agent with correct color range
+    scatter_anim = []
+    for id_minus_one in range(N_AGENTS):
+        try:
+            # Define the relevant range
+            start_idx = form_ctrl_index[id_minus_one + 1] + 1
+            end_idx = len(x_pos[id_minus_one])
+            agent_seconds = timestamps_array[id_minus_one][start_idx:end_idx]
+
+            # Initialize scatter with the correct color mapping
+            scatter = ax_anim.scatter([], [], c=[], cmap=mpl.cm.hsv, norm=norm, s=50)
+            scatter_anim.append(scatter)
+        except KeyError:
+            scatter_anim.append(None)  # If no data, append None for this agent
+
+    # Determine the maximum number of frames to animate based on [start_idx:end_idx]
+    relevant_lengths = [
+        form_ctrl_index[i + 1] - (form_init_index[i + 1] + 1) for i in range(N_AGENTS)
+    ]
+    max_frames = max(relevant_lengths)
+
+    text_labels = []
+    for id_minus_one in range(N_AGENTS):
+        text = ax_anim.text(
+            0,
+            0,
+            str(id_minus_one + 1),  # Agent ID as the text
+            color="black",
+            ha="center",
+            va="center",
+            fontsize=12,
+            fontweight="bold",
+        )
+        text_labels.append(text)
+
+    # Update function for animation: display a colored number instead of a point
+    def update(frame):
+        for id_minus_one, text in enumerate(text_labels):
+            try:
+                # Use the relevant data range [start_idx:end_idx]
+                start_idx = form_ctrl_index[id_minus_one + 1] + 1
+                end_idx = len(x_pos[id_minus_one])
+
+                if frame < end_idx - start_idx:
+                    # Get the current position and color for the agent
+                    x_data = x_pos[id_minus_one][start_idx + frame]
+                    y_data = y_pos[id_minus_one][start_idx + frame]
+                    c_data = timestamps_array[id_minus_one][start_idx + frame]
+
+                    # Update the text position and color
+                    text.set_position((x_data, y_data))
+                    text.set_color(mpl.cm.hsv(norm(c_data)))  # Use color map with norm
+            except IndexError:
+                continue
+        return text_labels
+
+    # Set up animation
+    ani = FuncAnimation(fig_anim, update, frames=max_frames, interval=100, blit=True)
+
+    # Save the animation as a GIF
+    ani.save("fleet_evolution.gif", writer="pillow", fps=10)
+
+    print("GIF saved as 'fleet_evolution.gif'")
+
     ######################### Formation control distances ##########################
     min_timestamp = min(t[0] for t in ctrl_dist_ts.values() if t)
     max_timestamp = max(t[-1] for t in ctrl_dist_ts.values() if t)
@@ -490,4 +649,4 @@ if __name__ == "__main__":
     fig.text(0.1, 0.5, "Distance [m]", va="center", rotation="vertical", size=14)
 
     plt.suptitle("Inter-UAV Distances Over Time During Formation Control")
-    plt.show()
+    plt.show(block=False)
